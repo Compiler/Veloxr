@@ -1,3 +1,0 @@
-/home/luke/Code/VulkanRenderer/build/CMakeFiles/vulkanrenderer.dir
-/home/luke/Code/VulkanRenderer/build/CMakeFiles/edit_cache.dir
-/home/luke/Code/VulkanRenderer/build/CMakeFiles/rebuild_cache.dir
