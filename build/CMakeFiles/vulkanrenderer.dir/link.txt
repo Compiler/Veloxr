@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/vulkanrenderer.dir/src/main.cpp.o -o vulkanrenderer  /usr/lib/x86_64-linux-gnu/libvulkan.so /usr/local/lib/libglfw3.a /usr/lib/x86_64-linux-gnu/librt.a -lm -ldl 
