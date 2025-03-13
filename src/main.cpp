@@ -22,11 +22,24 @@ public:
     }
 
 private:
+    GLFWwindow* window;
+    const int WIDTH = 800;
+    const int HEIGHT = 800;
     void init() {
+        glfwInit();
+
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
+        window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
 
     }
 
     void render() {
+
+        while (!glfwWindowShouldClose(window)) {
+            glfwPollEvents();
+        }
 
     }
 
