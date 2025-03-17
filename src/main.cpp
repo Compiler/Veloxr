@@ -62,6 +62,7 @@ private: // Client
 
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VkDevice device;
+    VkQueue graphicsQueue;
 
 private:
 
@@ -130,6 +131,8 @@ private:
         }
 
         std::cout << "Finished logical device creation! " << std::endl;
+
+        vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
 
 
     }
@@ -227,6 +230,7 @@ private:
     }
 
     void destroy() {
+        vkDestroyDevice(device, nullptr);
         if (enableValidationLayers) {
             DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
         }
