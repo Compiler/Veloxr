@@ -1,3 +1,6 @@
+#include <map>
+#include <utility>
+#include <vulkan/vulkan_core.h>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
@@ -14,13 +17,6 @@
 #include <cstdlib>
 #include <vector>
 #include <cstring>
-
-void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
-    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-    if (func != nullptr) {
-        func(instance, debugMessenger, pAllocator);
-    }
-}
 
 // Hook extension functions and load them
 VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
@@ -56,6 +52,8 @@ private: // Client
         "VK_LAYER_KHRONOS_validation"
     };
 
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+
 private:
 
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
@@ -79,8 +77,61 @@ private:
 
         createVulkanInstance();
         setupDebugMessenger();
+        pickPhysicalDevice();
 
 
+    }
+
+    void pickPhysicalDevice() {
+        uint32_t deviceCount = 0;
+
+        vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+
+        if (deviceCount == 0) {
+            throw std::runtime_error("failed to find GPUs with Vulkan support!");
+        }
+
+        std::vector<VkPhysicalDevice> devices(deviceCount);
+        vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+
+        std::multimap<int, VkPhysicalDevice> scoreMap;
+        scoreMap.insert(std::make_pair(0, VK_NULL_HANDLE));
+
+        for (const auto& device : devices) {
+            scoreMap.insert(std::make_pair(calculateDeviceScore(device), device));
+        }
+
+        physicalDevice = scoreMap.rbegin()->second;
+        if (physicalDevice == VK_NULL_HANDLE) {
+            throw std::runtime_error("failed to find a suitable GPU!");
+        }
+
+
+    }
+
+    int calculateDeviceScore(VkPhysicalDevice device) {
+        
+        VkPhysicalDeviceProperties deviceProperties;
+        vkGetPhysicalDeviceProperties(device, &deviceProperties);
+
+        VkPhysicalDeviceFeatures deviceFeatures;
+        vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+        int score = 0;
+
+        score += deviceProperties.limits.maxImageDimension2D;
+        score += deviceFeatures.geometryShader;
+        score += deviceFeatures.sparseBinding;
+        score += deviceFeatures.tessellationShader;
+
+        if(deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+            score *= 2;
+        }
+        std::cout << "Score for device " << deviceProperties.deviceID << " (" << deviceProperties.deviceName << ") = " << score << std::endl;
+        return score;
+    }
+
+    uint32_t findQueueFamilies(VkPhysicalDevice device) {
     }
 
     void render() {
@@ -92,6 +143,9 @@ private:
     }
 
     void destroy() {
+        if (enableValidationLayers) {
+            DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+        }
         vkDestroyInstance(instance, nullptr);
         glfwDestroyWindow(window);
 
