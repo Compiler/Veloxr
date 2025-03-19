@@ -121,7 +121,6 @@ private:
         }
 
 
-        vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
 
         VkPhysicalDeviceFeatures deviceFeatures{};
 
@@ -151,6 +150,7 @@ private:
 
 
         vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
+        vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
 
         std::cout << "Finished logical device creation! Queue / Present indices: " << indices.graphicsFamily.value() << " " << indices.presentFamily.value() << std::endl;
 
