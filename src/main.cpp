@@ -149,10 +149,10 @@ private:
             throw std::runtime_error("failed to create logical device!");
         }
 
-        std::cout << "Finished logical device creation! Queue / Present indices: " << indices.graphicsFamily.value() << " " << indices.presentFamily.value() << std::endl;
 
         vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
 
+        std::cout << "Finished logical device creation! Queue / Present indices: " << indices.graphicsFamily.value() << " " << indices.presentFamily.value() << std::endl;
 
     }
 
