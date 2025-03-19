@@ -1,5 +1,7 @@
 #include <map>
 #include <optional>
+#include <queue>
+#include <set>
 #include <utility>
 #include <vulkan/vulkan_core.h>
 #define GLFW_INCLUDE_VULKAN
@@ -61,8 +63,9 @@ private: // Client
     };
 
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    VkSurfaceKHR surface;
     VkDevice device;
-    VkQueue graphicsQueue;
+    VkQueue graphicsQueue, presentQueue;
 
 private:
 
@@ -87,30 +90,46 @@ private:
 
         createVulkanInstance();
         setupDebugMessenger();
+        createSurface();
         pickPhysicalDevice();
         createLogicalDevice();
 
 
     }
 
+    void createSurface() {
+        if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create window surface!");
+        }
+    }
+
     void createLogicalDevice() {
 
-        QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 
-        VkDeviceQueueCreateInfo queueCreateInfo{};
-        queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-        queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
-        queueCreateInfo.queueCount = 1;
+        QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+        std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+        std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
         float queuePriority = 1.0f;
-        queueCreateInfo.pQueuePriorities = &queuePriority;
+        for (uint32_t queueFamily : uniqueQueueFamilies) {
+            VkDeviceQueueCreateInfo queueCreateInfo{};
+            queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+            queueCreateInfo.queueFamilyIndex = queueFamily;
+            queueCreateInfo.queueCount = 1;
+            queueCreateInfo.pQueuePriorities = &queuePriority;
+            queueCreateInfos.push_back(queueCreateInfo);
+        }
+
+
+        vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
 
         VkPhysicalDeviceFeatures deviceFeatures{};
 
         VkDeviceCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
-        createInfo.pQueueCreateInfos = &queueCreateInfo;
+        createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+        createInfo.pQueueCreateInfos = queueCreateInfos.data();
         createInfo.queueCreateInfoCount = 1;
 
         createInfo.pEnabledFeatures = &deviceFeatures;
@@ -130,7 +149,7 @@ private:
             throw std::runtime_error("failed to create logical device!");
         }
 
-        std::cout << "Finished logical device creation! " << std::endl;
+        std::cout << "Finished logical device creation! Queue / Present indices: " << indices.graphicsFamily.value() << " " << indices.presentFamily.value() << std::endl;
 
         vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
 
@@ -192,10 +211,11 @@ private:
 
     struct QueueFamilyIndices {
         std::optional<uint32_t> graphicsFamily;
+        std::optional<uint32_t> presentFamily;
 
         // Is complete if their are graphics commands supported
         bool isComplete() {
-            return graphicsFamily.has_value();
+            return graphicsFamily.has_value() && presentFamily.has_value();
         }
     };
 
@@ -210,9 +230,18 @@ private:
 
         int i = 0;
         for (const auto& queueFamily : queueFamilies) {
+
+            VkBool32 presentSupport = false;
+            vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+
+            if (presentSupport) {
+                indices.presentFamily = i;
+            }
+
             if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
                 indices.graphicsFamily = i;
             }
+
             if(indices.isComplete()) break;
 
             i++;
@@ -235,6 +264,7 @@ private:
             DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
         }
         vkDestroyInstance(instance, nullptr);
+        vkDestroySurfaceKHR(instance, surface, nullptr);
         glfwDestroyWindow(window);
 
         glfwTerminate();
