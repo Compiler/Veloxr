@@ -62,6 +62,10 @@ private: // Client
         "VK_LAYER_KHRONOS_validation"
     };
 
+    const std::vector<const char*> deviceExtensions = {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME
+    };
+
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VkSurfaceKHR surface;
     VkDevice device;
@@ -183,10 +187,26 @@ private:
 
     }
 
+    bool checkDeviceExtensionSupport(VkPhysicalDevice device) {
+        uint32_t extensionCount;
+        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+
+        std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+
+        std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
+
+        for (const auto& extension : availableExtensions) {
+            requiredExtensions.erase(extension.extensionName);
+        }
+
+        return requiredExtensions.empty();
+    }
+
     int calculateDeviceScore(VkPhysicalDevice device) {
 
         QueueFamilyIndices indices = findQueueFamilies(device); 
-        if(!indices.isComplete()) return 0;
+        if(!indices.isComplete() || !checkDeviceExtensionSupport(device)) return 0;
         
         VkPhysicalDeviceProperties deviceProperties;
         vkGetPhysicalDeviceProperties(device, &deviceProperties);
