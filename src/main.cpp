@@ -82,6 +82,10 @@ private: // Client
     VkDevice device;
     VkQueue graphicsQueue, presentQueue;
     VkSwapchainKHR swapChain;
+    VkFormat swapChainImageFormat;
+    VkExtent2D swapChainExtent;
+    VkColorSpaceKHR swapChainColorSpace;
+    std::vector<VkImage> swapChainImages;
 
 private:
 
@@ -134,6 +138,10 @@ private:
         createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
         uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+        // Store member meta data for swapchain
+        swapChainImageFormat = surfaceFormat.format;
+        swapChainColorSpace = surfaceFormat.colorSpace;
+        swapChainExtent = extent;
 
         if (indices.graphicsFamily != indices.presentFamily) {
             createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
@@ -152,6 +160,13 @@ private:
         if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
             throw std::runtime_error("failed to create swap chain!");
         }
+
+        // Need to resize, we specified the minimum not the actual.
+        vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
+        swapChainImages.resize(imageCount);
+        vkGetSwapchainImagesKHR(device, swapChain, &imageCount, swapChainImages.data());
+
+
 
     }
 
