@@ -81,6 +81,7 @@ private: // Client
     VkSurfaceKHR surface;
     VkDevice device;
     VkQueue graphicsQueue, presentQueue;
+    VkSwapchainKHR swapChain;
 
 private:
 
@@ -144,6 +145,14 @@ private:
             createInfo.pQueueFamilyIndices = nullptr; // Optional
         }
         createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
+        createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+        createInfo.presentMode = presentMode;
+        createInfo.clipped = VK_TRUE;
+
+        if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create swap chain!");
+        }
+
     }
 
     SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device) {
@@ -397,6 +406,7 @@ private:
     }
 
     void destroy() {
+        vkDestroySwapchainKHR(device, swapChain, nullptr);
         vkDestroyDevice(device, nullptr);
         if (enableValidationLayers) {
             DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
