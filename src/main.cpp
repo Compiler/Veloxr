@@ -38,6 +38,12 @@ VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMes
     }
 }
 
+struct SwapChainSupportDetails {
+    VkSurfaceCapabilitiesKHR capabilities;
+    std::vector<VkSurfaceFormatKHR> formats;
+    std::vector<VkPresentModeKHR> presentModes;
+};
+
 class RendererCore {
 public:
     void run() {
@@ -101,6 +107,13 @@ private:
 
     }
 
+    SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device) {
+        SwapChainSupportDetails details;
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
+
+        return details;
+    }
+
     void createSurface() {
         if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
             throw std::runtime_error("failed to create window surface!");
@@ -138,14 +151,15 @@ private:
         createInfo.pEnabledFeatures = &deviceFeatures;
 
         // Backwards compatability with older vulkan
-        createInfo.enabledExtensionCount = 0;
-
         if (enableValidationLayers) {
             createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
             createInfo.ppEnabledLayerNames = validationLayers.data();
         } else {
             createInfo.enabledLayerCount = 0;
         }
+
+        createInfo.enabledExtensionCount = (uint32_t)deviceExtensions.size();
+        createInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
 
         if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
