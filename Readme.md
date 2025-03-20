@@ -7,4 +7,5 @@ Installed GLFW3
 - bootstrap-vcpkg.bat
 - vcpkg install glfw3
 - Use this install path as a variable in cmake
+- Update your Makefile to -D to your glfw install path
 
