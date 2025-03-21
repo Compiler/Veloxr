@@ -316,6 +316,10 @@ private:
             scoreMap.insert(std::make_pair(calculateDeviceScore(device), device));
         }
 
+        auto curScore = scoreMap.rbegin()->first;
+        if (curScore == -1) {
+            std::runtime_error("No suitable device found");
+        }
         physicalDevice = scoreMap.rbegin()->second;
         if (physicalDevice == VK_NULL_HANDLE) {
             throw std::runtime_error("failed to find a suitable GPU!");
