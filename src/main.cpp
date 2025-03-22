@@ -25,6 +25,22 @@
 #include <cstdint> 
 #include <limits> 
 #include <algorithm> 
+#include <fstream>
+
+static std::vector<char> readFile(const std::string& filename) {
+    std::ifstream file(filename, std::ios::ate | std::ios::binary);
+
+    if (!file.is_open()) {
+        throw std::runtime_error("failed to open file!");
+    }
+    size_t fileSize = (size_t) file.tellg();
+    std::vector<char> buffer(fileSize);
+    file.seekg(0);
+    file.read(buffer.data(), fileSize);
+    file.close();
+
+    return buffer;
+}
 
 void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
     auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
@@ -121,6 +137,8 @@ private:
     }
 
     void createGraphicsPipeline() {
+        auto vertShaderCode = readFile("spirv/vert.spv");
+        auto fragShaderCode = readFile("spirv/frag.spv");
 
     }
 
