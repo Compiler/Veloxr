@@ -26,6 +26,9 @@
 #include <limits> 
 #include <algorithm> 
 #include <fstream>
+#ifndef PROJECT_ROOT_DIR
+#define PROJECT_ROOT_DIR "."
+#endif
 
 static std::vector<char> readFile(const std::string& filename) {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
@@ -104,6 +107,8 @@ private: // Client
     std::vector<VkImage> swapChainImages;
     std::vector<VkImageView> swapChainImageViews;
 
+    VkPipelineLayout pipelineLayout; // Uniforms in shaders object
+
 private:
 
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
@@ -133,13 +138,147 @@ private:
         createSwapChain();
         createImageViews();
         createGraphicsPipeline();
+        createRenderPass();
 
     }
 
+    void createRenderPass() {
+
+    }
+
+    VkShaderModule createShaderModule(const std::vector<char>& code) {
+
+        VkShaderModuleCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        createInfo.codeSize = code.size();
+        createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+
+        VkShaderModule shaderModule;
+        if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create shader module!");
+        }
+
+        return shaderModule;
+    }
+
+    // Immutable.
     void createGraphicsPipeline() {
         auto vertShaderCode = readFile(std::string(PROJECT_ROOT_DIR) + "/spirv/vert.spv");
         auto fragShaderCode = readFile(std::string(PROJECT_ROOT_DIR) + "/spirv/frag.spv");
 
+         VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
+         VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
+
+
+         VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
+         vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+         vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT; // TODO LR: RTX :eyes: ?
+         vertShaderStageInfo.module = vertShaderModule;
+         vertShaderStageInfo.pName = "main"; // Can use same shader with multiple entry points for one file n execution??
+         vertShaderStageInfo.pSpecializationInfo = nullptr; // Assign pipelinecreation-time-constants for shaders
+
+         VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
+         fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+         fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+         fragShaderStageInfo.module = fragShaderModule;
+         fragShaderStageInfo.pName = "main";
+
+         VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
+
+         // Hardcoded in shader for now :D
+         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+         vertexInputInfo.vertexBindingDescriptionCount = 0;
+         vertexInputInfo.pVertexBindingDescriptions = nullptr; 
+         vertexInputInfo.vertexAttributeDescriptionCount = 0;
+         vertexInputInfo.pVertexAttributeDescriptions = nullptr; 
+
+         // Default, triangles
+         VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
+         inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+         inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+         inputAssembly.primitiveRestartEnable = VK_FALSE;
+
+         // Render to the extents of our viewport
+         VkViewport viewport{};
+         viewport.x = 0.0f;
+         viewport.y = 0.0f;
+         viewport.width = (float) swapChainExtent.width;
+         viewport.height = (float) swapChainExtent.height;
+         viewport.minDepth = 0.0f;
+         viewport.maxDepth = 1.0f;
+
+         VkRect2D scissor{};
+         scissor.offset = {0, 0};
+         scissor.extent = swapChainExtent;
+
+
+         // Mutable properties must be explicitly defined for a graphics pipeline, use viewport and scissor for qml window size updates
+         std::vector<VkDynamicState> dynamicStates = {
+             VK_DYNAMIC_STATE_VIEWPORT,
+             VK_DYNAMIC_STATE_SCISSOR
+         };
+
+         VkPipelineDynamicStateCreateInfo dynamicState{};
+         dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+         dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
+         dynamicState.pDynamicStates = dynamicStates.data();
+
+
+         VkPipelineViewportStateCreateInfo viewportState{};
+         viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+         viewportState.viewportCount = 1;
+         viewportState.scissorCount = 1;
+
+         VkPipelineRasterizationStateCreateInfo rasterizer{};
+         rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+         rasterizer.depthClampEnable = VK_FALSE;
+         rasterizer.rasterizerDiscardEnable = VK_FALSE;
+         rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+         rasterizer.lineWidth = 1.0f;
+         rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+         rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+         rasterizer.depthBiasEnable = VK_FALSE;
+         rasterizer.depthBiasConstantFactor = 0.0f; 
+         rasterizer.depthBiasClamp = 0.0f; 
+         rasterizer.depthBiasSlopeFactor = 0.0f; 
+
+         VkPipelineMultisampleStateCreateInfo multisampling{};
+         multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+         multisampling.sampleShadingEnable = VK_FALSE;
+         multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+         multisampling.minSampleShading = 1.0f; 
+         multisampling.pSampleMask = nullptr; 
+         multisampling.alphaToCoverageEnable = VK_FALSE; 
+         multisampling.alphaToOneEnable = VK_FALSE; 
+
+         // Blend render passes into same fragment section in framebuffer :D
+         VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+         colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+         colorBlendAttachment.blendEnable = VK_FALSE;
+         colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+         colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; 
+         colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD; 
+         colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+         colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+         colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+
+
+         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+         pipelineLayoutInfo.setLayoutCount = 0;
+         pipelineLayoutInfo.pSetLayouts = nullptr;
+         pipelineLayoutInfo.pushConstantRangeCount = 0;
+         pipelineLayoutInfo.pPushConstantRanges = nullptr;
+
+         if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+             throw std::runtime_error("failed to create pipeline layout!");
+         }
+
+
+
+         vkDestroyShaderModule(device, fragShaderModule, nullptr);
+         vkDestroyShaderModule(device, vertShaderModule, nullptr);
     }
 
     void createImageViews() {
@@ -206,8 +345,8 @@ private:
             createInfo.pQueueFamilyIndices = queueFamilyIndices;
         } else {
             createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-            createInfo.queueFamilyIndexCount = 0; // Optional
-            createInfo.pQueueFamilyIndices = nullptr; // Optional
+            createInfo.queueFamilyIndexCount = 0; 
+            createInfo.pQueueFamilyIndices = nullptr; 
         }
         createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
         createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
@@ -482,6 +621,7 @@ private:
     }
 
     void destroy() {
+        vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
         for (auto imageView : swapChainImageViews) {
             vkDestroyImageView(device, imageView, nullptr);
         }
