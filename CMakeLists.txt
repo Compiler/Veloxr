@@ -4,8 +4,13 @@ project(vulkanrenderer)
 
 set(CMAKE_CXX_STANDARD 20)
 
-
 add_executable(vulkanrenderer src/main.cpp)
+
+target_compile_definitions(vulkanrenderer
+    PRIVATE 
+        PROJECT_ROOT_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}\"
+)
+
 set(MY_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 

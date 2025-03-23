@@ -137,8 +137,8 @@ private:
     }
 
     void createGraphicsPipeline() {
-        auto vertShaderCode = readFile("spirv/vert.spv");
-        auto fragShaderCode = readFile("spirv/frag.spv");
+        auto vertShaderCode = readFile(std::string(PROJECT_ROOT_DIR) + "/spirv/vert.spv");
+        auto fragShaderCode = readFile(std::string(PROJECT_ROOT_DIR) + "/spirv/frag.spv");
 
     }
 
