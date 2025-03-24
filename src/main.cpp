@@ -98,11 +98,18 @@ struct Vertex {
         return attributeDescriptions;
     }
 };
-
+const auto LEFT = -0.9f;
+const auto RIGHT = 0.9f;
+const auto TOP = -0.9f;
+const auto BOT = 0.9f;
 const std::vector<Vertex> vertices = {
-    {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-    {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-    {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+    {{RIGHT, BOT}, {0.0f, 1.0f, 0.0f}},
+    {{LEFT, BOT}, {1.0f, 0.0f, 0.0f}},
+    {{LEFT, TOP}, {0.0f, 0.0f, 1.0f}},
+
+    {{LEFT, TOP}, {0.0f, 0.0f, 1.0f}},
+    {{RIGHT, TOP}, {1.0f, 0.0f, 0.0f}},
+    {{RIGHT, BOT}, {0.0f, 1.0f, 0.0f}},
 };
 
 struct SwapChainSupportDetails {
