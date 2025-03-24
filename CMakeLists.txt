@@ -11,7 +11,7 @@ target_compile_definitions(vulkanrenderer
         PROJECT_ROOT_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}\"
 )
 
-set(MY_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
+set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 
 find_package(Vulkan REQUIRED)
@@ -19,7 +19,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${Vulkan_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} Vulkan::Vulkan)
 
 target_include_directories(vulkanrenderer PUBLIC
-    "${MY_INCLUDE_DIR}"
+    "${INCLUDE_DIR}"
 )
 
 find_package(glfw3 CONFIG REQUIRED)
