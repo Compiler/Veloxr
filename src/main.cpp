@@ -393,8 +393,9 @@ private:
 
     void createTextureImage() {
         int texWidth, texHeight, texChannels;
-        stbi_uc* pixels = stbi_load("/mnt/c/Users/ljuek/Downloads/texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+        stbi_uc* pixels = stbi_load("C:/Users/ljuek/Downloads/16kmarble.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
         VkDeviceSize imageSize = texWidth * texHeight * 4;
+        std::cout << "Loading texture of size " << texWidth  << " x " << texHeight << ": " << imageSize / 1024 / 1024 << std::endl;
 
         if (!pixels) {
             throw std::runtime_error("failed to load texture image!");
