@@ -42,6 +42,8 @@
 #define MAX_FRAMES_IN_FLIGHT 2
 #endif
 
+#include <opencv4/opencv2/opencv.hpp>
+
 
 static std::vector<char> readFile(const std::string& filename) {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
@@ -391,15 +393,65 @@ private:
         endSingleTimeCommands(commandBuffer);
     }
 
-    void createTextureImage() {
-        int texWidth, texHeight, texChannels;
-        stbi_uc* pixels = stbi_load("C:/Users/ljuek/Downloads/16kmarble.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-        VkDeviceSize imageSize = texWidth * texHeight * 4;
-        std::cout << "Loading texture of size " << texWidth  << " x " << texHeight << ": " << imageSize / 1024 / 1024 << std::endl;
-
-        if (!pixels) {
-            throw std::runtime_error("failed to load texture image!");
+    void _loadImage() {
+        cv::Mat image = cv::imread("C:/Users/ljuek/Downloads/16kmarble.jpg", cv::IMREAD_UNCHANGED);
+        if (image.empty()) {
+            throw std::runtime_error("Failed to load texture image with OpenCV!");
         }
+
+        if (image.channels() == 3) {
+            cv::Mat imageRGBA;
+            cv::cvtColor(image, imageRGBA, cv::COLOR_BGR2RGBA);
+            image = imageRGBA;
+        } else if (image.channels() == 1) {
+            cv::Mat imageRGBA;
+            cv::cvtColor(image, imageRGBA, cv::COLOR_GRAY2RGBA);
+            image = imageRGBA;
+        }
+
+        // Gather width, height, and channels
+        int texWidth    = image.cols;
+        int texHeight   = image.rows;
+        int texChannels = image.channels();
+
+        VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth) * 
+            static_cast<VkDeviceSize>(texHeight) *
+            static_cast<VkDeviceSize>(texChannels);
+
+        std::cout << "Loading texture of size " 
+            << texWidth << " x " << texHeight << ": " 
+            << (imageSize / 1024.0 / 1024.0) << " MB" << std::endl;
+    }
+
+    void createTextureImage() {
+        //cv::Mat image = cv::imread("C:/Users/ljuek/Downloads/16kmarble.jpeg", cv::IMREAD_UNCHANGED);
+        cv::Mat image = cv::imread("/mnt/c/Users/ljuek/Downloads/16kmarble.jpeg", cv::IMREAD_UNCHANGED);
+        if (image.empty()) {
+            throw std::runtime_error("Failed to load texture image with OpenCV!");
+        }
+
+        if (image.channels() == 3) {
+            cv::Mat imageRGBA;
+            cv::cvtColor(image, imageRGBA, cv::COLOR_BGR2RGBA);
+            image = imageRGBA;
+        } else if (image.channels() == 1) {
+            cv::Mat imageRGBA;
+            cv::cvtColor(image, imageRGBA, cv::COLOR_GRAY2RGBA);
+            image = imageRGBA;
+        }
+
+        int texWidth    = image.cols;
+        int texHeight   = image.rows;
+        int texChannels = image.channels();
+
+        VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth) * 
+            static_cast<VkDeviceSize>(texHeight) *
+            static_cast<VkDeviceSize>(texChannels);
+
+        std::cout << "Loading texture of size " 
+            << texWidth << " x " << texHeight << ": " 
+            << (imageSize / 1024.0 / 1024.0) << " MB" << std::endl;
+
 
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
@@ -407,10 +459,8 @@ private:
 
         void* data;
         vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
-        memcpy(data, pixels, static_cast<size_t>(imageSize));
+        memcpy(data, image.data, static_cast<size_t>(imageSize));
         vkUnmapMemory(device, stagingBufferMemory);
-
-        stbi_image_free(pixels);
 
         createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
 
