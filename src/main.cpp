@@ -1,4 +1,6 @@
+#define CV_IO_MAX_IMAGE_PIXELS 40536870912
 #include <array>
+#include <chrono>
 #include <glm/ext/matrix_transform.hpp>
 #include <map>
 #include <optional>
@@ -43,6 +45,7 @@
 #endif
 
 #include <opencv4/opencv2/opencv.hpp>
+#define CV_IO_MAX_IMAGE_PIXELS 40536870912
 
 
 static std::vector<char> readFile(const std::string& filename) {
@@ -1478,8 +1481,11 @@ private:
     void render() {
 
         while (!glfwWindowShouldClose(window)) {
+            auto now = std::chrono::high_resolution_clock::now();
             glfwPollEvents();
             drawFrame();
+            auto timeElapsed = std::chrono::high_resolution_clock::now() - now;
+            std::cout << "Time elapsed: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\n";
         }
 
         vkDeviceWaitIdle(device);

@@ -26,11 +26,15 @@ target_include_directories(vulkanrenderer PUBLIC
 find_package(OpenCV REQUIRED)
 target_include_directories(vulkanrenderer PRIVATE ${OpenCV_INCLUDE_DIRS})
 
+find_package(OpenImageIO REQUIRED)
+
+
 find_package(glfw3 CONFIG REQUIRED)
 
 target_link_libraries(vulkanrenderer
     PRIVATE
         glfw
         Vulkan::Vulkan
+        OpenImageIO::OpenImageIO
         ${OpenCV_LIBS}
 )
