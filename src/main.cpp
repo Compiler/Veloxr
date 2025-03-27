@@ -24,6 +24,7 @@
 #include <cstdlib>
 #include <vector>
 #include <cstring>
+#include <test.h>
 
 
 #include <cstdint> 
@@ -412,6 +413,7 @@ private:
             image = imageRGBA;
         }
 
+
         // Gather width, height, and channels
         int texWidth    = image.cols;
         int texHeight   = image.rows;
@@ -428,6 +430,8 @@ private:
 
     void createTextureImage() {
         //cv::Mat image = cv::imread("C:/Users/ljuek/Downloads/16kmarble.jpeg", cv::IMREAD_UNCHANGED);
+        Test t{};
+        t.run2("/mnt/c/Users/ljuek/Downloads/Colonial.jpg", "/mnt/c/Users/ljuek/Downloads/test2.jpg");
         cv::Mat image = cv::imread("/mnt/c/Users/ljuek/Downloads/16kmarble.jpeg", cv::IMREAD_UNCHANGED);
         if (image.empty()) {
             throw std::runtime_error("Failed to load texture image with OpenCV!");

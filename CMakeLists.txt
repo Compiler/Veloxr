@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 20)
 
 set(OpenCV_DIR "C:/Users/ljuek/Code/opencv-install/lib/cmake/opencv4")
 
-add_executable(vulkanrenderer src/main.cpp)
+add_executable(vulkanrenderer src/main.cpp src/test.h)
 
 target_compile_definitions(vulkanrenderer
     PRIVATE 
@@ -18,6 +18,7 @@ set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 find_package(Vulkan REQUIRED)
 target_include_directories(${PROJECT_NAME} PUBLIC ${Vulkan_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PUBLIC "src/")
 
 target_include_directories(vulkanrenderer PUBLIC
     "${INCLUDE_DIR}"
