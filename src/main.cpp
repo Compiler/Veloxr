@@ -113,6 +113,15 @@ const auto LEFT = -0.9f;
 const auto RIGHT = 0.9f;
 const auto TOP = -0.9f;
 const auto BOT = 0.9f;
+// TODO:
+//      - Alpha layer transparency
+//          - Where there are no colors, but there is an alpha layer, fill with alpha checkerboard
+//              - Always same size on screen. 
+//              - Repeat smallest memory footprint
+//      - Zoom / Pan
+//      - Aspect Ratio
+//      - Return parsable coordinates of what is being viewed.
+//          - 
 const std::vector<Vertex> vertices = {
     {{RIGHT, BOT}, {1.0f, 1.0f}},
     {{LEFT, BOT}, {0.0f, 1.0f}},
@@ -133,6 +142,7 @@ struct UniformBufferObject {
     alignas(16) glm::mat4 model;
     alignas(16) glm::mat4 view;
     alignas(16) glm::mat4 proj;
+    alignas(16) glm::vec4 time;
 };
 
 class RendererCore {
@@ -243,6 +253,7 @@ private:
         createFramebuffers();
         createCommandPool();
         createTextureImage();
+
         createTextureImageView();
         createTextureSampler();
         createVertexBuffer();
@@ -294,7 +305,9 @@ private:
     }
 
     void createTextureImageView() {
-        textureImageView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB);
+        textureImageView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_
+                - Return parsable coordinates of what is being viewed.
+                    - SRGB);
     }
 
     VkImageView createImageView(VkImage image, VkFormat format) {
@@ -436,7 +449,7 @@ private:
     void createTextureImage() {
         //cv::Mat image = cv::imread("C:/Users/ljuek/Downloads/16kmarble.jpeg", cv::IMREAD_UNCHANGED);
         Test t{};
-       // t.run2(PREFIX + "/Users/ljuek/Downloads/56000.jpg", PREFIX+"/Users/ljuek/Downloads/56000_1.jpg");
+        t.run2(PREFIX + "/Users/ljuek/Downloads/56000.jpg", PREFIX+"/Users/ljuek/Downloads/56000_1.jpg");
         cv::Mat image = cv::imread(PREFIX+"/Users/ljuek/Downloads/16kmarble.jpeg", cv::IMREAD_UNCHANGED);
         if (image.empty()) {
             throw std::runtime_error("Failed to load texture image with OpenCV!");
@@ -790,6 +803,7 @@ private:
         ubo.view = glm::identity<glm::mat4>();
         ubo.proj = glm::identity<glm::mat4>();
         ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.time.x = glfwGetTime();
         memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
 
 
