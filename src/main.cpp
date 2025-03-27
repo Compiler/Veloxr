@@ -428,11 +428,16 @@ private:
             << (imageSize / 1024.0 / 1024.0) << " MB" << std::endl;
     }
 
+    #ifdef _WIN32
+    #define PREFIX std::string("C:")
+    #else
+    #define PREFIX std::string("/mnt/c")
+    #endif
     void createTextureImage() {
         //cv::Mat image = cv::imread("C:/Users/ljuek/Downloads/16kmarble.jpeg", cv::IMREAD_UNCHANGED);
         Test t{};
-        t.run2("/mnt/c/Users/ljuek/Downloads/Colonial.jpg", "/mnt/c/Users/ljuek/Downloads/test2.jpg");
-        cv::Mat image = cv::imread("/mnt/c/Users/ljuek/Downloads/16kmarble.jpeg", cv::IMREAD_UNCHANGED);
+        t.run2(PREFIX + "/Users/ljuek/Downloads/56000.jpg", PREFIX+"/Users/ljuek/Downloads/56000_1.jpg");
+        cv::Mat image = cv::imread(PREFIX+"/Users/ljuek/Downloads/56000_1.jpg", cv::IMREAD_UNCHANGED);
         if (image.empty()) {
             throw std::runtime_error("Failed to load texture image with OpenCV!");
         }

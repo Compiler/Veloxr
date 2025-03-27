@@ -8,6 +8,9 @@ set(OpenCV_DIR "C:/Users/ljuek/Code/opencv-install/lib/cmake/opencv4")
 
 add_executable(vulkanrenderer src/main.cpp src/test.h)
 
+if (MSVC)
+    target_compile_options(vulkanrenderer PRIVATE /utf-8)
+endif()
 target_compile_definitions(vulkanrenderer
     PRIVATE 
         PROJECT_ROOT_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}\"

@@ -27,7 +27,7 @@ struct Test{
         std::cout << "Input image: " << in_width << "x" << in_height 
             << " channels=" << nchannels << std::endl;
 
-        int skip = 25;  
+        int skip = in_width / 4096;  
         int out_width  = in_width  / skip;  
         int out_height = in_height / skip;  
 
