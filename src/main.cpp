@@ -114,13 +114,13 @@ const auto RIGHT = 0.9f;
 const auto TOP = -0.9f;
 const auto BOT = 0.9f;
 const std::vector<Vertex> vertices = {
-    {{RIGHT, BOT}, {1.0f, 0.0f}},
-    {{LEFT, BOT}, {0.0f, 0.0f}},
-    {{LEFT, TOP}, {0.0f, 1.0f}},
+    {{RIGHT, BOT}, {1.0f, 1.0f}},
+    {{LEFT, BOT}, {0.0f, 1.0f}},
+    {{LEFT, TOP}, {0.0f, 0.0f}},
 
-    {{LEFT, TOP}, {0.0f, 1.0f}},
-    {{RIGHT, TOP}, {1.0f, 1.0f}},
-    {{RIGHT, BOT}, {1.0f, 0.0f}},
+    {{LEFT, TOP}, {0.0f, 0.0f}},
+    {{RIGHT, TOP}, {1.0f, 0.0f}},
+    {{RIGHT, BOT}, {1.0f, 1.0f}},
 };
 
 struct SwapChainSupportDetails {
@@ -437,7 +437,7 @@ private:
         //cv::Mat image = cv::imread("C:/Users/ljuek/Downloads/16kmarble.jpeg", cv::IMREAD_UNCHANGED);
         Test t{};
        // t.run2(PREFIX + "/Users/ljuek/Downloads/56000.jpg", PREFIX+"/Users/ljuek/Downloads/56000_1.jpg");
-        cv::Mat image = cv::imread(PREFIX+"/Users/ljuek/Downloads/56000_1.jpg", cv::IMREAD_UNCHANGED);
+        cv::Mat image = cv::imread(PREFIX+"/Users/ljuek/Downloads/16kmarble.jpeg", cv::IMREAD_UNCHANGED);
         if (image.empty()) {
             throw std::runtime_error("Failed to load texture image with OpenCV!");
         }
