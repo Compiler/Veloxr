@@ -436,7 +436,7 @@ private:
     void createTextureImage() {
         //cv::Mat image = cv::imread("C:/Users/ljuek/Downloads/16kmarble.jpeg", cv::IMREAD_UNCHANGED);
         Test t{};
-        t.run2(PREFIX + "/Users/ljuek/Downloads/56000.jpg", PREFIX+"/Users/ljuek/Downloads/56000_1.jpg");
+       // t.run2(PREFIX + "/Users/ljuek/Downloads/56000.jpg", PREFIX+"/Users/ljuek/Downloads/56000_1.jpg");
         cv::Mat image = cv::imread(PREFIX+"/Users/ljuek/Downloads/56000_1.jpg", cv::IMREAD_UNCHANGED);
         if (image.empty()) {
             throw std::runtime_error("Failed to load texture image with OpenCV!");
@@ -1501,10 +1501,11 @@ private:
             auto timerElapsed = std::chrono::high_resolution_clock::now() - timer;
             auto elapsedPerSec = std::chrono::duration_cast<std::chrono::milliseconds>(timerElapsed).count();
             if(elapsedPerSec > 1000) {
-                frames = 0;
+                
                 std::cout << "Time elapsed single frame: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\n";
-                auto timer = std::chrono::high_resolution_clock::now();
-                std::cout << frames << " FPS, " << 1000/frames << " ms.\n";
+                timer = std::chrono::high_resolution_clock::now();
+                std::cout << frames << " FPS, " << 1000.0f/frames << " ms.\n";
+                frames = 0;
             }
             frames++;
         }
