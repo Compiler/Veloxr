@@ -1502,7 +1502,7 @@ private:
             auto elapsedPerSec = std::chrono::duration_cast<std::chrono::milliseconds>(timerElapsed).count();
             if(elapsedPerSec > 1000) {
                 
-                std::cout << "Time elapsed single frame: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\n";
+                std::cout << "Time elapsed single frame: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
                 timer = std::chrono::high_resolution_clock::now();
                 std::cout << frames << " FPS, " << 1000.0f/frames << " ms.\n";
                 frames = 0;
