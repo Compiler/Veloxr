@@ -1489,12 +1489,24 @@ private:
 
     void render() {
 
+        auto timer = std::chrono::high_resolution_clock::now();
+        int frames = 0;
         while (!glfwWindowShouldClose(window)) {
             auto now = std::chrono::high_resolution_clock::now();
             glfwPollEvents();
             drawFrame();
+
             auto timeElapsed = std::chrono::high_resolution_clock::now() - now;
-            std::cout << "Time elapsed: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\n";
+
+            auto timerElapsed = std::chrono::high_resolution_clock::now() - timer;
+            auto elapsedPerSec = std::chrono::duration_cast<std::chrono::milliseconds>(timerElapsed).count();
+            if(elapsedPerSec > 1000) {
+                frames = 0;
+                std::cout << "Time elapsed single frame: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\n";
+                auto timer = std::chrono::high_resolution_clock::now();
+                std::cout << frames << " FPS, " << 1000/frames << " ms.\n";
+            }
+            frames++;
         }
 
         vkDeviceWaitIdle(device);
