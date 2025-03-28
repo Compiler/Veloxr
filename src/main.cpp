@@ -11,6 +11,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+
+
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
@@ -48,7 +50,21 @@
 #include <opencv4/opencv2/opencv.hpp>
 #define CV_IO_MAX_IMAGE_PIXELS 40536870912
 
-
+//Platform
+#ifdef _WIN32
+#define VK_USE_PLATFORM_WIN32_KHR
+#include <windows.h>
+#include <vulkan/vulkan_win32.h>
+#elif defined(__APPLE__)
+#define VK_USE_PLATFORM_METAL_EXT
+#include <Cocoa/Cocoa.h>
+#include <QuartzCore/CAMetalLayer.h>
+#include <vulkan/vulkan_metal.h>
+#include <vulkan/vulkan_macos.h>
+#elif defined(__linux__)
+#define VK_USE_PLATFORM_XLIB_KHR
+#include <X11/Xlib.h>
+#endif
 static std::vector<char> readFile(const std::string& filename) {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
@@ -259,7 +275,7 @@ private:
         createInfo.hwnd = static_cast<HWND>(windowHandle);
         createInfo.hinstance = GetModuleHandle(nullptr);
 
-        if (vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, surface) != VK_SUCCESS) {
+        if (vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, &surface) != VK_SUCCESS) {
             throw std::runtime_error("failed to create window surface!");
         }
 #elif defined(__APPLE__)
@@ -268,7 +284,7 @@ private:
         createInfo.sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
         createInfo.pLayer = static_cast<CAMetalLayer*>(windowHandle);
 
-        if (vkCreateMetalSurfaceEXT(instance, &createInfo, nullptr, surface) != VK_SUCCESS) {
+        if (vkCreateMetalSurfaceEXT(instance, &createInfo, nullptr, &surface) != VK_SUCCESS) {
             throw std::runtime_error("failed to create window surface!");
         }
 #endif
@@ -1722,6 +1738,14 @@ private:
 
         requiredExtensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
         if(enableValidationLayers) requiredExtensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+
+        #ifdef _WIN32
+        requiredExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+        #elif defined(__APPLE__)
+        requiredExtensions.push_back(VK_EXT_METAL_SURFACE_EXTENSION_NAME);
+        #elif defined(__linux__)
+        requiredExtensions.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
+        #endif
 
         createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 
