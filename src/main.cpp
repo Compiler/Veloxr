@@ -1706,11 +1706,11 @@ private:
             throw std::runtime_error("validation layers requested, but not available!");
         }
         #ifdef _WIN32
-        extensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+        deviceExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
         #elif defined(__APPLE__)
-        extensions.push_back(VK_EXT_METAL_SURFACE_EXTENSION_NAME);
+        deviceExtensions.push_back(VK_EXT_METAL_SURFACE_EXTENSION_NAME);
         #elif defined(__linux__)
-        extensions.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
+        deviceExtensions.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
         #endif
         VkApplicationInfo appInfo{};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
