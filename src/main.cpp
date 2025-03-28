@@ -231,6 +231,77 @@ private:
 
     }
 
+    void* getWindowHandleFromRaw(void* rawHandle) {
+#ifdef __APPLE__
+        // For macOS, we need to ensure we have a CAMetalLayer
+        NSView* nsView = (__bridge NSView*)rawHandle;
+
+        // Make sure the view is layer-backed
+        if (![nsView layer] || ![nsView.layer isKindOfClass:[CAMetalLayer class]]) {
+            [nsView setWantsLayer:YES];
+            CAMetalLayer* metalLayer = [CAMetalLayer layer];
+            [nsView setLayer:metalLayer];
+        }
+
+        return (__bridge void*)nsView.layer;
+#else
+        // For Windows and other platforms, use the handle directly
+        return rawHandle;
+#endif
+
+    }
+
+    void createSurfaceFromWindowHandle(void* windowHandle) {
+#ifdef _WIN32
+        // Windows implementation
+        VkWin32SurfaceCreateInfoKHR createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+        createInfo.hwnd = static_cast<HWND>(windowHandle);
+        createInfo.hinstance = GetModuleHandle(nullptr);
+
+        if (vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, surface) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create window surface!");
+        }
+#elif defined(__APPLE__)
+        // macOS implementation using Metal
+        VkMetalSurfaceCreateInfoEXT createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
+        createInfo.pLayer = static_cast<CAMetalLayer*>(windowHandle);
+
+        if (vkCreateMetalSurfaceEXT(instance, &createInfo, nullptr, surface) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create window surface!");
+        }
+#endif
+    }
+    void initFromWindow(void* windowHandle) {
+        void* mappedWindow = getWindowHandleFromRaw(windowHandle);
+        createVulkanInstance();
+        setupDebugMessenger();
+        //createSurface();
+
+        createSurfaceFromWindowHandle(mappedWindow);
+        pickPhysicalDevice();
+        createLogicalDevice();
+        createSwapChain();
+        createImageViews();
+        createRenderPass();
+        createDescriptorLayout();
+        createGraphicsPipeline();
+        createFramebuffers();
+        createCommandPool();
+        createTextureImage();
+
+        createTextureImageView();
+        createTextureSampler();
+        createVertexBuffer();
+        createUniformBuffers();
+        createDescriptorPool();
+        createDescriptorSets();
+        createCommandBuffer();
+        createSyncObjects();
+
+    }
+
     void init() {
         glfwInit();
 
@@ -305,9 +376,7 @@ private:
     }
 
     void createTextureImageView() {
-        textureImageView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_
-                - Return parsable coordinates of what is being viewed.
-                    - SRGB);
+        textureImageView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB);
     }
 
     VkImageView createImageView(VkImage image, VkFormat format) {
