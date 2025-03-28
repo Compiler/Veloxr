@@ -12,17 +12,6 @@
 #include <GLFW/glfw3.h>
 
 
-#ifdef _WIN32
-#define VK_USE_PLATFORM_WIN32_KHR
-#include <windows.h>
-#elif defined(__APPLE__)
-#define VK_USE_PLATFORM_METAL_EXT
-#include <Cocoa/Cocoa.h>
-#include <QuartzCore/CAMetalLayer.h>
-#elif defined(__linux__)
-#define VK_USE_PLATFORM_XLIB_KHR
-#include <X11/Xlib.h>
-#endif
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -61,7 +50,18 @@
 #include <opencv4/opencv2/opencv.hpp>
 #define CV_IO_MAX_IMAGE_PIXELS 40536870912
 
-
+//Platform
+#ifdef _WIN32
+#define VK_USE_PLATFORM_WIN32_KHR
+#include <windows.h>
+#elif defined(__APPLE__)
+#define VK_USE_PLATFORM_METAL_EXT
+#include <Cocoa/Cocoa.h>
+#include <QuartzCore/CAMetalLayer.h>
+#elif defined(__linux__)
+#define VK_USE_PLATFORM_XLIB_KHR
+#include <X11/Xlib.h>
+#endif
 static std::vector<char> readFile(const std::string& filename) {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
@@ -1709,8 +1709,8 @@ private:
         deviceExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
         #elif defined(__APPLE__)
         deviceExtensions.push_back(VK_EXT_METAL_SURFACE_EXTENSION_NAME);
-        #elif defined(__linux__)
-        deviceExtensions.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
+        //#elif defined(__linux__)
+        //deviceExtensions.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
         #endif
         VkApplicationInfo appInfo{};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
