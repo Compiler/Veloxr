@@ -10,10 +10,6 @@
 #include <set>
 #include <utility>
 #include <vulkan/vulkan_core.h>
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-
-
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -49,7 +45,6 @@
 #define MAX_FRAMES_IN_FLIGHT 2
 #endif
 
-#include <opencv4/opencv2/opencv.hpp>
 #define CV_IO_MAX_IMAGE_PIXELS 40536870912
 
 //Platform
@@ -173,7 +168,6 @@ public:
 
 private: // No client
 
-    GLFWwindow* window;
     const int WIDTH = 800;
     const int HEIGHT = 800;
 
@@ -243,12 +237,6 @@ private:
         return VK_FALSE;
     }
 
-    static void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
-        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
-        app->frameBufferResized = true;
-
-    }
-
     void* getWindowHandleFromRaw(void* rawHandle) {
 #ifdef __APPLE__
         // For macOS, we need to ensure we have a CAMetalLayer
@@ -295,7 +283,6 @@ private:
         void* mappedWindow = getWindowHandleFromRaw(windowHandle);
         createVulkanInstance();
         setupDebugMessenger();
-        //createSurface();
 
         createSurfaceFromWindowHandle(mappedWindow);
         pickPhysicalDevice();
@@ -321,17 +308,9 @@ private:
     }
 
     void init() {
-        glfwInit();
-
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-
-        window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
-        glfwSetWindowUserPointer(window, this);
-        glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
 
         createVulkanInstance();
         setupDebugMessenger();
-        createSurface();
         pickPhysicalDevice();
         createLogicalDevice();
         createSwapChain();
@@ -497,93 +476,14 @@ private:
         endSingleTimeCommands(commandBuffer);
     }
 
-    void _loadImage() {
-        cv::Mat image = cv::imread("C:/Users/ljuek/Downloads/16kmarble.jpg", cv::IMREAD_UNCHANGED);
-        if (image.empty()) {
-            throw std::runtime_error("Failed to load texture image with OpenCV!");
-        }
-
-        if (image.channels() == 3) {
-            cv::Mat imageRGBA;
-            cv::cvtColor(image, imageRGBA, cv::COLOR_BGR2RGBA);
-            image = imageRGBA;
-        } else if (image.channels() == 1) {
-            cv::Mat imageRGBA;
-            cv::cvtColor(image, imageRGBA, cv::COLOR_GRAY2RGBA);
-            image = imageRGBA;
-        }
-
-
-        // Gather width, height, and channels
-        int texWidth    = image.cols;
-        int texHeight   = image.rows;
-        int texChannels = image.channels();
-
-        VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth) * 
-            static_cast<VkDeviceSize>(texHeight) *
-            static_cast<VkDeviceSize>(texChannels);
-
-        std::cout << "Loading texture of size " 
-            << texWidth << " x " << texHeight << ": " 
-            << (imageSize / 1024.0 / 1024.0) << " MB" << std::endl;
-    }
 
     #ifdef _WIN32
     #define PREFIX std::string("C:")
     #else
     #define PREFIX std::string("/mnt/c")
     #endif
-    void createTextureImage() {
-        //cv::Mat image = cv::imread("C:/Users/ljuek/Downloads/16kmarble.jpeg", cv::IMREAD_UNCHANGED);
-        Test t{};
-        t.run2(PREFIX + "/Users/ljuek/Downloads/56000.jpg", PREFIX+"/Users/ljuek/Downloads/56000_1.jpg");
-        cv::Mat image = cv::imread(PREFIX+"/Users/ljuek/Downloads/16kmarble.jpeg", cv::IMREAD_UNCHANGED);
-        if (image.empty()) {
-            throw std::runtime_error("Failed to load texture image with OpenCV!");
-        }
-
-        if (image.channels() == 3) {
-            cv::Mat imageRGBA;
-            cv::cvtColor(image, imageRGBA, cv::COLOR_BGR2RGBA);
-            image = imageRGBA;
-        } else if (image.channels() == 1) {
-            cv::Mat imageRGBA;
-            cv::cvtColor(image, imageRGBA, cv::COLOR_GRAY2RGBA);
-            image = imageRGBA;
-        }
-
-        int texWidth    = image.cols;
-        int texHeight   = image.rows;
-        int texChannels = image.channels();
-
-        VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth) * 
-            static_cast<VkDeviceSize>(texHeight) *
-            static_cast<VkDeviceSize>(texChannels);
-
-        std::cout << "Loading texture of size " 
-            << texWidth << " x " << texHeight << ": " 
-            << (imageSize / 1024.0 / 1024.0) << " MB" << std::endl;
-
-
-        VkBuffer stagingBuffer;
-        VkDeviceMemory stagingBufferMemory;
-        createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-
-        void* data;
-        vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
-        memcpy(data, image.data, static_cast<size_t>(imageSize));
-        vkUnmapMemory(device, stagingBufferMemory);
-
-        createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
-
-        transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-        copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
-        transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-
-        vkDestroyBuffer(device, stagingBuffer, nullptr);
-        vkFreeMemory(device, stagingBufferMemory, nullptr);
-    }
+    public:
+    void createTextureImage();
 
     VkCommandBuffer beginSingleTimeCommands() {
         VkCommandBufferAllocateInfo allocInfo{};
@@ -833,11 +733,6 @@ private:
     void recreateSwapChain() {
         // TODO: This is client only
         int width = 0, height = 0;
-        glfwGetFramebufferSize(window, &width, &height);
-        while (width == 0 || height == 0) {
-            glfwGetFramebufferSize(window, &width, &height);
-            glfwWaitEvents();
-        }
         vkDeviceWaitIdle(device);
 
         cleanupSwapChain();
@@ -890,7 +785,6 @@ private:
         ubo.view = glm::identity<glm::mat4>();
         ubo.proj = glm::identity<glm::mat4>();
         ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.time.x = glfwGetTime();
         memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
 
 
@@ -1365,12 +1259,6 @@ private:
         return details;
     }
 
-    void createSurface() {
-        if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create window surface!");
-        }
-    }
-
     VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
 
         for (const auto& availableFormat : availableFormats) {
@@ -1399,12 +1287,10 @@ private:
             return capabilities.currentExtent;
         } else {
             // TODO: This is user side, need client side passthrough
-            int width, height;
-            glfwGetFramebufferSize(window, &width, &height);
 
             VkExtent2D actualExtent = {
-                static_cast<uint32_t>(width),
-                static_cast<uint32_t>(height)
+                static_cast<uint32_t>(1920),
+                static_cast<uint32_t>(1080)
             };
 
             actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
@@ -1592,27 +1478,24 @@ private:
 
         auto timer = std::chrono::high_resolution_clock::now();
         int frames = 0;
-        while (!glfwWindowShouldClose(window)) {
-            auto now = std::chrono::high_resolution_clock::now();
-            glfwPollEvents();
-            drawFrame();
+        auto now = std::chrono::high_resolution_clock::now();
+        drawFrame();
 
-            auto timeElapsed = std::chrono::high_resolution_clock::now() - now;
+        auto timeElapsed = std::chrono::high_resolution_clock::now() - now;
 
-            auto timerElapsed = std::chrono::high_resolution_clock::now() - timer;
-            auto elapsedPerSec = std::chrono::duration_cast<std::chrono::milliseconds>(timerElapsed).count();
-            if(elapsedPerSec > 1000) {
-                
-                std::cout << "Time elapsed single frame: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
-                timer = std::chrono::high_resolution_clock::now();
-                std::cout << frames << " FPS, " << 1000.0f/frames << " ms.\n";
-                frames = 0;
-            }
-            frames++;
+        auto timerElapsed = std::chrono::high_resolution_clock::now() - timer;
+        auto elapsedPerSec = std::chrono::duration_cast<std::chrono::milliseconds>(timerElapsed).count();
+        if (elapsedPerSec > 1000)
+        {
+
+            std::cout << "Time elapsed single frame: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
+            timer = std::chrono::high_resolution_clock::now();
+            std::cout << frames << " FPS, " << 1000.0f / frames << " ms.\n";
+            frames = 0;
         }
+        frames++;
 
         vkDeviceWaitIdle(device);
-
     }
 
     void destroy() {
@@ -1655,9 +1538,6 @@ private:
         vkDestroySurfaceKHR(instance, surface, nullptr);
         vkDestroyInstance(instance, nullptr);
 
-        glfwDestroyWindow(window);
-
-        glfwTerminate();
     }
 
     void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
@@ -1722,22 +1602,11 @@ private:
         createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         createInfo.pApplicationInfo = &appInfo;
 
-        uint32_t glfwExtensionCount = 0;
-        const char** glfwExtensions;
-
-        glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-        createInfo.enabledExtensionCount = glfwExtensionCount;
-        createInfo.ppEnabledExtensionNames = glfwExtensions;
         createInfo.enabledLayerCount = 0;
 
         // ifdef macos / molten
+
         std::vector<const char*> requiredExtensions;
-
-        for(uint32_t i = 0; i < glfwExtensionCount; i++) {
-            requiredExtensions.emplace_back(glfwExtensions[i]);
-        }
-
         requiredExtensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
         if(enableValidationLayers) requiredExtensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
