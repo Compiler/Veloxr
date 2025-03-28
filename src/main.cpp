@@ -11,6 +11,19 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+
+#ifdef _WIN32
+#define VK_USE_PLATFORM_WIN32_KHR
+#include <windows.h>
+#elif defined(__APPLE__)
+#define VK_USE_PLATFORM_METAL_EXT
+#include <Cocoa/Cocoa.h>
+#include <QuartzCore/CAMetalLayer.h>
+#elif defined(__linux__)
+#define VK_USE_PLATFORM_XLIB_KHR
+#include <X11/Xlib.h>
+#endif
+
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
@@ -259,7 +272,7 @@ private:
         createInfo.hwnd = static_cast<HWND>(windowHandle);
         createInfo.hinstance = GetModuleHandle(nullptr);
 
-        if (vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, surface) != VK_SUCCESS) {
+        if (vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, &surface) != VK_SUCCESS) {
             throw std::runtime_error("failed to create window surface!");
         }
 #elif defined(__APPLE__)
@@ -268,7 +281,7 @@ private:
         createInfo.sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
         createInfo.pLayer = static_cast<CAMetalLayer*>(windowHandle);
 
-        if (vkCreateMetalSurfaceEXT(instance, &createInfo, nullptr, surface) != VK_SUCCESS) {
+        if (vkCreateMetalSurfaceEXT(instance, &createInfo, nullptr, &surface) != VK_SUCCESS) {
             throw std::runtime_error("failed to create window surface!");
         }
 #endif
@@ -1692,6 +1705,13 @@ private:
         if (enableValidationLayers && !checkValidationLayerSupport()) {
             throw std::runtime_error("validation layers requested, but not available!");
         }
+        #ifdef _WIN32
+        extensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+        #elif defined(__APPLE__)
+        extensions.push_back(VK_EXT_METAL_SURFACE_EXTENSION_NAME);
+        #elif defined(__linux__)
+        extensions.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
+        #endif
         VkApplicationInfo appInfo{};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         appInfo.pApplicationName = "ImageRenderer";

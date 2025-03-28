@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 20)
 
 set(OpenCV_DIR "C:/Users/ljuek/Code/opencv-install/lib/cmake/opencv4")
 
+#add_library(vulkanrenderer STATIC src/main.cpp src/test.h)
 add_executable(vulkanrenderer src/main.cpp src/test.h)
 
 if (MSVC)
