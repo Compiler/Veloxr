@@ -54,10 +54,13 @@
 #ifdef _WIN32
 #define VK_USE_PLATFORM_WIN32_KHR
 #include <windows.h>
+#include <vulkan/vulkan_win32.h>
 #elif defined(__APPLE__)
 #define VK_USE_PLATFORM_METAL_EXT
 #include <Cocoa/Cocoa.h>
 #include <QuartzCore/CAMetalLayer.h>
+#include <vulkan/vulkan_metal.h>
+#include <vulkan/vulkan_macos.h>
 #elif defined(__linux__)
 #define VK_USE_PLATFORM_XLIB_KHR
 #include <X11/Xlib.h>
