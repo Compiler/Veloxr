@@ -185,7 +185,7 @@ private: // Client
         "VK_LAYER_KHRONOS_validation"
     };
 
-    const std::vector<const char*> deviceExtensions = {
+    std::vector<const char*> deviceExtensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME
     };
 
@@ -1708,13 +1708,6 @@ private:
         if (enableValidationLayers && !checkValidationLayerSupport()) {
             throw std::runtime_error("validation layers requested, but not available!");
         }
-        #ifdef _WIN32
-        deviceExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
-        #elif defined(__APPLE__)
-        deviceExtensions.push_back(VK_EXT_METAL_SURFACE_EXTENSION_NAME);
-        //#elif defined(__linux__)
-        //deviceExtensions.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
-        #endif
         VkApplicationInfo appInfo{};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         appInfo.pApplicationName = "ImageRenderer";
@@ -1745,6 +1738,14 @@ private:
 
         requiredExtensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
         if(enableValidationLayers) requiredExtensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+
+        #ifdef _WIN32
+        requiredExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+        #elif defined(__APPLE__)
+        requiredExtensions.push_back(VK_EXT_METAL_SURFACE_EXTENSION_NAME);
+        #elif defined(__linux__)
+        requiredExtensions.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
+        #endif
 
         createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 
