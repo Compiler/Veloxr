@@ -180,6 +180,7 @@ private: // No client
 private: // Client
 
     VkInstance instance;
+
     VkDebugUtilsMessengerEXT debugMessenger;
     bool enableValidationLayers = true;
 
