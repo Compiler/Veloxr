@@ -1,11 +1,102 @@
 #include "device.h"
+#include <map>
 
-using namespace LRend;
+using namespace Veloxr;
 
-Device::Device(VkSurfaceKHR surface): _surface(surface) {
+Device::Device(VkSurfaceKHR surface, bool enableValidationLayers): _surface(surface), _enableValidationLayers(enableValidationLayers) {
 
 }
 
+
+void Device::create() {
+    _pickPhysicalDevice();
+    _createLogicalDevice();
+}
+
+void Device::_createLogicalDevice() {
+
+    QueueFamilyIndices indices = findQueueFamilies(_physicalDevice);
+    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+    std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+
+    float queuePriority = 1.0f;
+    for (uint32_t queueFamily : uniqueQueueFamilies) {
+        VkDeviceQueueCreateInfo queueCreateInfo{};
+        queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfo.queueFamilyIndex = queueFamily;
+        queueCreateInfo.queueCount = 1;
+        queueCreateInfo.pQueuePriorities = &queuePriority;
+        queueCreateInfos.push_back(queueCreateInfo);
+    }
+
+
+
+    VkPhysicalDeviceFeatures deviceFeatures{};
+
+    VkDeviceCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+
+    createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+    createInfo.pQueueCreateInfos = queueCreateInfos.data();
+    createInfo.queueCreateInfoCount = 1;
+
+    createInfo.pEnabledFeatures = &deviceFeatures;
+
+    // Backwards compatability with older vulkan
+    if (_enableValidationLayers) {
+        createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+        createInfo.ppEnabledLayerNames = validationLayers.data();
+    } else {
+        createInfo.enabledLayerCount = 0;
+    }
+
+    createInfo.enabledExtensionCount = (uint32_t)deviceExtensions.size();
+    createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+
+
+    if (vkCreateDevice(_physicalDevice, &createInfo, nullptr, &_logicalDevice) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create logical device!");
+    }
+
+
+    vkGetDeviceQueue(_logicalDevice, indices.graphicsFamily.value(), 0, &_graphicsQueue);
+    vkGetDeviceQueue(_logicalDevice, indices.presentFamily.value(), 0, &_presentQueue);
+
+    std::cout << "Finished logical device creation! Queue / Present indices: " << indices.graphicsFamily.value() << " " << indices.presentFamily.value() << std::endl;
+
+}
+
+
+Veloxr::QueueFamilyIndices Device::findQueueFamilies(VkPhysicalDevice device) {
+    Veloxr::QueueFamilyIndices indices;
+
+    uint32_t queueFamilyCount = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+    int i = 0;
+    for (const auto& queueFamily : queueFamilies) {
+
+        VkBool32 presentSupport = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, _surface, &presentSupport);
+
+        if (presentSupport) {
+            indices.presentFamily = i;
+        }
+
+        if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            indices.graphicsFamily = i;
+        }
+
+        if(indices.isComplete()) break;
+
+        i++;
+    }
+
+    return indices;
+}
 QueueFamilyIndices Device::_findQueueFamilies(VkPhysicalDevice device) {
     QueueFamilyIndices indices;
 
@@ -107,5 +198,37 @@ SwapChainSupportDetails Device::_querySwapChainSupport(VkPhysicalDevice device) 
 
     return details;
 }
+
+void Device::_pickPhysicalDevice() {
+    uint32_t deviceCount = 0;
+
+    vkEnumeratePhysicalDevices(_instance, &deviceCount, nullptr);
+
+    if (deviceCount == 0) {
+        throw std::runtime_error("failed to find GPUs with Vulkan support!");
+    }
+
+    std::vector<VkPhysicalDevice> devices(deviceCount);
+    vkEnumeratePhysicalDevices(_instance, &deviceCount, devices.data());
+
+    std::multimap<int, VkPhysicalDevice> scoreMap;
+    scoreMap.insert(std::make_pair(0, VK_NULL_HANDLE));
+
+    for (const auto& device : devices) {
+        scoreMap.insert(std::make_pair(_calculateDeviceScore(device), device));
+    }
+
+    auto curScore = scoreMap.rbegin()->first;
+    if (curScore == -1) {
+        std::runtime_error("No suitable device found");
+    }
+    _device = scoreMap.rbegin()->second;
+    if (_device == VK_NULL_HANDLE) {
+        throw std::runtime_error("failed to find a suitable GPU!");
+    }
+
+
+}
+
 
 

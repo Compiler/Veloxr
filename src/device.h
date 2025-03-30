@@ -7,7 +7,7 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
 
-namespace LRend {
+namespace Veloxr {
 
 struct QueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily;
@@ -30,15 +30,23 @@ class Device {
 
         VkInstance _instance;
         VkSurfaceKHR _surface;
-        VkPhysicalDevice _device;
+        VkPhysicalDevice _physicalDevice;
+        VkDevice _logicalDevice;
         VkQueue _graphicsQueue, _presentQueue;
+        bool _enableValidationLayers;
 
         const std::vector<const char*> deviceExtensions = {
             VK_KHR_SWAPCHAIN_EXTENSION_NAME
         };
 
+        const std::vector<const char*> validationLayers = {
+            "VK_LAYER_KHRONOS_validation"
+        };
+
         QueueFamilyIndices _findQueueFamilies(VkPhysicalDevice device);
 
+        void _pickPhysicalDevice();
+        void _createLogicalDevice();
         int _calculateDeviceScore(VkPhysicalDevice device);
         bool _checkDeviceExtensionSupport(VkPhysicalDevice device);
 
@@ -46,8 +54,12 @@ class Device {
 
 
     public:
-        Device(VkSurfaceKHR surface);
+        Device(VkSurfaceKHR surface, bool enableValidationLayers = false);
         void create();
+        Veloxr::QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+
+        VkPhysicalDevice getPhysicalDevice() const { return _physicalDevice; }
+        VkDevice getLogicalDevice() const { return _logicalDevice; }
 
 }; 
 }
