@@ -38,6 +38,7 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image/stb_image.h>
+#include <device.h>
 
 
 #ifndef PROJECT_ROOT_DIR
@@ -537,8 +538,8 @@ private:
     void createTextureImage() {
         //cv::Mat image = cv::imread("C:/Users/ljuek/Downloads/16kmarble.jpeg", cv::IMREAD_UNCHANGED);
         Test t{};
-        t.run2(PREFIX + "/Users/ljuek/Downloads/56000.jpg", PREFIX+"/Users/ljuek/Downloads/56000_1.jpg");
-        cv::Mat image = cv::imread(PREFIX+"/Users/ljuek/Downloads/16kmarble.jpeg", cv::IMREAD_UNCHANGED);
+        //t.run2(PREFIX + "/Users/ljuek/Downloads/Colonial.jpg", PREFIX+"/Users/ljuek/Downloads/Colonial_1.jpg");
+        cv::Mat image = cv::imread(PREFIX+"/Users/ljuek/Downloads/Colonial_1.jpg", cv::IMREAD_UNCHANGED);
         if (image.empty()) {
             throw std::runtime_error("Failed to load texture image with OpenCV!");
         }
