@@ -3,7 +3,7 @@
 
 using namespace Veloxr;
 
-Device::Device(VkSurfaceKHR surface, bool enableValidationLayers): _surface(surface), _enableValidationLayers(enableValidationLayers) {
+Device::Device(VkInstance instance, VkSurfaceKHR surface, bool enableValidationLayers): _instance(instance), _surface(surface), _enableValidationLayers(enableValidationLayers) {
 
 }
 
@@ -67,7 +67,7 @@ void Device::_createLogicalDevice() {
 }
 
 
-Veloxr::QueueFamilyIndices Device::findQueueFamilies(VkPhysicalDevice device) {
+Veloxr::QueueFamilyIndices Device::findQueueFamilies(VkPhysicalDevice device) const {
     Veloxr::QueueFamilyIndices indices;
 
     uint32_t queueFamilyCount = 0;
@@ -99,6 +99,7 @@ Veloxr::QueueFamilyIndices Device::findQueueFamilies(VkPhysicalDevice device) {
 }
 QueueFamilyIndices Device::_findQueueFamilies(VkPhysicalDevice device) {
     QueueFamilyIndices indices;
+    std::cout << "Finding device " << device << " queue families\n";
 
     uint32_t queueFamilyCount = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
@@ -129,20 +130,28 @@ QueueFamilyIndices Device::_findQueueFamilies(VkPhysicalDevice device) {
 }
 
 int Device::_calculateDeviceScore(VkPhysicalDevice device) {
-
     QueueFamilyIndices indices = _findQueueFamilies(device); 
-    if(!indices.isComplete() || !_checkDeviceExtensionSupport(device)) return -1;
+    if(!indices.isComplete() || !_checkDeviceExtensionSupport(device)) {
+        std::cerr << "Device " << device << " failed to support our needs.\n";
+        return -1;
+    }
 
     VkPhysicalDeviceProperties deviceProperties;
     vkGetPhysicalDeviceProperties(device, &deviceProperties);
+    std::cout << "[DEBUG] Physical Device Name: " << deviceProperties.deviceName << "\n";
+    std::cout << "[DEBUG] API Version: " << deviceProperties.apiVersion << "\n";
 
     VkPhysicalDeviceFeatures deviceFeatures;
     vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
     bool swapChainAdequate = false;
-    SwapChainSupportDetails swapChainSupport = _querySwapChainSupport(device);
+    SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
     swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
-    if(!swapChainAdequate) return -1;
+    if(!swapChainAdequate) {
+        std::cerr << "Device " << device << " does not contained swapChain needs.\n";
+        return -1;
+    }
+    std::cout << "Device " << device << " ready to score.\n";
 
 
     int score = 0;
@@ -175,8 +184,7 @@ bool Device::_checkDeviceExtensionSupport(VkPhysicalDevice device) {
     return requiredExtensions.empty();
 }
 
-
-SwapChainSupportDetails Device::_querySwapChainSupport(VkPhysicalDevice device) {
+SwapChainSupportDetails Device::querySwapChainSupport(VkPhysicalDevice device) const {
     SwapChainSupportDetails details;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, _surface, &details.capabilities);
 
@@ -209,7 +217,6 @@ void Device::_pickPhysicalDevice() {
     }
 
     std::vector<VkPhysicalDevice> devices(deviceCount);
-    vkEnumeratePhysicalDevices(_instance, &deviceCount, devices.data());
 
     std::multimap<int, VkPhysicalDevice> scoreMap;
     scoreMap.insert(std::make_pair(0, VK_NULL_HANDLE));
@@ -222,13 +229,8 @@ void Device::_pickPhysicalDevice() {
     if (curScore == -1) {
         std::runtime_error("No suitable device found");
     }
-    _device = scoreMap.rbegin()->second;
-    if (_device == VK_NULL_HANDLE) {
+    _physicalDevice = scoreMap.rbegin()->second;
+    if (_physicalDevice == VK_NULL_HANDLE) {
         throw std::runtime_error("failed to find a suitable GPU!");
     }
-
-
 }
-
-
-

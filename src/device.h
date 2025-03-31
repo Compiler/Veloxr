@@ -4,8 +4,9 @@
 #include <string>
 #include <vector>
 #include <iostream>
-#include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
+#define GLFW_INCLUDE_VULKAN
+#include <vulkan/vulkan.h>
 
 namespace Veloxr {
 
@@ -50,16 +51,17 @@ class Device {
         int _calculateDeviceScore(VkPhysicalDevice device);
         bool _checkDeviceExtensionSupport(VkPhysicalDevice device);
 
-        SwapChainSupportDetails _querySwapChainSupport(VkPhysicalDevice device);
 
 
     public:
-        Device(VkSurfaceKHR surface, bool enableValidationLayers = false);
+        Device(VkInstance instance, VkSurfaceKHR surface, bool enableValidationLayers = false);
+
         void create();
-        Veloxr::QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 
-        VkPhysicalDevice getPhysicalDevice() const { return _physicalDevice; }
-        VkDevice getLogicalDevice() const { return _logicalDevice; }
+        QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) const ;
+        SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device) const ;
 
+        inline VkPhysicalDevice getPhysicalDevice() const { return _physicalDevice; }
+        inline VkDevice getLogicalDevice() const { return _logicalDevice; }
 }; 
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #define CV_IO_MAX_IMAGE_PIXELS 40536870912
 #include <array>
 #include <chrono>
@@ -21,7 +22,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <iostream>
-#include <vulkan/vulkan.h>
 
 #include <iostream>
 #include <stdexcept>
@@ -185,10 +185,11 @@ private: // Client
     };
 
 
-    Veloxr::Device _deviceUtils;
+    std::unique_ptr<Veloxr::Device> _deviceUtils;
 
     VkSurfaceKHR surface;
     VkDevice device;
+    VkPhysicalDevice physicalDevice;
     VkQueue graphicsQueue, presentQueue;
     VkSwapchainKHR swapChain;
     VkFormat swapChainImageFormat;
@@ -326,8 +327,10 @@ private:
         setupDebugMessenger();
         createSurface();
 
-        Veloxr::Device deviceTools = Veloxr::Device(surface, enableValidationLayers);
-        device = deviceTools.getLogicalDevice();
+        _deviceUtils = std::make_unique<Veloxr::Device>(instance, surface, enableValidationLayers);
+        _deviceUtils->create();
+        device = _deviceUtils->getLogicalDevice();
+        physicalDevice = _deviceUtils->getPhysicalDevice();
         createSwapChain();
         createImageViews();
         createRenderPass();
@@ -1022,7 +1025,7 @@ private:
     }
 
     void createCommandPool() {
-        QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice);
+        Veloxr::QueueFamilyIndices queueFamilyIndices = _deviceUtils->findQueueFamilies(physicalDevice);
 
         VkCommandPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -1284,7 +1287,7 @@ private:
     }
 
     void createSwapChain() {
-        SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice);
+        Veloxr::SwapChainSupportDetails swapChainSupport = _deviceUtils->querySwapChainSupport(physicalDevice);
 
         VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
         VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
@@ -1302,7 +1305,7 @@ private:
         createInfo.imageExtent = extent;
         createInfo.imageArrayLayers = 1; //stereoscopic, ignore.
         createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-        QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+        Veloxr::QueueFamilyIndices indices = _deviceUtils->findQueueFamilies(physicalDevice);
         uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
         // Store member meta data for swapchain
         swapChainImageFormat = surfaceFormat.format;
@@ -1334,29 +1337,6 @@ private:
 
 
 
-    }
-
-    Veloxr::SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device) {
-        SwapChainSupportDetails details;
-        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
-
-        uint32_t formatCount;
-        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
-
-        if (formatCount != 0) {
-            details.formats.resize(formatCount);
-            vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
-        }
-
-        uint32_t presentModeCount;
-        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
-
-        if (presentModeCount != 0) {
-            details.presentModes.resize(presentModeCount);
-            vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
-        }
-
-        return details;
     }
 
     void createSurface() {
@@ -1591,6 +1571,7 @@ private:
         if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
             throw std::runtime_error("failed to create instance!");
         }
+        std::cout << "Created a valid instance!\n";
 
     }
 };
