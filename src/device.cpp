@@ -29,8 +29,6 @@ void Device::_createLogicalDevice() {
         queueCreateInfos.push_back(queueCreateInfo);
     }
 
-
-
     VkPhysicalDeviceFeatures deviceFeatures{};
 
     VkDeviceCreateInfo createInfo{};
@@ -217,6 +215,7 @@ void Device::_pickPhysicalDevice() {
     }
 
     std::vector<VkPhysicalDevice> devices(deviceCount);
+    vkEnumeratePhysicalDevices(_instance, &deviceCount, devices.data());
 
     std::multimap<int, VkPhysicalDevice> scoreMap;
     scoreMap.insert(std::make_pair(0, VK_NULL_HANDLE));
