@@ -63,5 +63,7 @@ class Device {
 
         inline VkPhysicalDevice getPhysicalDevice() const { return _physicalDevice; }
         inline VkDevice getLogicalDevice() const { return _logicalDevice; }
+        inline VkQueue getGraphicsQueue() const { return _graphicsQueue; }
+        inline VkQueue getPresentationQueue() const { return _presentQueue; }
 }; 
 }

@@ -331,6 +331,8 @@ private:
         _deviceUtils->create();
         device = _deviceUtils->getLogicalDevice();
         physicalDevice = _deviceUtils->getPhysicalDevice();
+        graphicsQueue = _deviceUtils->getGraphicsQueue();
+        presentQueue = _deviceUtils->getPresentationQueue();
         createSwapChain();
         createImageViews();
         createRenderPass();
