@@ -159,6 +159,35 @@ struct UniformBufferObject {
     alignas(16) glm::vec4 time;
 };
 
+bool mousePressed = false;
+double lastX = 0.0, lastY = 0.0;
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+    if (button == GLFW_MOUSE_BUTTON_LEFT) {
+        if (action == GLFW_PRESS) {
+            mousePressed = true;
+            glfwGetCursorPos(window, &lastX, &lastY);
+        } else if (action == GLFW_RELEASE) {
+            mousePressed = false;
+        }
+    }
+}
+
+void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
+    if (mousePressed) {
+        double dx = xpos - lastX;
+        double dy = ypos - lastY;
+
+        printf("Dragging: dx = %.2f, dy = %.2f\n", dx, dy);
+
+        lastX = xpos;
+        lastY = ypos;
+    }
+}
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+    printf("Scrolled: x = %.2f, y = %.2f\n", xoffset, yoffset);
+}
+
 class RendererCore {
 public:
     void run() {
@@ -314,6 +343,9 @@ private:
 
     }
 
+
+
+
     void init() {
 
         auto now = std::chrono::high_resolution_clock::now();
@@ -326,6 +358,9 @@ private:
         window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
         glfwSetWindowUserPointer(window, this);
         glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
+        glfwSetMouseButtonCallback(window, mouse_button_callback);
+        glfwSetCursorPosCallback(window, cursor_position_callback);
+        glfwSetScrollCallback(window, scroll_callback);
 
         auto timeElapsed = std::chrono::high_resolution_clock::now() - now;
         std::cout << "Init glfw: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
