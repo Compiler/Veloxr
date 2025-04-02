@@ -92,3 +92,9 @@ void OrthographicCamera::setPosition(const glm::vec2& pos) {
     recalculateView();
 }
 
+void OrthographicCamera::translate(const glm::vec2& delta){
+    _position.x += delta.x;
+    _position.y += delta.y;
+    recalculateView();
+}
+

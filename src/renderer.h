@@ -174,17 +174,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     }
 }
 
-void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
-    if (mousePressed) {
-        double dx = xpos - lastX;
-        double dy = ypos - lastY;
-
-        printf("Dragging: dx = %.2f, dy = %.2f\n", dx, dy);
-
-        lastX = xpos;
-        lastY = ypos;
-    }
-}
+void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) ;
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) ;
 
 class RendererCore {
@@ -1602,4 +1592,19 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
     printf("Scrolled: x = %.2f, y = %.2f\n", xoffset, yoffset);
     auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
     app->getCamera().addToZoom(-yoffset / 10.0f);
+}
+
+void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
+    if (mousePressed) {
+        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
+        double dx = xpos - lastX;
+        double dy = ypos - lastY;
+
+        printf("Dragging: dx = %.2f, dy = %.2f\n", dx, dy);
+
+        lastX = xpos;
+        lastY = ypos;
+        glm::vec2 diffs{-dx/500.0f, -dy/500.0f};
+        app->getCamera().translate(diffs);
+    }
 }

@@ -26,6 +26,7 @@ public:
     void setZoomLevel(float zoomLevel);
     void addToZoom(float delta);
     void setPosition(const glm::vec2& pos);
+    void translate(const glm::vec2& delta);
 
 private:
     float _aspectRatio;
