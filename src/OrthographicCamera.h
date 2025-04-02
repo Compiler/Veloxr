@@ -24,6 +24,7 @@ public:
     glm::vec2 getPosition() const;
 
     void setZoomLevel(float zoomLevel);
+    void addToZoom(float delta);
     void setPosition(const glm::vec2& pos);
 
 private:

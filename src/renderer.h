@@ -194,10 +194,8 @@ public:
         render();
         destroy();
     }
-    void incrementZoom() {
-        static float zoom = 1.0f;
-        zoom += 0.1f;
-        _camera.setZoomLevel(zoom);
+    /*const*/Veloxr::OrthographicCamera& getCamera() {
+        return _camera;
     }
 
 private: // No client
@@ -1603,4 +1601,5 @@ private:
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
     printf("Scrolled: x = %.2f, y = %.2f\n", xoffset, yoffset);
     auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
+    app->getCamera().addToZoom(-yoffset / 10.0f);
 }

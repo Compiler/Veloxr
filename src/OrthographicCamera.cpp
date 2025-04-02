@@ -81,6 +81,12 @@ void OrthographicCamera::setZoomLevel(float zoomLevel) {
     recalculateProjection();
 }
 
+void OrthographicCamera::addToZoom(float delta) {
+    _zoomLevel += delta;
+    _zoomLevel = std::min(_zoomLevel, static_cast<decltype(_zoomLevel)>(10));
+    _zoomLevel = std::max(_zoomLevel, static_cast<decltype(_zoomLevel)>(0.0001));
+    recalculateProjection();
+}
 void OrthographicCamera::setPosition(const glm::vec2& pos) {
     _position = pos;
     recalculateView();
