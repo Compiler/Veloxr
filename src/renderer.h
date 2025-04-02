@@ -11,6 +11,7 @@
 #include <set>
 #include <utility>
 #include <vulkan/vulkan_core.h>
+#include <OrthographicCamera.h>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
@@ -184,9 +185,7 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
         lastY = ypos;
     }
 }
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
-    printf("Scrolled: x = %.2f, y = %.2f\n", xoffset, yoffset);
-}
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) ;
 
 class RendererCore {
 public:
@@ -194,6 +193,11 @@ public:
         init();
         render();
         destroy();
+    }
+    void incrementZoom() {
+        static float zoom = 1.0f;
+        zoom += 0.1f;
+        _camera.setZoomLevel(zoom);
     }
 
 private: // No client
@@ -208,6 +212,9 @@ private: // Client
 
     VkDebugUtilsMessengerEXT debugMessenger;
     bool enableValidationLayers = true;
+
+    Veloxr::OrthographicCamera _camera;
+
 
     const std::vector<const char*> validationLayers = {
         "VK_LAYER_KHRONOS_validation"
@@ -571,6 +578,7 @@ private:
         int texWidth    = image.cols;
         int texHeight   = image.rows;
         int texChannels = image.channels();
+        _camera.init((float)texWidth / (float)texHeight);
 
         VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth) * 
             static_cast<VkDeviceSize>(texHeight) *
@@ -903,9 +911,9 @@ private:
     void updateUniformBuffers(uint32_t currentImage) {
         UniformBufferObject ubo{};
         float time = 1;
-        ubo.view = glm::identity<glm::mat4>();
-        ubo.proj = glm::identity<glm::mat4>();
-        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.view = _camera.getViewMatrix();
+        ubo.proj = _camera.getProjectionMatrix();
+        ubo.model = glm::mat4(1.0f);
         ubo.time.x = glfwGetTime();
         memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
     }
@@ -1592,3 +1600,7 @@ private:
     }
 };
 
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+    printf("Scrolled: x = %.2f, y = %.2f\n", xoffset, yoffset);
+    auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
+}
