@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #define CV_IO_MAX_IMAGE_PIXELS 40536870912
 #include <array>
 #include <chrono>
@@ -21,7 +22,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <iostream>
-#include <vulkan/vulkan.h>
 
 #include <iostream>
 #include <stdexcept>
@@ -38,6 +38,7 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image/stb_image.h>
+#include <device.h>
 
 
 #ifndef PROJECT_ROOT_DIR
@@ -150,11 +151,6 @@ const std::vector<Vertex> vertices = {
     {{RIGHT, BOT}, {1.0f, 1.0f}},
 };
 
-struct SwapChainSupportDetails {
-    VkSurfaceCapabilitiesKHR capabilities;
-    std::vector<VkSurfaceFormatKHR> formats;
-    std::vector<VkPresentModeKHR> presentModes;
-};
 
 struct UniformBufferObject {
     alignas(16) glm::mat4 model;
@@ -162,6 +158,35 @@ struct UniformBufferObject {
     alignas(16) glm::mat4 proj;
     alignas(16) glm::vec4 time;
 };
+
+bool mousePressed = false;
+double lastX = 0.0, lastY = 0.0;
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+    if (button == GLFW_MOUSE_BUTTON_LEFT) {
+        if (action == GLFW_PRESS) {
+            mousePressed = true;
+            glfwGetCursorPos(window, &lastX, &lastY);
+        } else if (action == GLFW_RELEASE) {
+            mousePressed = false;
+        }
+    }
+}
+
+void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
+    if (mousePressed) {
+        double dx = xpos - lastX;
+        double dy = ypos - lastY;
+
+        printf("Dragging: dx = %.2f, dy = %.2f\n", dx, dy);
+
+        lastX = xpos;
+        lastY = ypos;
+    }
+}
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+    printf("Scrolled: x = %.2f, y = %.2f\n", xoffset, yoffset);
+}
 
 class RendererCore {
 public:
@@ -188,13 +213,12 @@ private: // Client
         "VK_LAYER_KHRONOS_validation"
     };
 
-    const std::vector<const char*> deviceExtensions = {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME
-    };
 
-    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    std::unique_ptr<Veloxr::Device> _deviceUtils;
+
     VkSurfaceKHR surface;
     VkDevice device;
+    VkPhysicalDevice physicalDevice;
     VkQueue graphicsQueue, presentQueue;
     VkSwapchainKHR swapChain;
     VkFormat swapChainImageFormat;
@@ -299,8 +323,6 @@ private:
         //createSurface();
 
         createSurfaceFromWindowHandle(mappedWindow);
-        pickPhysicalDevice();
-        createLogicalDevice();
         createSwapChain();
         createImageViews();
         createRenderPass();
@@ -321,7 +343,14 @@ private:
 
     }
 
+
+
+
     void init() {
+
+        auto now = std::chrono::high_resolution_clock::now();
+        auto nowTop = std::chrono::high_resolution_clock::now();
+
         glfwInit();
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -329,12 +358,22 @@ private:
         window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
         glfwSetWindowUserPointer(window, this);
         glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
+        glfwSetMouseButtonCallback(window, mouse_button_callback);
+        glfwSetCursorPosCallback(window, cursor_position_callback);
+        glfwSetScrollCallback(window, scroll_callback);
 
+        auto timeElapsed = std::chrono::high_resolution_clock::now() - now;
+        std::cout << "Init glfw: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
         createVulkanInstance();
         setupDebugMessenger();
         createSurface();
-        pickPhysicalDevice();
-        createLogicalDevice();
+
+        _deviceUtils = std::make_unique<Veloxr::Device>(instance, surface, enableValidationLayers);
+        _deviceUtils->create();
+        device = _deviceUtils->getLogicalDevice();
+        physicalDevice = _deviceUtils->getPhysicalDevice();
+        graphicsQueue = _deviceUtils->getGraphicsQueue();
+        presentQueue = _deviceUtils->getPresentationQueue();
         createSwapChain();
         createImageViews();
         createRenderPass();
@@ -342,7 +381,11 @@ private:
         createGraphicsPipeline();
         createFramebuffers();
         createCommandPool();
+
+        now = std::chrono::high_resolution_clock::now();
         createTextureImage();
+        timeElapsed = std::chrono::high_resolution_clock::now() - now;
+        std::cout << "Texture creation: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
 
         createTextureImageView();
         createTextureSampler();
@@ -352,6 +395,8 @@ private:
         createDescriptorSets();
         createCommandBuffer();
         createSyncObjects();
+        auto timeElapsedTop = std::chrono::high_resolution_clock::now() - now;
+        std::cout << "Init(): " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsedTop).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsedTop).count() << "microseconds.\n";
     }
 
     void createTextureSampler() {
@@ -498,36 +543,6 @@ private:
         endSingleTimeCommands(commandBuffer);
     }
 
-    void _loadImage() {
-        cv::Mat image = cv::imread("C:/Users/ljuek/Downloads/16kmarble.jpg", cv::IMREAD_UNCHANGED);
-        if (image.empty()) {
-            throw std::runtime_error("Failed to load texture image with OpenCV!");
-        }
-
-        if (image.channels() == 3) {
-            cv::Mat imageRGBA;
-            cv::cvtColor(image, imageRGBA, cv::COLOR_BGR2RGBA);
-            image = imageRGBA;
-        } else if (image.channels() == 1) {
-            cv::Mat imageRGBA;
-            cv::cvtColor(image, imageRGBA, cv::COLOR_GRAY2RGBA);
-            image = imageRGBA;
-        }
-
-
-        // Gather width, height, and channels
-        int texWidth    = image.cols;
-        int texHeight   = image.rows;
-        int texChannels = image.channels();
-
-        VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth) * 
-            static_cast<VkDeviceSize>(texHeight) *
-            static_cast<VkDeviceSize>(texChannels);
-
-        std::cout << "Loading texture of size " 
-            << texWidth << " x " << texHeight << ": " 
-            << (imageSize / 1024.0 / 1024.0) << " MB" << std::endl;
-    }
 
     #ifdef _WIN32
     #define PREFIX std::string("C:")
@@ -537,8 +552,8 @@ private:
     void createTextureImage() {
         //cv::Mat image = cv::imread("C:/Users/ljuek/Downloads/16kmarble.jpeg", cv::IMREAD_UNCHANGED);
         Test t{};
-        t.run2(PREFIX + "/Users/ljuek/Downloads/56000.jpg", PREFIX+"/Users/ljuek/Downloads/56000_1.jpg");
-        cv::Mat image = cv::imread(PREFIX+"/Users/ljuek/Downloads/16kmarble.jpeg", cv::IMREAD_UNCHANGED);
+        //t.run2(PREFIX + "/Users/ljuek/Downloads/Colonial.jpg", PREFIX+"/Users/ljuek/Downloads/Colonial_1.jpg");
+        cv::Mat image = cv::imread(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg", cv::IMREAD_UNCHANGED);
         if (image.empty()) {
             throw std::runtime_error("Failed to load texture image with OpenCV!");
         }
@@ -820,7 +835,7 @@ private:
 
         void* data;
         vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-            memcpy(data, vertices.data(), (size_t) bufferSize);
+        memcpy(data, vertices.data(), (size_t) bufferSize);
         vkUnmapMemory(device, stagingBufferMemory);
 
         createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
@@ -893,9 +908,6 @@ private:
         ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.time.x = glfwGetTime();
         memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
-
-
-
     }
 
     void drawFrame() {
@@ -1029,7 +1041,7 @@ private:
     }
 
     void createCommandPool() {
-        QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice);
+        Veloxr::QueueFamilyIndices queueFamilyIndices = _deviceUtils->findQueueFamilies(physicalDevice);
 
         VkCommandPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -1291,7 +1303,7 @@ private:
     }
 
     void createSwapChain() {
-        SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice);
+        Veloxr::SwapChainSupportDetails swapChainSupport = _deviceUtils->querySwapChainSupport(physicalDevice);
 
         VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
         VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
@@ -1309,7 +1321,7 @@ private:
         createInfo.imageExtent = extent;
         createInfo.imageArrayLayers = 1; //stereoscopic, ignore.
         createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-        QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+        Veloxr::QueueFamilyIndices indices = _deviceUtils->findQueueFamilies(physicalDevice);
         uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
         // Store member meta data for swapchain
         swapChainImageFormat = surfaceFormat.format;
@@ -1341,29 +1353,6 @@ private:
 
 
 
-    }
-
-    SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device) {
-        SwapChainSupportDetails details;
-        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
-
-        uint32_t formatCount;
-        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
-
-        if (formatCount != 0) {
-            details.formats.resize(formatCount);
-            vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
-        }
-
-        uint32_t presentModeCount;
-        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
-
-        if (presentModeCount != 0) {
-            details.presentModes.resize(presentModeCount);
-            vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
-        }
-
-        return details;
     }
 
     void createSurface() {
@@ -1414,179 +1403,6 @@ private:
             return actualExtent;
         }
 
-    }
-
-    void createLogicalDevice() {
-
-
-        QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
-        std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-        std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
-
-        float queuePriority = 1.0f;
-        for (uint32_t queueFamily : uniqueQueueFamilies) {
-            VkDeviceQueueCreateInfo queueCreateInfo{};
-            queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            queueCreateInfo.queueFamilyIndex = queueFamily;
-            queueCreateInfo.queueCount = 1;
-            queueCreateInfo.pQueuePriorities = &queuePriority;
-            queueCreateInfos.push_back(queueCreateInfo);
-        }
-
-
-
-        VkPhysicalDeviceFeatures deviceFeatures{};
-
-        VkDeviceCreateInfo createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-
-        createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
-        createInfo.pQueueCreateInfos = queueCreateInfos.data();
-        createInfo.queueCreateInfoCount = 1;
-
-        createInfo.pEnabledFeatures = &deviceFeatures;
-
-        // Backwards compatability with older vulkan
-        if (enableValidationLayers) {
-            createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-            createInfo.ppEnabledLayerNames = validationLayers.data();
-        } else {
-            createInfo.enabledLayerCount = 0;
-        }
-
-        createInfo.enabledExtensionCount = (uint32_t)deviceExtensions.size();
-        createInfo.ppEnabledExtensionNames = deviceExtensions.data();
-
-
-        if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create logical device!");
-        }
-
-
-        vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
-        vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
-
-        std::cout << "Finished logical device creation! Queue / Present indices: " << indices.graphicsFamily.value() << " " << indices.presentFamily.value() << std::endl;
-
-    }
-
-    void pickPhysicalDevice() {
-        uint32_t deviceCount = 0;
-
-        vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
-
-        if (deviceCount == 0) {
-            throw std::runtime_error("failed to find GPUs with Vulkan support!");
-        }
-
-        std::vector<VkPhysicalDevice> devices(deviceCount);
-        vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
-
-        std::multimap<int, VkPhysicalDevice> scoreMap;
-        scoreMap.insert(std::make_pair(0, VK_NULL_HANDLE));
-
-        for (const auto& device : devices) {
-            scoreMap.insert(std::make_pair(calculateDeviceScore(device), device));
-        }
-
-        auto curScore = scoreMap.rbegin()->first;
-        if (curScore == -1) {
-            std::runtime_error("No suitable device found");
-        }
-        physicalDevice = scoreMap.rbegin()->second;
-        if (physicalDevice == VK_NULL_HANDLE) {
-            throw std::runtime_error("failed to find a suitable GPU!");
-        }
-
-
-    }
-
-    bool checkDeviceExtensionSupport(VkPhysicalDevice device) {
-        uint32_t extensionCount;
-        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
-
-        std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
-
-        std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
-
-        for (const auto& extension : availableExtensions) {
-            requiredExtensions.erase(extension.extensionName);
-        }
-
-        return requiredExtensions.empty();
-    }
-
-    int calculateDeviceScore(VkPhysicalDevice device) {
-
-        QueueFamilyIndices indices = findQueueFamilies(device); 
-        if(!indices.isComplete() || !checkDeviceExtensionSupport(device)) return -1;
-        
-        VkPhysicalDeviceProperties deviceProperties;
-        vkGetPhysicalDeviceProperties(device, &deviceProperties);
-
-        VkPhysicalDeviceFeatures deviceFeatures;
-        vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-
-        bool swapChainAdequate = false;
-        SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
-        swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
-        if(!swapChainAdequate) return -1;
-
-
-        int score = 0;
-
-        score += deviceProperties.limits.maxImageDimension2D;
-        score += deviceFeatures.geometryShader;
-        score += deviceFeatures.sparseBinding;
-        score += deviceFeatures.tessellationShader;
-
-        if(deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
-            score *= 2;
-        }
-        std::cout << "Score for device " << deviceProperties.deviceID << " (" << deviceProperties.deviceName << ") = " << score << std::endl;
-        return score;
-    }
-
-    struct QueueFamilyIndices {
-        std::optional<uint32_t> graphicsFamily;
-        std::optional<uint32_t> presentFamily;
-
-        // Is complete if their are graphics commands supported
-        bool isComplete() {
-            return graphicsFamily.has_value() && presentFamily.has_value();
-        }
-    };
-
-    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
-        QueueFamilyIndices indices;
-
-        uint32_t queueFamilyCount = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-
-        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
-
-        int i = 0;
-        for (const auto& queueFamily : queueFamilies) {
-
-            VkBool32 presentSupport = false;
-            vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
-
-            if (presentSupport) {
-                indices.presentFamily = i;
-            }
-
-            if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-                indices.graphicsFamily = i;
-            }
-
-            if(indices.isComplete()) break;
-
-            i++;
-        }
-
-        return indices;
     }
 
     void render() {
@@ -1771,6 +1587,7 @@ private:
         if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
             throw std::runtime_error("failed to create instance!");
         }
+        std::cout << "Created a valid instance!\n";
 
     }
 };
