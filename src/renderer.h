@@ -315,6 +315,10 @@ private:
     }
 
     void init() {
+
+        auto now = std::chrono::high_resolution_clock::now();
+        auto nowTop = std::chrono::high_resolution_clock::now();
+
         glfwInit();
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -323,6 +327,8 @@ private:
         glfwSetWindowUserPointer(window, this);
         glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
 
+        auto timeElapsed = std::chrono::high_resolution_clock::now() - now;
+        std::cout << "Init glfw: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
         createVulkanInstance();
         setupDebugMessenger();
         createSurface();
@@ -340,7 +346,11 @@ private:
         createGraphicsPipeline();
         createFramebuffers();
         createCommandPool();
+
+        now = std::chrono::high_resolution_clock::now();
         createTextureImage();
+        timeElapsed = std::chrono::high_resolution_clock::now() - now;
+        std::cout << "Texture creation: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
 
         createTextureImageView();
         createTextureSampler();
@@ -350,6 +360,8 @@ private:
         createDescriptorSets();
         createCommandBuffer();
         createSyncObjects();
+        auto timeElapsedTop = std::chrono::high_resolution_clock::now() - now;
+        std::cout << "Init(): " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsedTop).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsedTop).count() << "microseconds.\n";
     }
 
     void createTextureSampler() {
@@ -496,36 +508,6 @@ private:
         endSingleTimeCommands(commandBuffer);
     }
 
-    void _loadImage() {
-        cv::Mat image = cv::imread("C:/Users/ljuek/Downloads/16kmarble.jpg", cv::IMREAD_UNCHANGED);
-        if (image.empty()) {
-            throw std::runtime_error("Failed to load texture image with OpenCV!");
-        }
-
-        if (image.channels() == 3) {
-            cv::Mat imageRGBA;
-            cv::cvtColor(image, imageRGBA, cv::COLOR_BGR2RGBA);
-            image = imageRGBA;
-        } else if (image.channels() == 1) {
-            cv::Mat imageRGBA;
-            cv::cvtColor(image, imageRGBA, cv::COLOR_GRAY2RGBA);
-            image = imageRGBA;
-        }
-
-
-        // Gather width, height, and channels
-        int texWidth    = image.cols;
-        int texHeight   = image.rows;
-        int texChannels = image.channels();
-
-        VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth) * 
-            static_cast<VkDeviceSize>(texHeight) *
-            static_cast<VkDeviceSize>(texChannels);
-
-        std::cout << "Loading texture of size " 
-            << texWidth << " x " << texHeight << ": " 
-            << (imageSize / 1024.0 / 1024.0) << " MB" << std::endl;
-    }
 
     #ifdef _WIN32
     #define PREFIX std::string("C:")
@@ -536,7 +518,7 @@ private:
         //cv::Mat image = cv::imread("C:/Users/ljuek/Downloads/16kmarble.jpeg", cv::IMREAD_UNCHANGED);
         Test t{};
         //t.run2(PREFIX + "/Users/ljuek/Downloads/Colonial.jpg", PREFIX+"/Users/ljuek/Downloads/Colonial_1.jpg");
-        cv::Mat image = cv::imread(PREFIX+"/Users/ljuek/Downloads/Colonial_1.jpg", cv::IMREAD_UNCHANGED);
+        cv::Mat image = cv::imread(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg", cv::IMREAD_UNCHANGED);
         if (image.empty()) {
             throw std::runtime_error("Failed to load texture image with OpenCV!");
         }
@@ -818,7 +800,7 @@ private:
 
         void* data;
         vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-            memcpy(data, vertices.data(), (size_t) bufferSize);
+        memcpy(data, vertices.data(), (size_t) bufferSize);
         vkUnmapMemory(device, stagingBufferMemory);
 
         createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
@@ -891,9 +873,6 @@ private:
         ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.time.x = glfwGetTime();
         memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
-
-
-
     }
 
     void drawFrame() {
