@@ -14,6 +14,7 @@
 #include <OrthographicCamera.h>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#include <texture.h>
 
 
 
@@ -179,6 +180,8 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) ;
 
 class RendererCore {
 public:
+
+    float deltaMs;
     void run() {
         init();
         render();
@@ -191,8 +194,8 @@ public:
 private: // No client
 
     GLFWwindow* window;
-    const int WIDTH = 800;
-    const int HEIGHT = 800;
+    const int WIDTH = 1920;
+    const int HEIGHT = 1080;
 
 private: // Client
 
@@ -548,7 +551,8 @@ private:
         //cv::Mat image = cv::imread("C:/Users/ljuek/Downloads/16kmarble.jpeg", cv::IMREAD_UNCHANGED);
         Test t{};
         //t.run2(PREFIX + "/Users/ljuek/Downloads/Colonial.jpg", PREFIX+"/Users/ljuek/Downloads/Colonial_1.jpg");
-        cv::Mat image = cv::imread(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg", cv::IMREAD_UNCHANGED);
+        std::string input_filepath = PREFIX+"/Users/ljuek/Downloads/Colonial.jpg";
+        cv::Mat image = cv::imread(input_filepath, cv::IMREAD_UNCHANGED);
         if (image.empty()) {
             throw std::runtime_error("Failed to load texture image with OpenCV!");
         }
@@ -563,11 +567,14 @@ private:
             image = imageRGBA;
         }
 
-        int texWidth    = image.cols;
-        int texHeight   = image.rows;
-        int texChannels = image.channels();
+
+        Veloxr::OIIOTexture myTexture{input_filepath};
+        int texWidth    = myTexture.getResolution().x;
+        int texHeight   = myTexture.getResolution().y;
+        int texChannels = 4;//myTexture.getNumChannels();
         _camera.init((float)texWidth / (float)texHeight);
 
+        std::cout << "HELP MY CHANNELS ARE " << myTexture.getNumChannels() << std::endl;
         VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth) * 
             static_cast<VkDeviceSize>(texHeight) *
             static_cast<VkDeviceSize>(texChannels);
@@ -583,7 +590,7 @@ private:
 
         void* data;
         vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
-        memcpy(data, image.data, static_cast<size_t>(imageSize));
+        memcpy(data, myTexture.load(input_filepath).data(), static_cast<size_t>(imageSize));
         vkUnmapMemory(device, stagingBufferMemory);
 
         createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
@@ -982,7 +989,7 @@ private:
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = swapChainExtent;
 
-        VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+        VkClearValue clearColor = {{{1.0f, 0.0f, 1.0f, 1.0f}}};
         renderPassInfo.clearValueCount = 1;
         renderPassInfo.pClearValues = &clearColor;
 
@@ -1405,6 +1412,7 @@ private:
 
         auto timer = std::chrono::high_resolution_clock::now();
         int frames = 0;
+        
         while (!glfwWindowShouldClose(window)) {
             auto now = std::chrono::high_resolution_clock::now();
             glfwPollEvents();
@@ -1413,6 +1421,7 @@ private:
             auto timeElapsed = std::chrono::high_resolution_clock::now() - now;
 
             auto timerElapsed = std::chrono::high_resolution_clock::now() - timer;
+            deltaMs = std::chrono::duration<float>(timeElapsed).count();
             auto elapsedPerSec = std::chrono::duration_cast<std::chrono::milliseconds>(timerElapsed).count();
             if(elapsedPerSec > 1000) {
                 
@@ -1605,6 +1614,7 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
         lastX = xpos;
         lastY = ypos;
         glm::vec2 diffs{-dx/500.0f, -dy/500.0f};
+        diffs *= app->getCamera().getZoomLevel() * 20 * app->deltaMs;
         app->getCamera().translate(diffs);
     }
 }

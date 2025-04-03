@@ -38,21 +38,17 @@ std::vector<unsigned char> OIIOTexture::load(std::string filename) {
         throw std::runtime_error("Failed to open image with OIIO: " + filename);
     }
 
-    const OIIO::ImageSpec& spec = in->spec();
-    uint32_t width  = spec.width;
-    uint32_t height = spec.height;
-    int channels    = spec.nchannels;
-
-    std::vector<unsigned char> rawData(width * height * channels);
-    in->read_image(0, 0, 0, channels, OIIO::TypeDesc::UINT8, rawData.data());
+    std::vector<unsigned char> rawData(_resolution.x * _resolution.y * _numChannels);
+    in->read_image(0, 0, 0, _numChannels, OIIO::TypeDesc::UINT8, rawData.data());
     in->close();
     in.reset();
 
-    std::vector<unsigned char> pixelData(width * height * 4, 255);
-    for (uint32_t i = 0; i < width * height; ++i) {
-        for (int c = 0; c < channels && c < 4; ++c) {
-            pixelData[i * 4 + c] = rawData[i * channels + c];
+    std::vector<unsigned char> pixelData(_resolution.x * _resolution.y * 4, 255);
+    for (uint32_t i = 0; i < _resolution.x * _resolution.y; ++i) {
+        for (int c = 0; c < _numChannels && c < 4; ++c) {
+            pixelData[i * 4 + c] = rawData[i * _numChannels + c];
         }
     }
+    _numChannels = 4; // Forcing rgba, lets stick to this till im given other instructions by Adam/Anya
     return pixelData; 
 }
