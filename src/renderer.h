@@ -1589,7 +1589,7 @@ private:
 };
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
-    printf("Scrolled: x = %.2f, y = %.2f\n", xoffset, yoffset);
+    //printf("Scrolled: x = %.2f, y = %.2f\n", xoffset, yoffset);
     auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
     app->getCamera().addToZoom(-yoffset / 10.0f);
 }
@@ -1600,7 +1600,7 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
         double dx = xpos - lastX;
         double dy = ypos - lastY;
 
-        printf("Dragging: dx = %.2f, dy = %.2f\n", dx, dy);
+     //   printf("Dragging: dx = %.2f, dy = %.2f\n", dx, dy);
 
         lastX = xpos;
         lastY = ypos;
