@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <string>
+#include <vector>
 
 namespace Veloxr {
 
@@ -8,21 +9,23 @@ namespace Veloxr {
         uint32_t x, y;
     };
 
-class TextureInfo {
-    public:
-        TextureInfo() = default;
-        TextureInfo(std::string filename);
-        void init(std::string filename);
+    class OIIOTexture {
+        public:
+            OIIOTexture() = default;
+            OIIOTexture(std::string filename);
+            void init(std::string filename);
 
-        inline const Point& getResolution() const { return _resolution; }
-        inline const std::string& getFilename() const { return _filename; }
-        inline const int& getNumChannels() const { return _numChannels; }
+            inline const Point& getResolution() const { return _resolution; }
+            inline const std::string& getFilename() const { return _filename; }
+            inline const int& getNumChannels() const { return _numChannels; }
+            std::vector<unsigned char> load(std::string filename="");
 
-    private:
-        Point _resolution;
-        std::string _filename;
-        int _numChannels;
+        private:
+            Point _resolution;
+            std::string _filename;
+            int _numChannels;
+            bool _loaded{false};
 
-};
+    };
 
 }
