@@ -1708,7 +1708,7 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
         lastX = xpos;
         lastY = ypos;
         glm::vec2 diffs{-dx/500.0f, -dy/500.0f};
-        diffs *= app->getCamera().getZoomLevel() * 20 * app->deltaMs;
+        diffs *= app->getCamera().getZoomLevel() * 100 * app->deltaMs;
         app->getCamera().translate(diffs);
     }
 }
