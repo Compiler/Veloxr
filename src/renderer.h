@@ -112,8 +112,9 @@ VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMes
 
 
 struct Vertex {
-    glm::vec2 pos;
-    glm::vec2 texCoord;
+    glm::vec4 pos;
+    glm::vec4 texCoord;
+    int textureUnit;
 
     static VkVertexInputBindingDescription getBindingDescription() {
         VkVertexInputBindingDescription bindingDescription{};
@@ -123,8 +124,9 @@ struct Vertex {
 
         return bindingDescription;
     }
-    static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions() {
-        std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+    static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions() {
+        std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
+
         attributeDescriptions[0].binding = 0;
         attributeDescriptions[0].location = 0;
         attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
@@ -135,6 +137,12 @@ struct Vertex {
         attributeDescriptions[1].location = 1;
         attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
         attributeDescriptions[1].offset = offsetof(Vertex, texCoord);
+
+        attributeDescriptions[2].binding = 0;
+        attributeDescriptions[2].location = 2;
+        attributeDescriptions[2].format = VK_FORMAT_R32_SINT;
+        attributeDescriptions[2].offset = offsetof(Vertex, textureUnit);
+
         return attributeDescriptions;
     }
 };
@@ -152,13 +160,13 @@ const auto BOT = 0.9f;
 //      - Return parsable coordinates of what is being viewed.
 //          - 
 const std::vector<Vertex> vertices = {
-    {{RIGHT, BOT}, {1.0f, 1.0f}},
-    {{LEFT, BOT}, {0.0f, 1.0f}},
-    {{LEFT, TOP}, {0.0f, 0.0f}},
+    {{RIGHT, BOT, 0, 0}, {1.0f, 1.0f, 1, 0}, 1},
+    {{LEFT, BOT, 0, 0}, {0.0f, 1.0f, 1, 0}, 1},
+    {{LEFT, TOP, 0, 0}, {0.0f, 0.0f, 1, 0}, 1},
 
-    {{LEFT, TOP}, {0.0f, 0.0f}},
-    {{RIGHT, TOP}, {1.0f, 0.0f}},
-    {{RIGHT, BOT}, {1.0f, 1.0f}},
+    {{LEFT, TOP, 0, 0}, {0.0f, 0.0f, 0, 0}, 0},
+    {{RIGHT, TOP, 0, 0}, {1.0f, 0.0f, 0, 0}, 0},
+    {{RIGHT, BOT, 0, 0}, {1.0f, 1.0f, 0, 0}, 0},
 };
 
 
@@ -903,7 +911,6 @@ private:
                 throw std::runtime_error("failed to create synchronization objects for a frame!");
             }
         }
-
     }
 
 
