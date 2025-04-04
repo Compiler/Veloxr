@@ -6,7 +6,7 @@
 using namespace Veloxr;
 OIIO_NAMESPACE_USING  
 
-std::vector<std::vector<unsigned char>> TextureTiling::tile(OIIOTexture& texture, uint32_t maxResolution){
+std::vector<TextureData> TextureTiling::tile(OIIOTexture& texture, uint32_t maxResolution){
     // n^2 * ~4k < 25*4k: Fit tiles into 100,000x100,000
     static std::vector<int> TILES = {1, 4, 9, 16, 25, 36, 49, 64, 81, 100, 121};
 
@@ -16,20 +16,25 @@ std::vector<std::vector<unsigned char>> TextureTiling::tile(OIIOTexture& texture
         return {{}};
     }
 
-    long long w = texture.getResolution().x;
-    long long h = texture.getResolution().y;
-    long long totalPixels = w * h;
+    uint32_t w = texture.getResolution().x;
+    uint32_t h = texture.getResolution().y;
+    uint32_t totalPixels = w * h;
 
     if (totalPixels <= maxResolution) {
-        return {texture.load()};
+        TextureData one;
+        one.width = w;
+        one.height = h;
+        one.channels = 4;
+        one.pixelData = texture.load();
+        return {{w, h, 4, texture.load()}};
     }
 
     double ratio = (double)totalPixels / (double)maxResolution; 
     double exactN = std::sqrt(ratio);
     int N = (int)std::ceil(exactN);
 
-    long long tileW = (w + N - 1) / N;
-    long long tileH = (h + N - 1) / N;
+    uint32_t tileW = (w + N - 1) / N;
+    uint32_t tileH = (h + N - 1) / N;
 
     auto resolution = texture.getResolution();
     auto pixelResolution = resolution.x * resolution.y;
@@ -61,12 +66,12 @@ std::vector<std::vector<unsigned char>> TextureTiling::tile(OIIOTexture& texture
     uint32_t forcedChannels = 4;
     for (int row = 0; row < N; ++row) {
         for (int col = 0; col < N; ++col) {
-            long long x0 = col * tileW;
-            long long x1 = std::min(x0 + tileW, w);
-            long long y0 = row * tileH;
-            long long y1 = std::min(y0 + tileH, h);
-            long long thisTileW = x1 - x0;
-            long long thisTileH = y1 - y0;
+            uint32_t x0 = col * tileW;
+            uint32_t x1 = std::min(x0 + tileW, w);
+            uint32_t y0 = row * tileH;
+            uint32_t y1 = std::min(y0 + tileH, h);
+            uint32_t thisTileW = x1 - x0;
+            uint32_t thisTileH = y1 - y0;
             if (thisTileW <= 0 || thisTileH <= 0) {
                 continue;
             }
@@ -89,11 +94,16 @@ std::vector<std::vector<unsigned char>> TextureTiling::tile(OIIOTexture& texture
                 size_t rowOffsetInBuf = x0 * forcedChannels;
                 memcpy(&tileData[rowOffsetInTile], &rgbaRow[rowOffsetInBuf], thisTileW * forcedChannels);
             }
-            tilePixels.push_back(std::move(tileData));
-            return tilePixels;
+            TextureData data;
+            data.width = thisTileW;
+            data.height = thisTileH;
+            data.channels = 4;
+            data.pixelData = std::move(tileData);
+            std::cout << "[TILER] Done with tile 1\n";
+            return {data};
         }
     }
 
 
-    return tilePixels;
+    return {{}};
 }

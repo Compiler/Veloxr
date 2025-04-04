@@ -560,8 +560,13 @@ private:
         auto maxResolution = _deviceUtils->getMaxTextureResolution();
         std::cout << "Tiling...\n";
         auto res = tiler.tile(myTexture, maxResolution * maxResolution);
-        int texWidth    = myTexture.getResolution().x;
-        int texHeight   = myTexture.getResolution().y;
+//        int texWidth    = myTexture.getResolution().x;
+ //       int texHeight   = myTexture.getResolution().y;
+  //      int texChannels = 4;//myTexture.getNumChannels();
+  
+
+        int texWidth    = res.begin()->width;
+        int texHeight   = res.begin()->height;
         int texChannels = 4;//myTexture.getNumChannels();
         _camera.init((float)texWidth / (float)texHeight);
 
@@ -581,7 +586,7 @@ private:
 
         void* data;
         vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
-        memcpy(data, res.begin()->data()/*myTexture.load(input_filepath).data()*/, static_cast<size_t>(imageSize));
+        memcpy(data, res.begin()->pixelData.data()/*myTexture.load(input_filepath).data()*/, static_cast<size_t>(imageSize));
         vkUnmapMemory(device, stagingBufferMemory);
 
         createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
