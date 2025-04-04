@@ -340,7 +340,7 @@ private:
 
         now = std::chrono::high_resolution_clock::now();
         //addTexture(PREFIX+"/Users/ljuek/Downloads/56000.jpg");
-        auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg");
+        auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/56000.jpg");
         std::cout << "Texture creation: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
         timeElapsed = std::chrono::high_resolution_clock::now() - now;
         //addTexture(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg");
@@ -583,6 +583,60 @@ private:
             _textureMap[input_filepath + "_tile_" + std::to_string(i)] = tileTexture;
         }
         vertices = std::vector<Veloxr::Vertex>(tileData.vertices.begin(), tileData.vertices.end());
+        for(Veloxr::Vertex& vertice : vertices) {
+            std::cout << "Vertex pos : " << vertice.pos.x << ", " << vertice.pos.y << "\n";
+            std::cout << "Vertex texCoord: " << vertice.texCoord.x << ", " << vertice.texCoord.y << "\n";
+            std::cout << "Vertex texUnit: " << vertice.textureUnit << "\n";
+        }
+        vertices = {
+            {{RIGHT, BOT / 2, 0, 0}, {1.0f, 1.0f, 1, 0}, 0},
+            {{LEFT, BOT / 2, 0, 0}, {0.0f, 1.0f, 1, 0}, 0},
+            {{LEFT, TOP / 2, 0, 0}, {0.0f, 0.0f, 1, 0}, 0},
+            {{LEFT, TOP / 2, 0, 0}, {0.0f, 0.0f, 0, 0}, 0},
+            {{RIGHT, TOP / 2, 0, 0}, {1.0f, 0.0f, 0, 0}, 0},
+            {{RIGHT, BOT / 2, 0, 0}, {1.0f, 1.0f, 0, 0}, 0},
+        };
+        vertices = {
+            // Tile 0: Top-left (NDC: left=-1, right=0, bottom=0, top=1)
+            // Order: bottom-right, bottom-left, top-left, top-left, top-right, bottom-right
+            { {  0.0f,  0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 0, 0.0f }, 0 }, // v0
+            { { -1.0f,  0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0, 0.0f }, 0 }, // v1
+            { { -1.0f,  1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0, 0.0f }, 0 }, // v2
+
+            { { -1.0f,  1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0, 0.0f }, 0 }, // v3 (repeat)
+            { {  0.0f,  1.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0, 0.0f }, 0 }, // v4
+            { {  0.0f,  0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 0, 0.0f }, 0 }, // v5
+
+            // Tile 1: Top-right (NDC: left=0, right=1, bottom=0, top=1)
+            { {  1.0f,  0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1, 0.0f }, 1 }, // v6
+            { {  0.0f,  0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1, 0.0f }, 1 }, // v7
+            { {  0.0f,  1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1, 0.0f }, 1 }, // v8
+
+            { {  0.0f,  1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1, 0.0f }, 1 }, // v9 (repeat)
+            { {  1.0f,  1.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 1, 0.0f }, 1 }, // v10
+            { {  1.0f,  0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1, 0.0f }, 1 }, // v11
+
+            // Tile 2: Bottom-left (NDC: left=-1, right=0, bottom=-1, top=0)
+            { {  0.0f, -1.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 2, 0.0f }, 2 }, // v12
+            { { -1.0f, -1.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 2, 0.0f }, 2 }, // v13
+            { { -1.0f,  0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 2, 0.0f }, 2 }, // v14
+
+            { { -1.0f,  0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 2, 0.0f }, 2 }, // v15 (repeat)
+            { {  0.0f,  0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 2, 0.0f }, 2 }, // v16
+            { {  0.0f, -1.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 2, 0.0f }, 2 }, // v17
+
+            // Tile 3: Bottom-right (NDC: left=0, right=1, bottom=-1, top=0)
+            { {  1.0f, -1.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 3, 0.0f }, 3 }, // v18
+            { {  0.0f, -1.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 3, 0.0f }, 3 }, // v19
+            { {  0.0f,  0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 3, 0.0f }, 3 }, // v20
+
+            { {  0.0f,  0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 3, 0.0f }, 3 }, // v21 (repeat)
+            { {  1.0f,  0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 3, 0.0f }, 3 }, // v22
+            { {  1.0f, -1.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 3, 0.0f }, 3 }  // v23
+        };
+
+
+        return {};
     }
 
     std::tuple<VkImage, VkDeviceMemory, Veloxr::OIIOTexture> createTextureImage(std::string input_filepath="") {
@@ -810,7 +864,7 @@ private:
         VkDescriptorSetLayoutBinding samplerLayoutBinding{};
         samplerLayoutBinding.binding = 1;
         samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        samplerLayoutBinding.descriptorCount = static_cast<uint32_t>(_textureMap.size());
+        samplerLayoutBinding.descriptorCount = 16;//static_cast<uint32_t>(_textureMap.size());
         samplerLayoutBinding.pImmutableSamplers = nullptr;
         samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
@@ -1262,7 +1316,7 @@ private:
         rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
         rasterizer.lineWidth = 1.0f;
         rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-        rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+        rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         rasterizer.depthBiasEnable = VK_FALSE;
         rasterizer.depthBiasConstantFactor = 0.0f; 
         rasterizer.depthBiasClamp = 0.0f; 
