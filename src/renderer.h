@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <unordered_map>
 #define CV_IO_MAX_IMAGE_PIXELS 40536870912
 #include <array>
 #include <chrono>
@@ -249,11 +250,22 @@ private: // Client
     VkDescriptorPool descriptorPool;
     std::vector<VkDescriptorSet> descriptorSets;
 
-    VkImage textureImage;
-    VkDeviceMemory textureImageMemory;
-    VkImageView textureImageView;
-    VkSampler textureSampler;
+    struct VkVirtualTexture {
+        VkImage textureImage;
+        VkDeviceMemory textureImageMemory;
+        VkImageView textureImageView;
+        VkSampler textureSampler;
+        //Veloxr::OIIOTexture textureData;
 
+        void destroy(VkDevice device) {
+            vkDestroySampler(device, textureSampler, nullptr);
+            vkDestroyImageView(device, textureImageView, nullptr);
+            vkDestroyImage(device, textureImage, nullptr);
+            vkFreeMemory(device, textureImageMemory, nullptr);
+        }
+    };
+
+    std::unordered_map<std::string, VkVirtualTexture> _textureMap;
     // Sync
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
@@ -321,40 +333,8 @@ private:
         }
 #endif
     }
-    void initFromWindow(void* windowHandle) {
-        void* mappedWindow = getWindowHandleFromRaw(windowHandle);
-        createVulkanInstance();
-        setupDebugMessenger();
-        //createSurface();
-
-        createSurfaceFromWindowHandle(mappedWindow);
-        createSwapChain();
-        createImageViews();
-        createRenderPass();
-        createDescriptorLayout();
-        createGraphicsPipeline();
-        createFramebuffers();
-        createCommandPool();
-
-        std::string input_filepath = PREFIX+"/Users/ljuek/Downloads/56000.jpg";
-        createTextureImage(input_filepath);
-        createTextureImageView();
-        createTextureSampler();
-        createVertexBuffer();
-
-        createUniformBuffers();
-        createDescriptorPool();
-        createDescriptorSets();
-        createCommandBuffer();
-        createSyncObjects();
-
-    }
-
-
-
 
     void init() {
-
         auto now = std::chrono::high_resolution_clock::now();
         auto nowTop = std::chrono::high_resolution_clock::now();
 
@@ -381,22 +361,39 @@ private:
         physicalDevice = _deviceUtils->getPhysicalDevice();
         graphicsQueue = _deviceUtils->getGraphicsQueue();
         presentQueue = _deviceUtils->getPresentationQueue();
+        createCommandPool();
+
+        now = std::chrono::high_resolution_clock::now();
+        {
+            std::string input_filepath = PREFIX+"/Users/ljuek/Downloads/56000.jpg";
+            const auto& [textureImage, textureImageMemory] = createTextureImage(input_filepath);
+            std::cout << "Texture creation: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
+
+            auto imageView = createTextureImageView(textureImage);
+            auto sampler = createTextureSampler();
+            _textureMap[input_filepath] = {textureImage, textureImageMemory, imageView, sampler};
+        }
+        timeElapsed = std::chrono::high_resolution_clock::now() - now;
+
+
+        {
+            std::string input_filepath = PREFIX+"/Users/ljuek/Downloads/Colonial.jpg";
+            const auto& [textureImage, textureImageMemory] = createTextureImage(input_filepath);
+            std::cout << "Texture creation: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
+
+            auto imageView = createTextureImageView(textureImage);
+            auto sampler = createTextureSampler();
+            _textureMap[input_filepath] = {textureImage, textureImageMemory, imageView, sampler};
+        }
+
+
         createSwapChain();
         createImageViews();
         createRenderPass();
         createDescriptorLayout();
         createGraphicsPipeline();
         createFramebuffers();
-        createCommandPool();
-
-        now = std::chrono::high_resolution_clock::now();
-        std::string input_filepath = PREFIX+"/Users/ljuek/Downloads/56000.jpg";
-        createTextureImage(input_filepath);
-        timeElapsed = std::chrono::high_resolution_clock::now() - now;
-        std::cout << "Texture creation: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
-
-        createTextureImageView();
-        createTextureSampler();
+        
         createVertexBuffer();
         createUniformBuffers();
         createDescriptorPool();
@@ -407,8 +404,9 @@ private:
         std::cout << "Init(): " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsedTop).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsedTop).count() << "microseconds.\n";
     }
 
-    void createTextureSampler() {
+    VkSampler createTextureSampler(std::string input_filepath="") {
 
+        VkSampler textureSampler;
         VkSamplerCreateInfo samplerInfo{};
         samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
         // TODO: See if Linear is better for filter
@@ -443,12 +441,13 @@ private:
             throw std::runtime_error("failed to create texture sampler!");
         }
 
+        return textureSampler;
 
     
     }
 
-    void createTextureImageView() {
-        textureImageView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB);
+    VkImageView createTextureImageView(VkImage textureImage) {
+        return createImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB);
     }
 
     VkImageView createImageView(VkImage image, VkFormat format) {
@@ -552,7 +551,7 @@ private:
     }
 
 
-    void createTextureImage(std::string input_filepath) {
+    std::pair<VkImage, VkDeviceMemory> createTextureImage(std::string input_filepath="") {
         //cv::Mat image = cv::imread("C:/Users/ljuek/Downloads/16kmarble.jpeg", cv::IMREAD_UNCHANGED);
         Test t{};
         //t.run2(PREFIX + "/Users/ljuek/Downloads/Colonial.jpg", PREFIX+"/Users/ljuek/Downloads/Colonial_1.jpg");
@@ -592,6 +591,8 @@ private:
         memcpy(data, res.begin()->pixelData.data()/*myTexture.load(input_filepath).data()*/, static_cast<size_t>(imageSize));
         vkUnmapMemory(device, stagingBufferMemory);
 
+        VkImage textureImage;
+        VkDeviceMemory textureImageMemory;
         createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
 
         transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -601,6 +602,7 @@ private:
 
         vkDestroyBuffer(device, stagingBuffer, nullptr);
         vkFreeMemory(device, stagingBufferMemory, nullptr);
+        return {textureImage, textureImageMemory};
     }
 
     VkCommandBuffer beginSingleTimeCommands() {
@@ -692,12 +694,17 @@ private:
             bufferInfo.offset = 0;
             bufferInfo.range = sizeof(UniformBufferObject);
 
-            VkDescriptorImageInfo imageInfo{};
-            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView = textureImageView;
-            imageInfo.sampler = textureSampler;
+            std::vector<VkDescriptorImageInfo> imageInfos;
+            for (auto& [filepath, structure] : _textureMap) {
+                VkDescriptorImageInfo imageInfo{};
+                imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                imageInfo.imageView = structure.textureImageView;
+                imageInfo.sampler = structure.textureSampler;
+                imageInfos.push_back(imageInfo);
+            }
 
             std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
+
             descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             descriptorWrites[0].dstSet = descriptorSets[i];
             descriptorWrites[0].dstBinding = 0;
@@ -711,13 +718,11 @@ private:
             descriptorWrites[1].dstBinding = 1;
             descriptorWrites[1].dstArrayElement = 0;
             descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites[1].descriptorCount = 1;
-            descriptorWrites[1].pImageInfo = &imageInfo;
+            descriptorWrites[1].descriptorCount = static_cast<uint32_t>(imageInfos.size());
+            descriptorWrites[1].pImageInfo = imageInfos.data();
 
             vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-
         }
-
     }
 
     void createDescriptorPool() {
@@ -725,7 +730,7 @@ private:
         poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
         poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+        poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * _textureMap.size());// static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
         VkDescriptorPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -763,8 +768,8 @@ private:
 
         VkDescriptorSetLayoutBinding samplerLayoutBinding{};
         samplerLayoutBinding.binding = 1;
-        samplerLayoutBinding.descriptorCount = 1;
         samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        samplerLayoutBinding.descriptorCount = static_cast<uint32_t>(_textureMap.size());
         samplerLayoutBinding.pImmutableSamplers = nullptr;
         samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
@@ -1439,10 +1444,7 @@ private:
 
         cleanupSwapChain();
 
-        vkDestroySampler(device, textureSampler, nullptr);
-        vkDestroyImageView(device, textureImageView, nullptr);
-        vkDestroyImage(device, textureImage, nullptr);
-        vkFreeMemory(device, textureImageMemory, nullptr);
+        for(auto& [name, data] : _textureMap) data.destroy(device);
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             vkDestroyBuffer(device, uniformBuffers[i], nullptr);
