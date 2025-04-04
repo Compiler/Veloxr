@@ -57,39 +57,42 @@ std::vector<std::vector<unsigned char>> TextureTiling::tile(OIIOTexture& texture
     }
     const ImageSpec& spec = in->spec();
 
-
-    uint32_t numChannels = spec.nchannels;
+    uint32_t originalChannels = spec.nchannels;
+    uint32_t forcedChannels = 4;
     for (int row = 0; row < N; ++row) {
         for (int col = 0; col < N; ++col) {
-
             long long x0 = col * tileW;
-            long long x1 = std::min(x0 + tileW, w);  
+            long long x1 = std::min(x0 + tileW, w);
             long long y0 = row * tileH;
-            long long y1 = std::min(y0 + tileH, h); 
-
+            long long y1 = std::min(y0 + tileH, h);
             long long thisTileW = x1 - x0;
             long long thisTileH = y1 - y0;
-
             if (thisTileW <= 0 || thisTileH <= 0) {
                 continue;
             }
-
-            ROI myROI(x0, x1, y0, y1, 0, 1, 0, numChannels);
-
-
-            std::vector<unsigned char> tileData(thisTileW * thisTileH * numChannels);
-
-            bool success = in->read_tiles(0, 0, x0, x1, y0, y1, 0, 1, 0, numChannels, TypeDesc::UINT8, tileData.data(), AutoStride, AutoStride, AutoStride);
-            if (!success) {
-                std::cerr << "Error reading tiles: " << in->geterror() << std::endl;
-                in->close();
-                return {{}};
+            std::vector<unsigned char> tileData(thisTileW * thisTileH * forcedChannels, 255);
+            std::vector<unsigned char> rowBuffer(w * originalChannels);
+            std::vector<unsigned char> rgbaRow(w * forcedChannels, 255);
+            for (int yy = y0; yy < y1; ++yy) {
+                bool ok = in->read_scanline(yy, 0, TypeDesc::UINT8, rowBuffer.data());
+                if (!ok) {
+                    std::cerr << "Error reading scanline: " << in->geterror() << std::endl;
+                    in->close();
+                    return {{}};
+                }
+                for (int x = 0; x < (int)w; ++x) {
+                    for (uint32_t c = 0; c < originalChannels && c < forcedChannels; ++c) {
+                        rgbaRow[x * forcedChannels + c] = rowBuffer[x * originalChannels + c];
+                    }
+                }
+                size_t rowOffsetInTile = (yy - y0) * thisTileW * forcedChannels;
+                size_t rowOffsetInBuf = x0 * forcedChannels;
+                memcpy(&tileData[rowOffsetInTile], &rgbaRow[rowOffsetInBuf], thisTileW * forcedChannels);
             }
-
             tilePixels.push_back(std::move(tileData));
+            return tilePixels;
         }
     }
-    
 
 
     return tilePixels;
