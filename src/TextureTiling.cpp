@@ -10,14 +10,12 @@ TiledResult TextureTiling::tile2(OIIOTexture &texture, uint32_t maxResolution){
     // n^2 * ~4k < 25*4k: Fit tiles into 100,000x100,000
     static std::vector<int> TILES = {1, 4, 9, 16, 25, 36, 49, 64, 81, 100, 121};
 
-    // Base case
     if (!texture.isInitialized()) {
         std::cerr << "Cannot tile a texture that is not initialized\n";
-        // Return empty result
         return {};
     }
 
-    TiledResult result; // This will hold all tile data + all vertices
+    TiledResult result; 
 
     uint32_t w = texture.getResolution().x;
     uint32_t h = texture.getResolution().y;
@@ -28,7 +26,7 @@ TiledResult TextureTiling::tile2(OIIOTexture &texture, uint32_t maxResolution){
         one.width    = w;
         one.height   = h;
         one.channels = 4;
-        one.pixelData = texture.load();
+        one.pixelData = texture.load(texture.getFilename());
 
         result.tiles.push_back(one);
 
@@ -85,9 +83,6 @@ TiledResult TextureTiling::tile2(OIIOTexture &texture, uint32_t maxResolution){
     uint32_t originalChannels = spec.nchannels;
     uint32_t forcedChannels   = 4;
 
-    // We'll want to map the entire image onto [-1..1] for both X and Y.
-    // Each tile is placed in an N x N grid in that space. If you want row=0 at the top,
-    // we can do "top-down" usage of row. Or invert if you prefer.
     float stepX = 2.0f / float(N);
     float stepY = 2.0f / float(N);
 
@@ -180,7 +175,6 @@ std::vector<TextureData> TextureTiling::tile(OIIOTexture& texture, uint32_t maxR
     // n^2 * ~4k < 25*4k: Fit tiles into 100,000x100,000
     static std::vector<int> TILES = {1, 4, 9, 16, 25, 36, 49, 64, 81, 100, 121};
 
-    // Base case
     if(!texture.isInitialized()) {
         std::cerr << "Cannot tile a texture that is not initialized\n";
         return {{}};
