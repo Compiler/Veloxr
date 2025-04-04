@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <unordered_map>
 #define CV_IO_MAX_IMAGE_PIXELS 40536870912
 #include <array>
@@ -16,6 +17,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <texture.h>
+#include <Vertex.h>
 #include <TextureTiling.h>
 
 
@@ -111,41 +113,6 @@ VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMes
 }
 
 
-struct Vertex {
-    glm::vec4 pos;
-    glm::vec4 texCoord;
-    int textureUnit;
-
-    static VkVertexInputBindingDescription getBindingDescription() {
-        VkVertexInputBindingDescription bindingDescription{};
-        bindingDescription.binding = 0;
-        bindingDescription.stride = sizeof(Vertex);
-        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-        return bindingDescription;
-    }
-    static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions() {
-        std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
-
-        attributeDescriptions[0].binding = 0;
-        attributeDescriptions[0].location = 0;
-        attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
-        attributeDescriptions[0].offset = offsetof(Vertex, pos);
-
-
-        attributeDescriptions[1].binding = 0;
-        attributeDescriptions[1].location = 1;
-        attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
-        attributeDescriptions[1].offset = offsetof(Vertex, texCoord);
-
-        attributeDescriptions[2].binding = 0;
-        attributeDescriptions[2].location = 2;
-        attributeDescriptions[2].format = VK_FORMAT_R32_SINT;
-        attributeDescriptions[2].offset = offsetof(Vertex, textureUnit);
-
-        return attributeDescriptions;
-    }
-};
 const auto LEFT = -0.9f;
 const auto RIGHT = 0.9f;
 const auto TOP = -0.9f;
@@ -159,10 +126,10 @@ const auto BOT = 0.9f;
 //      - Aspect Ratio
 //      - Return parsable coordinates of what is being viewed.
 //          - 
-const std::vector<Vertex> vertices = {
-    {{RIGHT, BOT, 0, 0}, {1.0f, 1.0f, 1, 0}, 1},
-    {{LEFT, BOT, 0, 0}, {0.0f, 1.0f, 1, 0}, 1},
-    {{LEFT, TOP, 0, 0}, {0.0f, 0.0f, 1, 0}, 1},
+std::vector<Veloxr::Vertex> vertices = {
+    {{RIGHT, BOT, 0, 0}, {1.0f, 1.0f, 1, 0}, 0},
+    {{LEFT, BOT, 0, 0}, {0.0f, 1.0f, 1, 0}, 0},
+    {{LEFT, TOP, 0, 0}, {0.0f, 0.0f, 1, 0}, 0},
 
     {{LEFT, TOP, 0, 0}, {0.0f, 0.0f, 0, 0}, 0},
     {{RIGHT, TOP, 0, 0}, {1.0f, 0.0f, 0, 0}, 0},
@@ -263,7 +230,7 @@ private: // Client
         VkDeviceMemory textureImageMemory;
         VkImageView textureImageView;
         VkSampler textureSampler;
-        //Veloxr::OIIOTexture textureData;
+        Veloxr::OIIOTexture textureData;
 
         void destroy(VkDevice device) {
             vkDestroySampler(device, textureSampler, nullptr);
@@ -372,27 +339,13 @@ private:
         createCommandPool();
 
         now = std::chrono::high_resolution_clock::now();
-        {
-            std::string input_filepath = PREFIX+"/Users/ljuek/Downloads/56000.jpg";
-            const auto& [textureImage, textureImageMemory] = createTextureImage(input_filepath);
-            std::cout << "Texture creation: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
-
-            auto imageView = createTextureImageView(textureImage);
-            auto sampler = createTextureSampler();
-            _textureMap[input_filepath] = {textureImage, textureImageMemory, imageView, sampler};
-        }
+        //addTexture(PREFIX+"/Users/ljuek/Downloads/56000.jpg");
+        auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg");
+        std::cout << "Texture creation: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
         timeElapsed = std::chrono::high_resolution_clock::now() - now;
+        //addTexture(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg");
 
 
-        {
-            std::string input_filepath = PREFIX+"/Users/ljuek/Downloads/Colonial.jpg";
-            const auto& [textureImage, textureImageMemory] = createTextureImage(input_filepath);
-            std::cout << "Texture creation: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
-
-            auto imageView = createTextureImageView(textureImage);
-            auto sampler = createTextureSampler();
-            _textureMap[input_filepath] = {textureImage, textureImageMemory, imageView, sampler};
-        }
 
 
         createSwapChain();
@@ -410,6 +363,19 @@ private:
         createSyncObjects();
         auto timeElapsedTop = std::chrono::high_resolution_clock::now() - now;
         std::cout << "Init(): " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsedTop).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsedTop).count() << "microseconds.\n";
+    }
+
+    void addTexture(std::string input_filepath) {
+        _textureMap[input_filepath] = {};
+        const auto& [textureImage, textureImageMemory, textureHelper] = createTextureImage(input_filepath);
+
+        auto imageView = createTextureImageView(textureImage);
+        auto sampler = createTextureSampler();
+        _textureMap[input_filepath].textureImage = textureImage;
+        _textureMap[input_filepath].textureImageMemory = textureImageMemory;
+        _textureMap[input_filepath].textureImageView = imageView;
+        _textureMap[input_filepath].textureSampler = sampler;
+        _textureMap[input_filepath].textureData = textureHelper;
     }
 
     VkSampler createTextureSampler(std::string input_filepath="") {
@@ -559,7 +525,67 @@ private:
     }
 
 
-    std::pair<VkImage, VkDeviceMemory> createTextureImage(std::string input_filepath="") {
+    std::unordered_map<std::string, VkVirtualTexture> createTiledTexture(std::string input_filepath="") {
+        std::unordered_map<std::string, VkVirtualTexture>  result;
+        Veloxr::OIIOTexture myTexture{input_filepath};
+        _camera.init((float)myTexture.getResolution().x / (float)myTexture.getResolution().y);
+        Veloxr::TextureTiling tiler{};
+        auto maxResolution = _deviceUtils->getMaxTextureResolution();
+        std::cout << "Tiling...\n";
+        Veloxr::TiledResult tileData = tiler.tile2(myTexture, maxResolution * maxResolution);
+        for(int i = 0; i < tileData.tiles.size(); i++){
+            VkVirtualTexture tileTexture;
+            int texWidth    = tileData.tiles[i].width;
+            int texHeight   = tileData.tiles[i].height;
+            int texChannels = 4;//myTexture.getNumChannels();
+
+            std::cout << "HELP MY CHANNELS ARE " << myTexture.getNumChannels() << std::endl;
+            VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth) * 
+                static_cast<VkDeviceSize>(texHeight) *
+                static_cast<VkDeviceSize>(texChannels);
+
+            std::cout << "Loading texture of size " 
+                << texWidth << " x " << texHeight << ": " 
+                << (imageSize / 1024.0 / 1024.0) << " MB" << std::endl;
+
+
+            VkBuffer stagingBuffer;
+            VkDeviceMemory stagingBufferMemory;
+            createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+            void* data;
+            vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
+            //memcpy(data, res.begin()->pixelData.data()/*myTexture.load(input_filepath).data()*/, static_cast<size_t>(imageSize));
+            memcpy(data, tileData.tiles[i].pixelData.data()/*myTexture.load(input_filepath).data()*/, static_cast<size_t>(imageSize));
+            vkUnmapMemory(device, stagingBufferMemory);
+
+            VkImage textureImage;
+            VkDeviceMemory textureImageMemory;
+            createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
+
+            transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+            copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+            transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+
+            vkDestroyBuffer(device, stagingBuffer, nullptr);
+            vkFreeMemory(device, stagingBufferMemory, nullptr);
+            tileTexture.textureImage = textureImage;
+            tileTexture.textureImageMemory = textureImageMemory;
+            tileTexture.textureData = myTexture;
+
+            
+            auto imageView = createTextureImageView(textureImage);
+            auto sampler = createTextureSampler();
+            tileTexture.textureImageView = imageView;
+            tileTexture.textureSampler = sampler;
+
+            _textureMap[input_filepath + "_tile_" + std::to_string(i)] = tileTexture;
+        }
+        vertices = std::vector<Veloxr::Vertex>(tileData.vertices.begin(), tileData.vertices.end());
+    }
+
+    std::tuple<VkImage, VkDeviceMemory, Veloxr::OIIOTexture> createTextureImage(std::string input_filepath="") {
         //cv::Mat image = cv::imread("C:/Users/ljuek/Downloads/16kmarble.jpeg", cv::IMREAD_UNCHANGED);
         Test t{};
         //t.run2(PREFIX + "/Users/ljuek/Downloads/Colonial.jpg", PREFIX+"/Users/ljuek/Downloads/Colonial_1.jpg");
@@ -569,14 +595,20 @@ private:
         Veloxr::TextureTiling tiler{};
         auto maxResolution = _deviceUtils->getMaxTextureResolution();
         std::cout << "Tiling...\n";
-        auto res = tiler.tile(myTexture, maxResolution * maxResolution);
+       // auto res = tiler.tile(myTexture, maxResolution * maxResolution);
+        Veloxr::TiledResult tileData = tiler.tile2(myTexture, maxResolution * maxResolution);
 //        int texWidth    = myTexture.getResolution().x;
  //       int texHeight   = myTexture.getResolution().y;
   //      int texChannels = 4;//myTexture.getNumChannels();
   
 
-        int texWidth    = res.begin()->width;
-        int texHeight   = res.begin()->height;
+        //int texWidth    = res.begin()->width;
+        //int texHeight   = res.begin()->height;
+        //int texChannels = 4;//myTexture.getNumChannels();
+                            //
+        
+        int texWidth    = tileData.tiles.begin()->width;
+        int texHeight   = tileData.tiles.begin()->height;
         int texChannels = 4;//myTexture.getNumChannels();
         _camera.init((float)texWidth / (float)texHeight);
 
@@ -596,7 +628,8 @@ private:
 
         void* data;
         vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
-        memcpy(data, res.begin()->pixelData.data()/*myTexture.load(input_filepath).data()*/, static_cast<size_t>(imageSize));
+        //memcpy(data, res.begin()->pixelData.data()/*myTexture.load(input_filepath).data()*/, static_cast<size_t>(imageSize));
+        memcpy(data, tileData.tiles.begin()->pixelData.data()/*myTexture.load(input_filepath).data()*/, static_cast<size_t>(imageSize));
         vkUnmapMemory(device, stagingBufferMemory);
 
         VkImage textureImage;
@@ -610,7 +643,7 @@ private:
 
         vkDestroyBuffer(device, stagingBuffer, nullptr);
         vkFreeMemory(device, stagingBufferMemory, nullptr);
-        return {textureImage, textureImageMemory};
+        return {textureImage, textureImageMemory, myTexture};
     }
 
     VkCommandBuffer beginSingleTimeCommands() {
@@ -1173,8 +1206,8 @@ private:
 
         VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
 
-        auto bindingDescription = Vertex::getBindingDescription();
-        auto attributeDescriptions = Vertex::getAttributeDescriptions();
+        auto bindingDescription = Veloxr::Vertex::getBindingDescription();
+        auto attributeDescriptions = Veloxr::Vertex::getAttributeDescriptions();
 
 
         // Hardcoded in shader for now :D

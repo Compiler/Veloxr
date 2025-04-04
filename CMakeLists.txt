@@ -13,6 +13,7 @@ set(OpenCV_DIR "C:/Users/ljuek/Code/opencv-install/lib/cmake/opencv4")
 add_executable(vulkanrenderer 
         src/main.cpp 
         src/test.h 
+        src/Vertex.h 
         src/device.h src/device.cpp 
         src/OrthographicCamera.h src/OrthographicCamera.cpp
         src/texture.h src/texture.cpp 

@@ -5,7 +5,7 @@ layout(location = 1) in flat int texUnit;
 
 layout(location = 0) out vec4 outColor;
 
-layout(binding = 1) uniform sampler2D texSamplers[2];
+layout(binding = 1) uniform sampler2D texSamplers[16];
 
 void main() {
     outColor = texture(texSamplers[texUnit], fragTexCoord.xy);
