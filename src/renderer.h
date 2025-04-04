@@ -71,6 +71,12 @@
 #define VK_USE_PLATFORM_XLIB_KHR
 #include <X11/Xlib.h>
 #endif
+
+#ifdef _WIN32
+#define PREFIX std::string("C:")
+#else
+#define PREFIX std::string("/mnt/c")
+#endif
 static std::vector<char> readFile(const std::string& filename) {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
@@ -329,11 +335,13 @@ private:
         createGraphicsPipeline();
         createFramebuffers();
         createCommandPool();
-        createTextureImage();
 
+        std::string input_filepath = PREFIX+"/Users/ljuek/Downloads/56000.jpg";
+        createTextureImage(input_filepath);
         createTextureImageView();
         createTextureSampler();
         createVertexBuffer();
+
         createUniformBuffers();
         createDescriptorPool();
         createDescriptorSets();
@@ -382,7 +390,8 @@ private:
         createCommandPool();
 
         now = std::chrono::high_resolution_clock::now();
-        createTextureImage();
+        std::string input_filepath = PREFIX+"/Users/ljuek/Downloads/56000.jpg";
+        createTextureImage(input_filepath);
         timeElapsed = std::chrono::high_resolution_clock::now() - now;
         std::cout << "Texture creation: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
 
@@ -543,16 +552,10 @@ private:
     }
 
 
-    #ifdef _WIN32
-    #define PREFIX std::string("C:")
-    #else
-    #define PREFIX std::string("/mnt/c")
-    #endif
-    void createTextureImage() {
+    void createTextureImage(std::string input_filepath) {
         //cv::Mat image = cv::imread("C:/Users/ljuek/Downloads/16kmarble.jpeg", cv::IMREAD_UNCHANGED);
         Test t{};
         //t.run2(PREFIX + "/Users/ljuek/Downloads/Colonial.jpg", PREFIX+"/Users/ljuek/Downloads/Colonial_1.jpg");
-        std::string input_filepath = PREFIX+"/Users/ljuek/Downloads/56000.jpg";
 
 
         Veloxr::OIIOTexture myTexture{input_filepath};
@@ -981,7 +984,6 @@ private:
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         renderPassInfo.renderPass = renderPass;
         renderPassInfo.framebuffer = swapChainFramebuffers[imageIndex];
-        // Hook movements / panning here?
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = swapChainExtent;
 
