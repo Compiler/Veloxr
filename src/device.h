@@ -66,5 +66,6 @@ class Device {
         inline VkDevice getLogicalDevice() const { return _logicalDevice; }
         inline VkQueue getGraphicsQueue() const { return _graphicsQueue; }
         inline VkQueue getPresentationQueue() const { return _presentQueue; }
+        inline uint32_t getMaxTextureResolution() const { return _maxTextureResolution; }
 }; 
 }

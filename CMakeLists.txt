@@ -16,6 +16,7 @@ add_executable(vulkanrenderer
         src/device.h src/device.cpp 
         src/OrthographicCamera.h src/OrthographicCamera.cpp
         src/texture.h src/texture.cpp 
+        src/TextureTiling.h src/TextureTiling.cpp 
     )
 
 if (MSVC)

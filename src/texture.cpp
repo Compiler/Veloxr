@@ -49,6 +49,6 @@ std::vector<unsigned char> OIIOTexture::load(std::string filename) {
             pixelData[i * 4 + c] = rawData[i * _numChannels + c];
         }
     }
-    _numChannels = 4; // Forcing rgba, lets stick to this till im given other instructions by Adam/Anya
+    _numChannels = 4; // Forcing rgba, lets stick to this.
     return pixelData; 
 }

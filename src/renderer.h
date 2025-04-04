@@ -15,6 +15,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <texture.h>
+#include <TextureTiling.h>
 
 
 
@@ -551,24 +552,14 @@ private:
         //cv::Mat image = cv::imread("C:/Users/ljuek/Downloads/16kmarble.jpeg", cv::IMREAD_UNCHANGED);
         Test t{};
         //t.run2(PREFIX + "/Users/ljuek/Downloads/Colonial.jpg", PREFIX+"/Users/ljuek/Downloads/Colonial_1.jpg");
-        std::string input_filepath = PREFIX+"/Users/ljuek/Downloads/Colonial.jpg";
-        cv::Mat image = cv::imread(input_filepath, cv::IMREAD_UNCHANGED);
-        if (image.empty()) {
-            throw std::runtime_error("Failed to load texture image with OpenCV!");
-        }
-
-        if (image.channels() == 3) {
-            cv::Mat imageRGBA;
-            cv::cvtColor(image, imageRGBA, cv::COLOR_BGR2RGBA);
-            image = imageRGBA;
-        } else if (image.channels() == 1) {
-            cv::Mat imageRGBA;
-            cv::cvtColor(image, imageRGBA, cv::COLOR_GRAY2RGBA);
-            image = imageRGBA;
-        }
+        std::string input_filepath = PREFIX+"/Users/ljuek/Downloads/56000.jpg";
 
 
         Veloxr::OIIOTexture myTexture{input_filepath};
+        Veloxr::TextureTiling tiler{};
+        auto maxResolution = _deviceUtils->getMaxTextureResolution();
+        std::cout << "Tiling...\n";
+        tiler.tile(myTexture, maxResolution * maxResolution);
         int texWidth    = myTexture.getResolution().x;
         int texHeight   = myTexture.getResolution().y;
         int texChannels = 4;//myTexture.getNumChannels();
