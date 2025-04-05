@@ -28,6 +28,8 @@ public:
     void setPosition(const glm::vec2& pos);
     void translate(const glm::vec2& delta);
 
+    inline const float getZoom() const { return _zoomLevel; }
+
 private:
     float _aspectRatio;
     float _near;

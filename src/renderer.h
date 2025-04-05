@@ -240,7 +240,7 @@ private: // Client
         }
     };
 
-    std::unordered_map<std::string, VkVirtualTexture> _textureMap;
+    std::map<std::string, VkVirtualTexture> _textureMap;
     // Sync
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
@@ -341,7 +341,7 @@ private:
         now = std::chrono::high_resolution_clock::now();
         //addTexture(PREFIX+"/Users/ljuek/Downloads/56000.jpg");
 
-        auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/56000_1.jpg");
+        auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/56000.jpg");
         std::cout << "Texture creation: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
         timeElapsed = std::chrono::high_resolution_clock::now() - now;
         //addTexture(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg");
@@ -533,7 +533,7 @@ private:
         Veloxr::TextureTiling tiler{};
         auto maxResolution = _deviceUtils->getMaxTextureResolution();
         std::cout << "Tiling...\n";
-        Veloxr::TiledResult tileData = tiler.tile2(myTexture, maxResolution * maxResolution);
+        Veloxr::TiledResult tileData = tiler.tile4(myTexture, maxResolution * maxResolution);
         for(int i = 0; i < tileData.tiles.size(); i++){
             VkVirtualTexture tileTexture;
             int texWidth    = tileData.tiles[i].width;
@@ -589,52 +589,6 @@ private:
             std::cout << "Vertex texCoord: " << vertice.texCoord.x << ", " << vertice.texCoord.y << "\n";
             std::cout << "Vertex texUnit: " << vertice.textureUnit << "\n";
         }
-        vertices = {
-            {{RIGHT, BOT / 2, 0, 0}, {1.0f, 1.0f, 1, 0}, 0},
-            {{LEFT, BOT / 2, 0, 0}, {0.0f, 1.0f, 1, 0}, 0},
-            {{LEFT, TOP / 2, 0, 0}, {0.0f, 0.0f, 1, 0}, 0},
-            {{LEFT, TOP / 2, 0, 0}, {0.0f, 0.0f, 0, 0}, 0},
-            {{RIGHT, TOP / 2, 0, 0}, {1.0f, 0.0f, 0, 0}, 0},
-            {{RIGHT, BOT / 2, 0, 0}, {1.0f, 1.0f, 0, 0}, 0},
-        };
-        vertices = {
-            // Tile 0: Top-left (NDC: left=-1, right=0, bottom=0, top=1)
-            // Order: bottom-right, bottom-left, top-left, top-left, top-right, bottom-right
-            { {  0.0f,  0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 0, 0.0f }, 0 }, // v0
-            { { -1.0f,  0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0, 0.0f }, 0 }, // v1
-            { { -1.0f,  1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0, 0.0f }, 0 }, // v2
-
-            { { -1.0f,  1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0, 0.0f }, 0 }, // v3 (repeat)
-            { {  0.0f,  1.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0, 0.0f }, 0 }, // v4
-            { {  0.0f,  0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 0, 0.0f }, 0 }, // v5
-
-            // Tile 1: Top-right (NDC: left=0, right=1, bottom=0, top=1)
-            { {  1.0f,  0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1, 0.0f }, 1 }, // v6
-            { {  0.0f,  0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1, 0.0f }, 1 }, // v7
-            { {  0.0f,  1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1, 0.0f }, 1 }, // v8
-
-            { {  0.0f,  1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1, 0.0f }, 1 }, // v9 (repeat)
-            { {  1.0f,  1.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 1, 0.0f }, 1 }, // v10
-            { {  1.0f,  0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1, 0.0f }, 1 }, // v11
-
-            // Tile 2: Bottom-left (NDC: left=-1, right=0, bottom=-1, top=0)
-            { {  0.0f, -1.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 2, 0.0f }, 2 }, // v12
-            { { -1.0f, -1.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 2, 0.0f }, 2 }, // v13
-            { { -1.0f,  0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 2, 0.0f }, 2 }, // v14
-
-            { { -1.0f,  0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 2, 0.0f }, 2 }, // v15 (repeat)
-            { {  0.0f,  0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 2, 0.0f }, 2 }, // v16
-            { {  0.0f, -1.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 2, 0.0f }, 2 }, // v17
-
-            // Tile 3: Bottom-right (NDC: left=0, right=1, bottom=-1, top=0)
-            { {  1.0f, -1.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 3, 0.0f }, 3 }, // v18
-            { {  0.0f, -1.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 3, 0.0f }, 3 }, // v19
-            { {  0.0f,  0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 3, 0.0f }, 3 }, // v20
-
-            { {  0.0f,  0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 3, 0.0f }, 3 }, // v21 (repeat)
-            { {  1.0f,  0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 3, 0.0f }, 3 }, // v22
-            { {  1.0f, -1.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 3, 0.0f }, 3 }  // v23
-        };
 
 
         return {};
@@ -1317,7 +1271,7 @@ private:
         rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
         rasterizer.lineWidth = 1.0f;
         rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-        rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+        rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
         rasterizer.depthBiasEnable = VK_FALSE;
         rasterizer.depthBiasConstantFactor = 0.0f; 
         rasterizer.depthBiasClamp = 0.0f; 
@@ -1695,7 +1649,10 @@ private:
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
     //printf("Scrolled: x = %.2f, y = %.2f\n", xoffset, yoffset);
     auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
-    app->getCamera().addToZoom(-yoffset / 10.0f);
+    Veloxr::OrthographicCamera& camera = app->getCamera();
+    float currentZoom = camera.getZoom();
+    float sensitivity = currentZoom * 0.1f;
+    camera.addToZoom(-yoffset * sensitivity);
 }
 
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
@@ -1709,7 +1666,7 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
         lastX = xpos;
         lastY = ypos;
         glm::vec2 diffs{-dx/500.0f, -dy/500.0f};
-        diffs *= app->getCamera().getZoomLevel() * 100 * app->deltaMs;
+        diffs *= app->getCamera().getZoomLevel() * 400 * app->deltaMs;
         app->getCamera().translate(diffs);
     }
 }

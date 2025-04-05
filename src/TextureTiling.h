@@ -9,13 +9,6 @@ namespace Veloxr {
         std::vector<unsigned char> pixelData;
     };
 
-/*    struct Vertex {
-        glm::vec4 pos;
-        glm::vec4 texCoord;
-        int textureUnit;
-    };
-*/
-
     struct TiledResult {
         std::vector<TextureData> tiles;
         std::vector<Vertex>      vertices;
@@ -26,9 +19,12 @@ namespace Veloxr {
         
         public:
             TextureTiling() = default;
+            void init();
             std::vector<TextureData> tile(OIIOTexture& texture, uint32_t maxResolution = 4096*2);
 
             TiledResult tile2(OIIOTexture &texture, uint32_t maxResolution=4096*2);
+            TiledResult tile3(OIIOTexture &texture, uint32_t maxResolution=4096*2);
+            TiledResult tile4(OIIOTexture &texture, uint32_t maxResolution=4096*2);
 
     };
 
