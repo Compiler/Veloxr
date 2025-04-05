@@ -341,7 +341,7 @@ private:
         now = std::chrono::high_resolution_clock::now();
         //addTexture(PREFIX+"/Users/ljuek/Downloads/56000.jpg");
 
-        auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/56000.jpg");
+        auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg");
         std::cout << "Texture creation: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
         timeElapsed = std::chrono::high_resolution_clock::now() - now;
         //addTexture(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg");
