@@ -77,7 +77,7 @@ TiledResult TextureTiling::tile4(OIIOTexture &texture, uint32_t maxResolution){
     for (int t = 0; t < numThreads; t++) {
         int start = t * tilesPerThread;
         int end = std::min(totalTiles, start + tilesPerThread);
-        threads.push_back(std::thread([=, &tileResults, &vertexResults, w, h, tileW, tileH, stepX, stepY]() {
+        threads.push_back(std::thread([=, &tileResults, &vertexResults, &w, &h, &tileW, &tileH, &stepX, &stepY]() {
             std::unique_ptr<OIIO::ImageInput> in = OIIO::ImageInput::open(filename);
             if (!in) {
                 std::cerr << "Thread: Could not open file: " << filename << std::endl;
