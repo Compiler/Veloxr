@@ -1,6 +1,8 @@
 #pragma once
 
 #include <memory>
+#include <string>
+#include <unordered_map>
 #define CV_IO_MAX_IMAGE_PIXELS 40536870912
 #include <array>
 #include <chrono>
@@ -14,6 +16,9 @@
 #include <OrthographicCamera.h>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#include <texture.h>
+#include <Vertex.h>
+#include <TextureTiling.h>
 
 
 
@@ -69,6 +74,12 @@
 #define VK_USE_PLATFORM_XLIB_KHR
 #include <X11/Xlib.h>
 #endif
+
+#ifdef _WIN32
+#define PREFIX std::string("C:")
+#else
+#define PREFIX std::string("/mnt/c")
+#endif
 static std::vector<char> readFile(const std::string& filename) {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
@@ -102,33 +113,6 @@ VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMes
 }
 
 
-struct Vertex {
-    glm::vec2 pos;
-    glm::vec2 texCoord;
-
-    static VkVertexInputBindingDescription getBindingDescription() {
-        VkVertexInputBindingDescription bindingDescription{};
-        bindingDescription.binding = 0;
-        bindingDescription.stride = sizeof(Vertex);
-        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-        return bindingDescription;
-    }
-    static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions() {
-        std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
-        attributeDescriptions[0].binding = 0;
-        attributeDescriptions[0].location = 0;
-        attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
-        attributeDescriptions[0].offset = offsetof(Vertex, pos);
-
-
-        attributeDescriptions[1].binding = 0;
-        attributeDescriptions[1].location = 1;
-        attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
-        attributeDescriptions[1].offset = offsetof(Vertex, texCoord);
-        return attributeDescriptions;
-    }
-};
 const auto LEFT = -0.9f;
 const auto RIGHT = 0.9f;
 const auto TOP = -0.9f;
@@ -142,14 +126,14 @@ const auto BOT = 0.9f;
 //      - Aspect Ratio
 //      - Return parsable coordinates of what is being viewed.
 //          - 
-const std::vector<Vertex> vertices = {
-    {{RIGHT, BOT}, {1.0f, 1.0f}},
-    {{LEFT, BOT}, {0.0f, 1.0f}},
-    {{LEFT, TOP}, {0.0f, 0.0f}},
+std::vector<Veloxr::Vertex> vertices = {
+    {{RIGHT, BOT, 0, 0}, {1.0f, 1.0f, 1, 0}, 0},
+    {{LEFT, BOT, 0, 0}, {0.0f, 1.0f, 1, 0}, 0},
+    {{LEFT, TOP, 0, 0}, {0.0f, 0.0f, 1, 0}, 0},
 
-    {{LEFT, TOP}, {0.0f, 0.0f}},
-    {{RIGHT, TOP}, {1.0f, 0.0f}},
-    {{RIGHT, BOT}, {1.0f, 1.0f}},
+    {{LEFT, TOP, 0, 0}, {0.0f, 0.0f, 0, 0}, 0},
+    {{RIGHT, TOP, 0, 0}, {1.0f, 0.0f, 0, 0}, 0},
+    {{RIGHT, BOT, 0, 0}, {1.0f, 1.0f, 0, 0}, 0},
 };
 
 
@@ -179,6 +163,8 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) ;
 
 class RendererCore {
 public:
+
+    float deltaMs;
     void run() {
         init();
         render();
@@ -191,8 +177,8 @@ public:
 private: // No client
 
     GLFWwindow* window;
-    const int WIDTH = 800;
-    const int HEIGHT = 800;
+    const int WIDTH = 1920;
+    const int HEIGHT = 1080;
 
 private: // Client
 
@@ -239,11 +225,22 @@ private: // Client
     VkDescriptorPool descriptorPool;
     std::vector<VkDescriptorSet> descriptorSets;
 
-    VkImage textureImage;
-    VkDeviceMemory textureImageMemory;
-    VkImageView textureImageView;
-    VkSampler textureSampler;
+    struct VkVirtualTexture {
+        VkImage textureImage;
+        VkDeviceMemory textureImageMemory;
+        VkImageView textureImageView;
+        VkSampler textureSampler;
+        Veloxr::OIIOTexture textureData;
 
+        void destroy(VkDevice device) {
+            vkDestroySampler(device, textureSampler, nullptr);
+            vkDestroyImageView(device, textureImageView, nullptr);
+            vkDestroyImage(device, textureImage, nullptr);
+            vkFreeMemory(device, textureImageMemory, nullptr);
+        }
+    };
+
+    std::map<std::string, VkVirtualTexture> _textureMap;
     // Sync
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
@@ -311,38 +308,8 @@ private:
         }
 #endif
     }
-    void initFromWindow(void* windowHandle) {
-        void* mappedWindow = getWindowHandleFromRaw(windowHandle);
-        createVulkanInstance();
-        setupDebugMessenger();
-        //createSurface();
-
-        createSurfaceFromWindowHandle(mappedWindow);
-        createSwapChain();
-        createImageViews();
-        createRenderPass();
-        createDescriptorLayout();
-        createGraphicsPipeline();
-        createFramebuffers();
-        createCommandPool();
-        createTextureImage();
-
-        createTextureImageView();
-        createTextureSampler();
-        createVertexBuffer();
-        createUniformBuffers();
-        createDescriptorPool();
-        createDescriptorSets();
-        createCommandBuffer();
-        createSyncObjects();
-
-    }
-
-
-
 
     void init() {
-
         auto now = std::chrono::high_resolution_clock::now();
         auto nowTop = std::chrono::high_resolution_clock::now();
 
@@ -369,21 +336,26 @@ private:
         physicalDevice = _deviceUtils->getPhysicalDevice();
         graphicsQueue = _deviceUtils->getGraphicsQueue();
         presentQueue = _deviceUtils->getPresentationQueue();
+        createCommandPool();
+
+        now = std::chrono::high_resolution_clock::now();
+        //addTexture(PREFIX+"/Users/ljuek/Downloads/56000.jpg");
+
+        auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg");
+        std::cout << "Texture creation: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
+        timeElapsed = std::chrono::high_resolution_clock::now() - now;
+        //addTexture(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg");
+
+
+
+
         createSwapChain();
         createImageViews();
         createRenderPass();
         createDescriptorLayout();
         createGraphicsPipeline();
         createFramebuffers();
-        createCommandPool();
-
-        now = std::chrono::high_resolution_clock::now();
-        createTextureImage();
-        timeElapsed = std::chrono::high_resolution_clock::now() - now;
-        std::cout << "Texture creation: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
-
-        createTextureImageView();
-        createTextureSampler();
+        
         createVertexBuffer();
         createUniformBuffers();
         createDescriptorPool();
@@ -394,8 +366,22 @@ private:
         std::cout << "Init(): " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsedTop).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsedTop).count() << "microseconds.\n";
     }
 
-    void createTextureSampler() {
+    void addTexture(std::string input_filepath) {
+        _textureMap[input_filepath] = {};
+        const auto& [textureImage, textureImageMemory, textureHelper] = createTextureImage(input_filepath);
 
+        auto imageView = createTextureImageView(textureImage);
+        auto sampler = createTextureSampler();
+        _textureMap[input_filepath].textureImage = textureImage;
+        _textureMap[input_filepath].textureImageMemory = textureImageMemory;
+        _textureMap[input_filepath].textureImageView = imageView;
+        _textureMap[input_filepath].textureSampler = sampler;
+        _textureMap[input_filepath].textureData = textureHelper;
+    }
+
+    VkSampler createTextureSampler(std::string input_filepath="") {
+
+        VkSampler textureSampler;
         VkSamplerCreateInfo samplerInfo{};
         samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
         // TODO: See if Linear is better for filter
@@ -430,12 +416,13 @@ private:
             throw std::runtime_error("failed to create texture sampler!");
         }
 
+        return textureSampler;
 
     
     }
 
-    void createTextureImageView() {
-        textureImageView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB);
+    VkImageView createTextureImageView(VkImage textureImage) {
+        return createImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB);
     }
 
     VkImageView createImageView(VkImage image, VkFormat format) {
@@ -539,35 +526,102 @@ private:
     }
 
 
-    #ifdef _WIN32
-    #define PREFIX std::string("C:")
-    #else
-    #define PREFIX std::string("/mnt/c")
-    #endif
-    void createTextureImage() {
+    std::unordered_map<std::string, VkVirtualTexture> createTiledTexture(std::string input_filepath="") {
+        std::unordered_map<std::string, VkVirtualTexture>  result;
+        Veloxr::OIIOTexture myTexture{input_filepath};
+        _camera.init((float)myTexture.getResolution().x / (float)myTexture.getResolution().y);
+        Veloxr::TextureTiling tiler{};
+        auto maxResolution = _deviceUtils->getMaxTextureResolution();
+        std::cout << "Tiling...\n";
+        Veloxr::TiledResult tileData = tiler.tile4(myTexture, maxResolution * maxResolution);
+        for(int i = 0; i < tileData.tiles.size(); i++){
+            VkVirtualTexture tileTexture;
+            int texWidth    = tileData.tiles[i].width;
+            int texHeight   = tileData.tiles[i].height;
+            int texChannels = 4;//myTexture.getNumChannels();
+
+            std::cout << "HELP MY CHANNELS ARE " << myTexture.getNumChannels() << std::endl;
+            VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth) * 
+                static_cast<VkDeviceSize>(texHeight) *
+                static_cast<VkDeviceSize>(texChannels);
+
+            std::cout << "Loading texture of size " 
+                << texWidth << " x " << texHeight << ": " 
+                << (imageSize / 1024.0 / 1024.0) << " MB" << std::endl;
+
+
+            VkBuffer stagingBuffer;
+            VkDeviceMemory stagingBufferMemory;
+            createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+            void* data;
+            vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
+            //memcpy(data, res.begin()->pixelData.data()/*myTexture.load(input_filepath).data()*/, static_cast<size_t>(imageSize));
+            memcpy(data, tileData.tiles[i].pixelData.data()/*myTexture.load(input_filepath).data()*/, static_cast<size_t>(imageSize));
+            vkUnmapMemory(device, stagingBufferMemory);
+
+            VkImage textureImage;
+            VkDeviceMemory textureImageMemory;
+            createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
+
+            transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+            copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+            transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+
+            vkDestroyBuffer(device, stagingBuffer, nullptr);
+            vkFreeMemory(device, stagingBufferMemory, nullptr);
+            tileTexture.textureImage = textureImage;
+            tileTexture.textureImageMemory = textureImageMemory;
+            tileTexture.textureData = myTexture;
+
+            
+            auto imageView = createTextureImageView(textureImage);
+            auto sampler = createTextureSampler();
+            tileTexture.textureImageView = imageView;
+            tileTexture.textureSampler = sampler;
+
+            _textureMap[input_filepath + "_tile_" + std::to_string(i)] = tileTexture;
+        }
+        vertices = std::vector<Veloxr::Vertex>(tileData.vertices.begin(), tileData.vertices.end());
+        for(Veloxr::Vertex& vertice : vertices) {
+            std::cout << "Vertex pos : " << vertice.pos.x << ", " << vertice.pos.y << "\n";
+            std::cout << "Vertex texCoord: " << vertice.texCoord.x << ", " << vertice.texCoord.y << "\n";
+            std::cout << "Vertex texUnit: " << vertice.textureUnit << "\n";
+        }
+
+
+        return {};
+    }
+
+    std::tuple<VkImage, VkDeviceMemory, Veloxr::OIIOTexture> createTextureImage(std::string input_filepath="") {
         //cv::Mat image = cv::imread("C:/Users/ljuek/Downloads/16kmarble.jpeg", cv::IMREAD_UNCHANGED);
         Test t{};
         //t.run2(PREFIX + "/Users/ljuek/Downloads/Colonial.jpg", PREFIX+"/Users/ljuek/Downloads/Colonial_1.jpg");
-        cv::Mat image = cv::imread(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg", cv::IMREAD_UNCHANGED);
-        if (image.empty()) {
-            throw std::runtime_error("Failed to load texture image with OpenCV!");
-        }
 
-        if (image.channels() == 3) {
-            cv::Mat imageRGBA;
-            cv::cvtColor(image, imageRGBA, cv::COLOR_BGR2RGBA);
-            image = imageRGBA;
-        } else if (image.channels() == 1) {
-            cv::Mat imageRGBA;
-            cv::cvtColor(image, imageRGBA, cv::COLOR_GRAY2RGBA);
-            image = imageRGBA;
-        }
 
-        int texWidth    = image.cols;
-        int texHeight   = image.rows;
-        int texChannels = image.channels();
+        Veloxr::OIIOTexture myTexture{input_filepath};
+        Veloxr::TextureTiling tiler{};
+        auto maxResolution = _deviceUtils->getMaxTextureResolution();
+        std::cout << "Tiling...\n";
+       // auto res = tiler.tile(myTexture, maxResolution * maxResolution);
+        Veloxr::TiledResult tileData = tiler.tile2(myTexture, maxResolution * maxResolution);
+//        int texWidth    = myTexture.getResolution().x;
+ //       int texHeight   = myTexture.getResolution().y;
+  //      int texChannels = 4;//myTexture.getNumChannels();
+  
+
+        //int texWidth    = res.begin()->width;
+        //int texHeight   = res.begin()->height;
+        //int texChannels = 4;//myTexture.getNumChannels();
+                            //
+        
+        int texWidth    = tileData.tiles.begin()->width;
+        int texHeight   = tileData.tiles.begin()->height;
+        int texChannels = 4;//myTexture.getNumChannels();
         _camera.init((float)texWidth / (float)texHeight);
 
+        std::cout << "HELP MY CHANNELS ARE " << myTexture.getNumChannels() << std::endl;
         VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth) * 
             static_cast<VkDeviceSize>(texHeight) *
             static_cast<VkDeviceSize>(texChannels);
@@ -583,9 +637,12 @@ private:
 
         void* data;
         vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
-        memcpy(data, image.data, static_cast<size_t>(imageSize));
+        //memcpy(data, res.begin()->pixelData.data()/*myTexture.load(input_filepath).data()*/, static_cast<size_t>(imageSize));
+        memcpy(data, tileData.tiles.begin()->pixelData.data()/*myTexture.load(input_filepath).data()*/, static_cast<size_t>(imageSize));
         vkUnmapMemory(device, stagingBufferMemory);
 
+        VkImage textureImage;
+        VkDeviceMemory textureImageMemory;
         createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
 
         transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -595,6 +652,7 @@ private:
 
         vkDestroyBuffer(device, stagingBuffer, nullptr);
         vkFreeMemory(device, stagingBufferMemory, nullptr);
+        return {textureImage, textureImageMemory, myTexture};
     }
 
     VkCommandBuffer beginSingleTimeCommands() {
@@ -686,12 +744,17 @@ private:
             bufferInfo.offset = 0;
             bufferInfo.range = sizeof(UniformBufferObject);
 
-            VkDescriptorImageInfo imageInfo{};
-            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView = textureImageView;
-            imageInfo.sampler = textureSampler;
+            std::vector<VkDescriptorImageInfo> imageInfos;
+            for (auto& [filepath, structure] : _textureMap) {
+                VkDescriptorImageInfo imageInfo{};
+                imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                imageInfo.imageView = structure.textureImageView;
+                imageInfo.sampler = structure.textureSampler;
+                imageInfos.push_back(imageInfo);
+            }
 
             std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
+
             descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             descriptorWrites[0].dstSet = descriptorSets[i];
             descriptorWrites[0].dstBinding = 0;
@@ -705,13 +768,11 @@ private:
             descriptorWrites[1].dstBinding = 1;
             descriptorWrites[1].dstArrayElement = 0;
             descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites[1].descriptorCount = 1;
-            descriptorWrites[1].pImageInfo = &imageInfo;
+            descriptorWrites[1].descriptorCount = static_cast<uint32_t>(imageInfos.size());
+            descriptorWrites[1].pImageInfo = imageInfos.data();
 
             vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-
         }
-
     }
 
     void createDescriptorPool() {
@@ -719,7 +780,7 @@ private:
         poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
         poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+        poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * _textureMap.size());// static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
         VkDescriptorPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -757,8 +818,8 @@ private:
 
         VkDescriptorSetLayoutBinding samplerLayoutBinding{};
         samplerLayoutBinding.binding = 1;
-        samplerLayoutBinding.descriptorCount = 1;
         samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        samplerLayoutBinding.descriptorCount = 16;//static_cast<uint32_t>(_textureMap.size());
         samplerLayoutBinding.pImmutableSamplers = nullptr;
         samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
@@ -892,7 +953,6 @@ private:
                 throw std::runtime_error("failed to create synchronization objects for a frame!");
             }
         }
-
     }
 
 
@@ -978,11 +1038,10 @@ private:
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         renderPassInfo.renderPass = renderPass;
         renderPassInfo.framebuffer = swapChainFramebuffers[imageIndex];
-        // Hook movements / panning here?
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = swapChainExtent;
 
-        VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+        VkClearValue clearColor = {{{1.0f, 0.0f, 1.0f, 1.0f}}};
         renderPassInfo.clearValueCount = 1;
         renderPassInfo.pClearValues = &clearColor;
 
@@ -1156,8 +1215,8 @@ private:
 
         VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
 
-        auto bindingDescription = Vertex::getBindingDescription();
-        auto attributeDescriptions = Vertex::getAttributeDescriptions();
+        auto bindingDescription = Veloxr::Vertex::getBindingDescription();
+        auto attributeDescriptions = Veloxr::Vertex::getAttributeDescriptions();
 
 
         // Hardcoded in shader for now :D
@@ -1405,6 +1464,7 @@ private:
 
         auto timer = std::chrono::high_resolution_clock::now();
         int frames = 0;
+        
         while (!glfwWindowShouldClose(window)) {
             auto now = std::chrono::high_resolution_clock::now();
             glfwPollEvents();
@@ -1413,6 +1473,7 @@ private:
             auto timeElapsed = std::chrono::high_resolution_clock::now() - now;
 
             auto timerElapsed = std::chrono::high_resolution_clock::now() - timer;
+            deltaMs = std::chrono::duration<float>(timeElapsed).count();
             auto elapsedPerSec = std::chrono::duration_cast<std::chrono::milliseconds>(timerElapsed).count();
             if(elapsedPerSec > 1000) {
                 
@@ -1432,10 +1493,7 @@ private:
 
         cleanupSwapChain();
 
-        vkDestroySampler(device, textureSampler, nullptr);
-        vkDestroyImageView(device, textureImageView, nullptr);
-        vkDestroyImage(device, textureImage, nullptr);
-        vkFreeMemory(device, textureImageMemory, nullptr);
+        for(auto& [name, data] : _textureMap) data.destroy(device);
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             vkDestroyBuffer(device, uniformBuffers[i], nullptr);
@@ -1589,9 +1647,12 @@ private:
 };
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
-    printf("Scrolled: x = %.2f, y = %.2f\n", xoffset, yoffset);
+    //printf("Scrolled: x = %.2f, y = %.2f\n", xoffset, yoffset);
     auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
-    app->getCamera().addToZoom(-yoffset / 10.0f);
+    Veloxr::OrthographicCamera& camera = app->getCamera();
+    float currentZoom = camera.getZoom();
+    float sensitivity = currentZoom * 0.1f;
+    camera.addToZoom(-yoffset * sensitivity);
 }
 
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
@@ -1600,11 +1661,12 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
         double dx = xpos - lastX;
         double dy = ypos - lastY;
 
-        printf("Dragging: dx = %.2f, dy = %.2f\n", dx, dy);
+     //   printf("Dragging: dx = %.2f, dy = %.2f\n", dx, dy);
 
         lastX = xpos;
         lastY = ypos;
         glm::vec2 diffs{-dx/500.0f, -dy/500.0f};
+        diffs *= app->getCamera().getZoomLevel() * 400 * app->deltaMs;
         app->getCamera().translate(diffs);
     }
 }
