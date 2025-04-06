@@ -23,6 +23,10 @@ void OIIOTexture::init(std::string filename) {
     _resolution = {(uint32_t)in_spec.width, (uint32_t)in_spec.height};
     _numChannels = in_spec.nchannels;
     _loaded = true;
+    OIIO::ImageSpec spec = in->spec();
+    auto orientation = spec.get_int_attribute("Orientation", 1);
+    std::cout << "Texture Orientation is " << orientation << std::endl;
+
 }
 
 

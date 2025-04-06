@@ -319,7 +319,9 @@ private:
 
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+        _windowWidth = WIDTH;
+        _windowHeight = HEIGHT;
+        window = glfwCreateWindow(_windowWidth, _windowHeight, "Vulkan", nullptr, nullptr);
         glfwSetWindowUserPointer(window, this);
         glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
         glfwSetMouseButtonCallback(window, mouse_button_callback);
@@ -356,7 +358,7 @@ public:
 
         now = std::chrono::high_resolution_clock::now();
 
-        auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg");
+        auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/landscape.tif");
         std::cout << "Texture creation: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
         timeElapsed = std::chrono::high_resolution_clock::now() - now;
 
@@ -544,11 +546,11 @@ private:
     std::unordered_map<std::string, VkVirtualTexture> createTiledTexture(std::string input_filepath="") {
         std::unordered_map<std::string, VkVirtualTexture>  result;
         Veloxr::OIIOTexture myTexture{input_filepath};
-        _camera.init((float)myTexture.getResolution().x / (float)myTexture.getResolution().y);
+        _camera.init((float)_windowWidth / (float) _windowHeight, (float)myTexture.getResolution().x / (float)myTexture.getResolution().y);
         Veloxr::TextureTiling tiler{};
         auto maxResolution = _deviceUtils->getMaxTextureResolution();
         std::cout << "Tiling...\n";
-        Veloxr::TiledResult tileData = tiler.tile4(myTexture, maxResolution * maxResolution);
+        Veloxr::TiledResult tileData = tiler.tile5(myTexture, maxResolution );
         for(int i = 0; i < tileData.tiles.size(); i++){
             VkVirtualTexture tileTexture;
             int texWidth    = tileData.tiles[i].width;
@@ -604,6 +606,19 @@ private:
             std::cout << "Vertex texCoord: " << vertice.texCoord.x << ", " << vertice.texCoord.y << "\n";
             std::cout << "Vertex texUnit: " << vertice.textureUnit << "\n";
         }
+        float minX = +9999.0f, maxX = -9999.0f;
+        float minY = +9999.0f, maxY = -9999.0f;
+        for (auto &v : vertices) {
+            minX = std::min(minX, v.pos.x);
+            maxX = std::max(maxX, v.pos.x);
+            minY = std::min(minY, v.pos.y);
+            maxY = std::max(maxY, v.pos.y);
+        }
+        std::cout << "Final geometry bounding box: X in [" 
+            << minX << ", " << maxX << "], Y in [" 
+            << minY << ", " << maxY << "]\n";
+
+
 
 
         return {};
@@ -612,7 +627,6 @@ private:
     std::tuple<VkImage, VkDeviceMemory, Veloxr::OIIOTexture> createTextureImage(std::string input_filepath="") {
         //cv::Mat image = cv::imread("C:/Users/ljuek/Downloads/16kmarble.jpeg", cv::IMREAD_UNCHANGED);
         Test t{};
-        //t.run2(PREFIX + "/Users/ljuek/Downloads/Colonial.jpg", PREFIX+"/Users/ljuek/Downloads/Colonial_1.jpg");
 
 
         Veloxr::OIIOTexture myTexture{input_filepath};
@@ -634,7 +648,7 @@ private:
         int texWidth    = tileData.tiles.begin()->width;
         int texHeight   = tileData.tiles.begin()->height;
         int texChannels = 4;//myTexture.getNumChannels();
-        _camera.init((float)texWidth / (float)texHeight);
+        _camera.init((float)_windowWidth / (float) _windowHeight, (float)texWidth / (float)texHeight);
 
         std::cout << "HELP MY CHANNELS ARE " << myTexture.getNumChannels() << std::endl;
         VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth) * 
@@ -927,6 +941,8 @@ private:
                 glfwGetFramebufferSize(window, &width, &height);
                 glfwWaitEvents();
             }
+            _windowWidth = width;
+            _windowHeight = height;
         }
         vkDeviceWaitIdle(device);
 
@@ -979,6 +995,7 @@ private:
         ubo.view = _camera.getViewMatrix();
         ubo.proj = _camera.getProjectionMatrix();
         ubo.model = glm::mat4(1.0f);
+        ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0,0,1));
         memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
     }
 
@@ -1290,8 +1307,8 @@ private:
         rasterizer.rasterizerDiscardEnable = VK_FALSE;
         rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
         rasterizer.lineWidth = 1.0f;
-        rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-        rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+        rasterizer.cullMode = VK_CULL_MODE_NONE;
+        rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         rasterizer.depthBiasEnable = VK_FALSE;
         rasterizer.depthBiasConstantFactor = 0.0f; 
         rasterizer.depthBiasClamp = 0.0f; 
