@@ -237,6 +237,7 @@ private: // Client
         VkImageView textureImageView;
         VkSampler textureSampler;
         Veloxr::OIIOTexture textureData;
+        int samplerIndex;
 
         void destroy(VkDevice device) {
             vkDestroySampler(device, textureSampler, nullptr);
@@ -550,7 +551,7 @@ private:
         Veloxr::TextureTiling tiler{};
         auto maxResolution = _deviceUtils->getMaxTextureResolution();
         std::cout << "Tiling...\n";
-        Veloxr::TiledResult tileData = tiler.tile5(myTexture, maxResolution );
+        Veloxr::TiledResult tileData = tiler.tile5(myTexture, maxResolution);
         for(const auto& [indx, tileData] : tileData.tiles){
             VkVirtualTexture tileTexture;
             int texWidth    = tileData.width;
@@ -597,14 +598,14 @@ private:
             auto sampler = createTextureSampler();
             tileTexture.textureImageView = imageView;
             tileTexture.textureSampler = sampler;
+            tileTexture.samplerIndex = indx;
 
             _textureMap[input_filepath + "_tile_" + std::to_string(indx)] = tileTexture;
         }
         vertices = std::vector<Veloxr::Vertex>(tileData.vertices.begin(), tileData.vertices.end());
         for(Veloxr::Vertex& vertice : vertices) {
-            std::cout << "Vertex pos : " << vertice.pos.x << ", " << vertice.pos.y << "\n";
-            std::cout << "Vertex texCoord: " << vertice.texCoord.x << ", " << vertice.texCoord.y << "\n";
-            std::cout << "Vertex texUnit: " << vertice.textureUnit << "\n";
+            const auto& [position, texCoords, texUnit] = vertice;
+            std::cout << "[" << position.x << ", " << position.y << "]\t\t|\t\t[" << texCoords.x << ", " << texCoords.y << "]\t|\t" << texUnit << std::endl;
         }
         float minX = +9999.0f, maxX = -9999.0f;
         float minY = +9999.0f, maxY = -9999.0f;
@@ -617,9 +618,6 @@ private:
         std::cout << "Final geometry bounding box: X in [" 
             << minX << ", " << maxX << "], Y in [" 
             << minY << ", " << maxY << "]\n";
-
-
-
 
         return {};
     }
@@ -715,11 +713,16 @@ private:
             bufferInfo.range = sizeof(UniformBufferObject);
 
             std::vector<VkDescriptorImageInfo> imageInfos;
+            std::map<int, VkDescriptorImageInfo> orderedSamplers;
             for (auto& [filepath, structure] : _textureMap) {
                 VkDescriptorImageInfo imageInfo{};
                 imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 imageInfo.imageView = structure.textureImageView;
                 imageInfo.sampler = structure.textureSampler;
+                orderedSamplers[structure.samplerIndex] = (imageInfo);
+            }
+
+            for(auto& [_, imageInfo] : orderedSamplers) {
                 imageInfos.push_back(imageInfo);
             }
 
@@ -750,7 +753,7 @@ private:
         poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
         poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSizes[1].descriptorCount = static_cast<uint32_t>(16 * MAX_FRAMES_IN_FLIGHT);//static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * _textureMap.size());// static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+        poolSizes[1].descriptorCount = static_cast<uint32_t>(32 * MAX_FRAMES_IN_FLIGHT);//static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * _textureMap.size());// static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
         VkDescriptorPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -789,7 +792,7 @@ private:
         VkDescriptorSetLayoutBinding samplerLayoutBinding{};
         samplerLayoutBinding.binding = 1;
         samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        samplerLayoutBinding.descriptorCount = 16;//static_cast<uint32_t>(_textureMap.size());
+        samplerLayoutBinding.descriptorCount = 32;//static_cast<uint32_t>(_textureMap.size());
         samplerLayoutBinding.pImmutableSamplers = nullptr;
         samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 

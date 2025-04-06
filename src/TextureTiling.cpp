@@ -8,6 +8,7 @@ using namespace Veloxr;
 OIIO_NAMESPACE_USING  
 
 // deviceMaxDimension is typically 16384, whatever is one side max
+
 TiledResult TextureTiling::tile5(OIIOTexture &texture, uint32_t deviceMaxDimension) {
     TiledResult result;
     if (!texture.isInitialized()) {
@@ -25,25 +26,26 @@ TiledResult TextureTiling::tile5(OIIOTexture &texture, uint32_t deviceMaxDimensi
 
     if (!tooManyPixels && !tooWide && !tooTall) {
         TextureData one;
-        one.width    = w;
-        one.height   = h;
+        one.width = w;
+        one.height = h;
         one.channels = 4;
         one.pixelData = texture.load(texture.getFilename());
         result.tiles[0] = one;
 
         float left   = -1.0f;
         float right  = +1.0f;
-        float top    = -1.0f;
-        float bottom = +1.0f;
+        float top    = +1.0f;
+        float bottom = -1.0f;
         int idx      = 0;
 
         std::vector<Vertex> singleTileVerts = {
-            {{left,  top,    0.0f, 0.0f}, {0.0f, 0.0f, float(idx), 0.0f}, idx},
-            {{left,  bottom, 0.0f, 0.0f}, {0.0f, 1.0f, float(idx), 0.0f}, idx},
-            {{right, bottom, 0.0f, 0.0f}, {1.0f, 1.0f, float(idx), 0.0f}, idx},
-            {{left,  top,    0.0f, 0.0f}, {0.0f, 0.0f, float(idx), 0.0f}, idx},
-            {{right, bottom, 0.0f, 0.0f}, {1.0f, 1.0f, float(idx), 0.0f}, idx},
-            {{right, top,    0.0f, 0.0f}, {1.0f, 0.0f, float(idx), 0.0f}, idx},
+            { { left,   top,    0.0f, 0.0f }, { 0.0f, 0.0f, float(idx), 0.0f }, idx },
+            { { left,   bottom, 0.0f, 0.0f }, { 0.0f, 1.0f, float(idx), 0.0f }, idx },
+            { { right,  bottom, 0.0f, 0.0f }, { 1.0f, 1.0f, float(idx), 0.0f }, idx },
+
+            { { left,   top,    0.0f, 0.0f }, { 0.0f, 0.0f, float(idx), 0.0f }, idx },
+            { { right,  bottom, 0.0f, 0.0f }, { 1.0f, 1.0f, float(idx), 0.0f }, idx },
+            { { right,  top,    0.0f, 0.0f }, { 1.0f, 0.0f, float(idx), 0.0f }, idx },
         };
         result.vertices.insert(result.vertices.end(), singleTileVerts.begin(), singleTileVerts.end());
         std::cout << "Tile " << idx << " has completed.\n";
@@ -54,16 +56,15 @@ TiledResult TextureTiling::tile5(OIIOTexture &texture, uint32_t deviceMaxDimensi
     uint32_t Ny = (h + deviceMaxDimension - 1) / deviceMaxDimension;
     uint32_t tileW = (w + Nx - 1) / Nx;
     uint32_t tileH = (h + Ny - 1) / Ny;
+
     float stepX = 2.0f / float(Nx);
     float stepY = 2.0f / float(Ny);
     int totalTiles = Nx * Ny;
 
-    // Store partial results in thread-local containers
     struct ThreadResult {
         std::map<int, TextureData> localTiles;
         std::map<int, std::vector<Vertex>> localVerts;
     };
-
     int numThreads = 8;
     std::vector<ThreadResult> partialResults(numThreads);
     int tilesPerThread = (totalTiles + numThreads - 1) / numThreads;
@@ -83,6 +84,14 @@ TiledResult TextureTiling::tile5(OIIOTexture &texture, uint32_t deviceMaxDimensi
                 return;
             }
             const OIIO::ImageSpec &spec = in->spec();
+
+            int orientation = spec.get_int_attribute("Orientation", 1);
+            if (orientation != 1) {
+                std::cerr << "[DEBUG] Large image orientation = " << orientation 
+                          << " (not 1). Might need rotate/flip.\n";
+            }
+
+            bool fileIsTiled = (spec.tile_width > 0 && spec.tile_height > 0);
             uint32_t originalChannels = spec.nchannels;
             uint32_t forcedChannels   = 4;
 
@@ -102,24 +111,52 @@ TiledResult TextureTiling::tile5(OIIOTexture &texture, uint32_t deviceMaxDimensi
                     continue;
                 }
 
-                std::vector<unsigned char> tileData(thisTileW * thisTileH * forcedChannels, 255);
-                std::vector<unsigned char> rowBuffer(w * originalChannels);
-                std::vector<unsigned char> rgbaRow(w * forcedChannels, 255);
+                std::vector<unsigned char> tileData(
+                    size_t(thisTileW) * size_t(thisTileH) * size_t(forcedChannels), 
+                    255
+                );
 
-                for (uint32_t scanY = y0; scanY < y1; scanY++) {
-                    bool ok = in->read_scanline(scanY, 0, OIIO::TypeDesc::UINT8, rowBuffer.data());
-                    if (!ok) {
-                        std::cerr << "[TILER] Error reading scanline " << scanY << ": " << in->geterror() << std::endl;
-                        break;
-                    }
-                    for (uint32_t x = 0; x < w; x++) {
-                        for (uint32_t c = 0; c < originalChannels && c < forcedChannels; c++) {
-                            rgbaRow[x * forcedChannels + c] = rowBuffer[x * originalChannels + c];
+                if (!fileIsTiled) {
+                    // read_scanline approach
+                    std::vector<unsigned char> rowBuffer(size_t(w) * size_t(originalChannels));
+                    std::vector<unsigned char> rgbaRow(size_t(w) * size_t(forcedChannels), 255);
+
+                    for (uint32_t scanY = y0; scanY < y1; scanY++) {
+                        bool ok = in->read_scanline(scanY, 0, OIIO::TypeDesc::UINT8, rowBuffer.data());
+
+                        if (!ok) {
+                            std::cerr << "[TILER] Error reading scanline " << scanY
+                                      << ": " << in->geterror() << std::endl;
+                            break;
                         }
+                        for (uint32_t x = 0; x < w; x++) {
+                            for (uint32_t c = 0; c < originalChannels && c < forcedChannels; c++) {
+                                rgbaRow[size_t(x) * size_t(forcedChannels) + c] =
+                                    rowBuffer[size_t(x) * size_t(originalChannels) + c];
+                            }
+                        }
+                        size_t rowOffsetInTile = 
+                            size_t(scanY - y0) * size_t(thisTileW) * size_t(forcedChannels);
+                        size_t rowOffsetInBuf  = 
+                            size_t(x0) * size_t(forcedChannels);
+
+                        memcpy(&tileData[rowOffsetInTile], 
+                               &rgbaRow[rowOffsetInBuf], 
+                               size_t(thisTileW) * size_t(forcedChannels));
                     }
-                    size_t rowOffsetInTile = (scanY - y0) * (thisTileW * forcedChannels);
-                    size_t rowOffsetInBuf  = x0 * forcedChannels;
-                    memcpy(&tileData[rowOffsetInTile], &rgbaRow[rowOffsetInBuf], thisTileW * forcedChannels);
+                } else {
+                    // read_tiles approach for subregion x0..x1, y0..y1
+                    bool ok = in->read_tiles(
+                        int(x0), int(x1),
+                        int(y0), int(y1),
+                        0, 1, // z range
+                        OIIO::TypeDesc::UINT8,
+                        tileData.data()
+                    );
+                    if (!ok) {
+                        std::cerr << "[TILER] Error read_tiles " << y0 << ".." 
+                                  << y1 << ": " << in->geterror() << std::endl;
+                    }
                 }
 
                 TextureData data;
@@ -127,23 +164,22 @@ TiledResult TextureTiling::tile5(OIIOTexture &texture, uint32_t deviceMaxDimensi
                 data.height   = thisTileH;
                 data.channels = forcedChannels;
                 data.pixelData = std::move(tileData);
-
                 localTiles[idx] = data;
 
-                float left   = -1.0f + col * stepX;
-                float right  = left + stepX;
-                float top    = -1.0f + row * stepY;
-                float bottom = top + stepY;
+                float tileLeft   = -1.0f + float(col) * stepX;
+                float tileRight  = tileLeft + stepX;
+                float tileTop    = +1.0f - float(row) * stepY;
+                float tileBottom = tileTop - stepY;
 
-                Vertex v0 = { { left,   top,    0.0f, 0.0f }, { 0.0f, 0.0f, float(idx), 0.0f }, idx };
-                Vertex v1 = { { left,   bottom, 0.0f, 0.0f }, { 0.0f, 1.0f, float(idx), 0.0f }, idx };
-                Vertex v2 = { { right,  bottom, 0.0f, 0.0f }, { 1.0f, 1.0f, float(idx), 0.0f }, idx };
-                Vertex v3 = { { left,   top,    0.0f, 0.0f }, { 0.0f, 0.0f, float(idx), 0.0f }, idx };
-                Vertex v4 = { { right,  bottom, 0.0f, 0.0f }, { 1.0f, 1.0f, float(idx), 0.0f }, idx };
-                Vertex v5 = { { right,  top,    0.0f, 0.0f }, { 1.0f, 0.0f, float(idx), 0.0f }, idx };
+                // CCW geometry
+                Vertex v0 = { { tileLeft,  tileTop,    0, 0 }, { 0.0f, 0.0f, float(idx), 0 }, idx };
+                Vertex v1 = { { tileLeft,  tileBottom, 0, 0 }, { 0.0f, 1.0f, float(idx), 0 }, idx };
+                Vertex v2 = { { tileRight, tileBottom, 0, 0 }, { 1.0f, 1.0f, float(idx), 0 }, idx };
+                Vertex v3 = { { tileLeft,  tileTop,    0, 0 }, { 0.0f, 0.0f, float(idx), 0 }, idx };
+                Vertex v4 = { { tileRight, tileBottom, 0, 0 }, { 1.0f, 1.0f, float(idx), 0 }, idx };
+                Vertex v5 = { { tileRight, tileTop,    0, 0 }, { 1.0f, 0.0f, float(idx), 0 }, idx };
 
                 localVerts[idx] = { v0, v1, v2, v3, v4, v5 };
-
                 std::cout << "Tile " << idx << " has completed.\n";
             }
             in->close();
@@ -154,13 +190,15 @@ TiledResult TextureTiling::tile5(OIIOTexture &texture, uint32_t deviceMaxDimensi
         th.join();
     }
 
+    // gather all tile indices
     std::set<int> allIndices;
     for (int t = 0; t < numThreads; t++) {
         for (auto &kv : partialResults[t].localTiles) {
             allIndices.insert(kv.first);
         }
     }
-    // build final TiledResult in ascending index
+
+    // build final TiledResult
     for (int idx : allIndices) {
         for (int t = 0; t < numThreads; t++) {
             auto itTiles = partialResults[t].localTiles.find(idx);
@@ -169,15 +207,14 @@ TiledResult TextureTiling::tile5(OIIOTexture &texture, uint32_t deviceMaxDimensi
             }
             auto itVerts = partialResults[t].localVerts.find(idx);
             if (itVerts != partialResults[t].localVerts.end()) {
-                // preserve ascending tile order in result.vertices
                 result.vertices.insert(result.vertices.end(),
                                        itVerts->second.begin(),
                                        itVerts->second.end());
             }
         }
     }
-
     return result;
 }
+
 
 
