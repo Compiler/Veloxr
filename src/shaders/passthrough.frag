@@ -5,7 +5,8 @@ layout(location = 1) in flat int texUnit;
 
 layout(location = 0) out vec4 outColor;
 
-layout(binding = 1) uniform sampler2D texSamplers[16];
+layout (constant_id = 0) const int MAX_SAMPLERS = 16;
+layout(binding = 1) uniform sampler2D texSamplers[MAX_SAMPLERS];
 
 void main() {
     outColor = texture(texSamplers[texUnit], fragTexCoord.xy);
