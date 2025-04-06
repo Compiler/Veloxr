@@ -358,7 +358,7 @@ public:
 
         now = std::chrono::high_resolution_clock::now();
 
-        auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/landscape.tif");
+        auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/56000.jpg");
         std::cout << "Texture creation: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
         timeElapsed = std::chrono::high_resolution_clock::now() - now;
 
@@ -385,15 +385,15 @@ private:
 
     void addTexture(std::string input_filepath) {
         _textureMap[input_filepath] = {};
-        const auto& [textureImage, textureImageMemory, textureHelper] = createTextureImage(input_filepath);
+        //const auto& [textureImage, textureImageMemory, textureHelper] = createTextureImage(input_filepath);
 
-        auto imageView = createTextureImageView(textureImage);
-        auto sampler = createTextureSampler();
-        _textureMap[input_filepath].textureImage = textureImage;
-        _textureMap[input_filepath].textureImageMemory = textureImageMemory;
-        _textureMap[input_filepath].textureImageView = imageView;
-        _textureMap[input_filepath].textureSampler = sampler;
-        _textureMap[input_filepath].textureData = textureHelper;
+        //auto imageView = createTextureImageView(textureImage);
+        //auto sampler = createTextureSampler();
+        //_textureMap[input_filepath].textureImage = textureImage;
+        //_textureMap[input_filepath].textureImageMemory = textureImageMemory;
+        //_textureMap[input_filepath].textureImageView = imageView;
+        //_textureMap[input_filepath].textureSampler = sampler;
+        //_textureMap[input_filepath].textureData = textureHelper;
     }
 
     VkSampler createTextureSampler(std::string input_filepath="") {
@@ -551,10 +551,10 @@ private:
         auto maxResolution = _deviceUtils->getMaxTextureResolution();
         std::cout << "Tiling...\n";
         Veloxr::TiledResult tileData = tiler.tile5(myTexture, maxResolution );
-        for(int i = 0; i < tileData.tiles.size(); i++){
+        for(const auto& [indx, tileData] : tileData.tiles){
             VkVirtualTexture tileTexture;
-            int texWidth    = tileData.tiles[i].width;
-            int texHeight   = tileData.tiles[i].height;
+            int texWidth    = tileData.width;
+            int texHeight   = tileData.height;
             int texChannels = 4;//myTexture.getNumChannels();
 
             std::cout << "HELP MY CHANNELS ARE " << myTexture.getNumChannels() << std::endl;
@@ -574,7 +574,7 @@ private:
             void* data;
             vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
             //memcpy(data, res.begin()->pixelData.data()/*myTexture.load(input_filepath).data()*/, static_cast<size_t>(imageSize));
-            memcpy(data, tileData.tiles[i].pixelData.data()/*myTexture.load(input_filepath).data()*/, static_cast<size_t>(imageSize));
+            memcpy(data, tileData.pixelData.data()/*myTexture.load(input_filepath).data()*/, static_cast<size_t>(imageSize));
             vkUnmapMemory(device, stagingBufferMemory);
 
             VkImage textureImage;
@@ -598,7 +598,7 @@ private:
             tileTexture.textureImageView = imageView;
             tileTexture.textureSampler = sampler;
 
-            _textureMap[input_filepath + "_tile_" + std::to_string(i)] = tileTexture;
+            _textureMap[input_filepath + "_tile_" + std::to_string(indx)] = tileTexture;
         }
         vertices = std::vector<Veloxr::Vertex>(tileData.vertices.begin(), tileData.vertices.end());
         for(Veloxr::Vertex& vertice : vertices) {
@@ -624,65 +624,6 @@ private:
         return {};
     }
 
-    std::tuple<VkImage, VkDeviceMemory, Veloxr::OIIOTexture> createTextureImage(std::string input_filepath="") {
-        //cv::Mat image = cv::imread("C:/Users/ljuek/Downloads/16kmarble.jpeg", cv::IMREAD_UNCHANGED);
-        Test t{};
-
-
-        Veloxr::OIIOTexture myTexture{input_filepath};
-        Veloxr::TextureTiling tiler{};
-        auto maxResolution = _deviceUtils->getMaxTextureResolution();
-        std::cout << "Tiling...\n";
-       // auto res = tiler.tile(myTexture, maxResolution * maxResolution);
-        Veloxr::TiledResult tileData = tiler.tile2(myTexture, maxResolution * maxResolution);
-//        int texWidth    = myTexture.getResolution().x;
- //       int texHeight   = myTexture.getResolution().y;
-  //      int texChannels = 4;//myTexture.getNumChannels();
-  
-
-        //int texWidth    = res.begin()->width;
-        //int texHeight   = res.begin()->height;
-        //int texChannels = 4;//myTexture.getNumChannels();
-                            //
-        
-        int texWidth    = tileData.tiles.begin()->width;
-        int texHeight   = tileData.tiles.begin()->height;
-        int texChannels = 4;//myTexture.getNumChannels();
-        _camera.init((float)_windowWidth / (float) _windowHeight, (float)texWidth / (float)texHeight);
-
-        std::cout << "HELP MY CHANNELS ARE " << myTexture.getNumChannels() << std::endl;
-        VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth) * 
-            static_cast<VkDeviceSize>(texHeight) *
-            static_cast<VkDeviceSize>(texChannels);
-
-        std::cout << "Loading texture of size " 
-            << texWidth << " x " << texHeight << ": " 
-            << (imageSize / 1024.0 / 1024.0) << " MB" << std::endl;
-
-
-        VkBuffer stagingBuffer;
-        VkDeviceMemory stagingBufferMemory;
-        createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-
-        void* data;
-        vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
-        //memcpy(data, res.begin()->pixelData.data()/*myTexture.load(input_filepath).data()*/, static_cast<size_t>(imageSize));
-        memcpy(data, tileData.tiles.begin()->pixelData.data()/*myTexture.load(input_filepath).data()*/, static_cast<size_t>(imageSize));
-        vkUnmapMemory(device, stagingBufferMemory);
-
-        VkImage textureImage;
-        VkDeviceMemory textureImageMemory;
-        createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
-
-        transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-        copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
-        transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-
-        vkDestroyBuffer(device, stagingBuffer, nullptr);
-        vkFreeMemory(device, stagingBufferMemory, nullptr);
-        return {textureImage, textureImageMemory, myTexture};
-    }
 
     VkCommandBuffer beginSingleTimeCommands() {
         VkCommandBufferAllocateInfo allocInfo{};

@@ -1,4 +1,5 @@
 #pragma once
+#include <map>
 #include <texture.h>
 #include <vector>
 #include <Vertex.h>
@@ -10,7 +11,7 @@ namespace Veloxr {
     };
 
     struct TiledResult {
-        std::vector<TextureData> tiles;
+        std::map<int, TextureData> tiles;
         std::vector<Vertex>      vertices;
     };
 
