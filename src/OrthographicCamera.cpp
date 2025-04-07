@@ -3,9 +3,9 @@
 #include <algorithm>
 #include <iostream>
 
-namespace Veloxr {
+namespace Veloxr  {
 
-OrthographicCamera::OrthographicCamera()
+    OrthographicCamera::OrthographicCamera()
   : _texWidth(1.0f), _texHeight(1.0f),
     _windowWidth(1.0f), _windowHeight(1.0f),
     _near(-1.0f), _far(1.0f),
@@ -46,11 +46,9 @@ void OrthographicCamera::init(float texWidth, float texHeight,
     _far = farPlane;
     _zoomLevel = zoomLevel;
     _position = glm::vec2(0.0f);
-
     _projectionMatrix = glm::mat4(1.0f);
     _viewMatrix = glm::mat4(1.0f);
     _viewProjectionMatrix = glm::mat4(1.0f);
-
     recalculateProjection();
     recalculateView();
 }
@@ -90,32 +88,28 @@ void OrthographicCamera::translate(const glm::vec2& delta) {
 }
 
 void OrthographicCamera::recalculateProjection() {
-    if (_windowWidth <= 0.0f)  _windowWidth  = 1.0f;
+    if (_windowWidth <= 0.0f) _windowWidth = 1.0f;
     if (_windowHeight <= 0.0f) _windowHeight = 1.0f;
-
     float texAspect = _texWidth / _texHeight;
     float windowAspect = _windowWidth / _windowHeight;
-
-    float halfWidth = 0.0f;
-    float halfHeight = 0.0f;
-
+    float left, right, bottom, top;
     if (texAspect > windowAspect) {
-        halfWidth  = (_texWidth * 0.5f) / _zoomLevel;
-        halfHeight = halfWidth / texAspect;
+        float halfW = (_texWidth * 0.5f) / _zoomLevel;
+        float halfH = halfW / texAspect;
+        left = -halfW;
+        right = halfW;
+        bottom = -halfH;
+        top = halfH;
     } else {
-        halfHeight = (_texHeight * 0.5f) / _zoomLevel;
-        halfWidth  = halfHeight * texAspect;
+        float halfH = (_texHeight * 0.5f) / _zoomLevel;
+        float halfW = halfH * texAspect;
+        left = -halfW;
+        right = halfW;
+        bottom = -halfH;
+        top = halfH;
     }
-
-    float left   = -halfWidth;
-    float right  = +halfWidth;
-    float bottom = -halfHeight;
-    float top    = +halfHeight;
-
     _projectionMatrix = glm::ortho(left, right, bottom, top, _near, _far);
-
     _viewProjectionMatrix = _projectionMatrix * _viewMatrix;
-
     std::cout << "[OrthographicCamera] texW=" << _texWidth
               << " texH=" << _texHeight
               << " windowW=" << _windowWidth
@@ -125,20 +119,12 @@ void OrthographicCamera::recalculateProjection() {
               << " right=" << right
               << " bottom=" << bottom
               << " top=" << top << "\n";
-
-
 }
 
 void OrthographicCamera::recalculateView() {
-    glm::mat4 transform = glm::translate(glm::mat4(1.0f),
-                                         glm::vec3(-_position, 0.0f));
-
+    glm::mat4 transform = glm::translate(glm::mat4(1.0f), glm::vec3(-_position, 0.0f));
     _viewMatrix = transform;
     _viewProjectionMatrix = _projectionMatrix * _viewMatrix;
-    std::cout
-        << "Camera position= (" << _position.x 
-        << ", " << _position.y << ")\n";
-
 }
 
 const glm::mat4& OrthographicCamera::getProjectionMatrix() const {
@@ -161,5 +147,5 @@ glm::vec2 OrthographicCamera::getPosition() const {
     return _position;
 }
 
-} 
+}
 

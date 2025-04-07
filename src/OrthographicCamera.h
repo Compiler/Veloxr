@@ -26,6 +26,9 @@ public:
     void setPosition(const glm::vec2& pos);
     void translate(const glm::vec2& delta);
 
+    void incrementTexHeight(){_texHeight += 500; recalculateProjection(); recalculateView();}
+    void incrementTexWidth(){_texWidth += 500; recalculateProjection(); recalculateView();}
+
     float getZoomLevel() const;
     glm::vec2 getPosition() const;
 

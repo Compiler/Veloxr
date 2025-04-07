@@ -14,6 +14,7 @@
 #include <utility>
 #include <vulkan/vulkan_core.h>
 #include <OrthographicCamera.h>
+#include <OrthoCam.h>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <texture.h>
@@ -145,7 +146,7 @@ struct UniformBufferObject {
 
 inline bool mousePressed = false;
 inline double lastX = 0.0, lastY = 0.0;
-
+inline void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 inline void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
     if (button == GLFW_MOUSE_BUTTON_LEFT) {
         if (action == GLFW_PRESS) {
@@ -155,6 +156,8 @@ inline void mouse_button_callback(GLFWwindow* window, int button, int action, in
             mousePressed = false;
         }
     }
+
+
 }
 
 inline void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) ;
@@ -178,6 +181,10 @@ public:
         return _camera;
     }
 
+    /*const*/Veloxr::OrthoCam& getCam() {
+        return _cam;
+    }
+
 private: // No client
 
     GLFWwindow* window;
@@ -194,6 +201,7 @@ private: // Client
     bool enableValidationLayers = true;
 
     Veloxr::OrthographicCamera _camera;
+    Veloxr::OrthoCam _cam;
 
 
     const std::vector<const char*> validationLayers = {
@@ -328,6 +336,7 @@ private:
         glfwSetMouseButtonCallback(window, mouse_button_callback);
         glfwSetCursorPosCallback(window, cursor_position_callback);
         glfwSetScrollCallback(window, scroll_callback);
+        glfwSetKeyCallback(window, key_callback);
 
     }
 public:
@@ -552,8 +561,7 @@ private:
         Veloxr::OIIOTexture myTexture{input_filepath};
         //_camera.init((float)_windowWidth / (float) _windowHeight, (float)myTexture.getResolution().x / (float)myTexture.getResolution().y);
         _camera.init((float)myTexture.getResolution().x, (float)myTexture.getResolution().y, _windowWidth, _windowHeight);
-        //_camera.translate({myTexture.getResolution().x / 2.0f, myTexture.getResolution().y / 2.0f});
-        _camera.setPosition({ 26634.0f * 0.5f, 6748.0f * 0.5f });
+        _cam.init(0, _windowWidth, 0, _windowHeight, -1, 1);
         Veloxr::TextureTiling tiler{};
         auto maxResolution = _deviceUtils->getMaxTextureResolution();
         std::cout << "Tiling...\n";
@@ -897,6 +905,7 @@ private:
         }
         vkDeviceWaitIdle(device);
         _camera.setWindowSize(_windowWidth, _windowHeight);
+        _cam.setProjection(0, _windowWidth, 0, _windowHeight, -1, 1);
 
         //_camera.setWindowAspectRatio((float)_windowWidth / (float) _windowHeight);
 
@@ -946,8 +955,8 @@ private:
     void updateUniformBuffers(uint32_t currentImage) {
         UniformBufferObject ubo{};
         float time = 1;
-        ubo.view = _camera.getViewMatrix();
-        ubo.proj = _camera.getProjectionMatrix();
+        ubo.view = _cam.getViewMatrix();
+        ubo.proj = _cam.getProjectionMatrix();
         ubo.model = glm::mat4(1.0f);
         //ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(270.0f), glm::vec3(0,0,1));
         memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
@@ -1657,7 +1666,7 @@ private:
 inline void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
     //printf("Scrolled: x = %.2f, y = %.2f\n", xoffset, yoffset);
     auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
-    Veloxr::OrthographicCamera& camera = app->getCamera();
+    auto& camera = app->getCam();
     float currentZoom = camera.getZoomLevel();
     float sensitivity = currentZoom * 0.1f;
     camera.addToZoom(yoffset * sensitivity);
@@ -1674,8 +1683,20 @@ inline void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
         lastX = xpos;
         lastY = ypos;
         glm::vec2 diffs{-dx * 2.0f, -dy * 2.0f};
-        diffs *= app->getCamera().getZoomLevel() * 400 * app->deltaMs;
-        app->getCamera().translate(diffs);
+        diffs *= app->getCam().getZoomLevel() * 400 * app->deltaMs;
+        app->getCam().translate(diffs);
     }
+}
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+        glfwSetWindowShouldClose(window, true);  
+    }
+
+    if (key == GLFW_KEY_W && action == GLFW_PRESS) {
+        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
+        app->getCamera().incrementTexWidth();
+    }
+
 }
 
