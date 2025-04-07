@@ -3,40 +3,52 @@
 
 namespace Veloxr {
 
-class OrthographicCamera
-{
+class OrthographicCamera {
 public:
     OrthographicCamera();
-    OrthographicCamera(float windowAspectRatio, float imageAspectRatio, float nearPlane = -1.0f, float farPlane = 1.0f, float zoomLevel = 1.0f);
+    OrthographicCamera(float texWidth, float texHeight,
+                       float windowWidth, float windowHeight,
+                       float nearPlane = -1.0f, float farPlane = 1.0f,
+                       float zoomLevel = 1.0f);
 
-    void init(float windowAspectRatio, float imageAspectRatio, float nearPlane = -1.0f, float farPlane = 1.0f, float zoomLevel = 1.0f);
-    void setWindowAspectRatio(float windowAspectRatio);
-    void setImageAspectRatio(float imageAspectRatio);
-    void recalculateProjection();
-    void recalculateView();
-    void zoom(float zoomDelta);
-    void pan(const glm::vec2& panDelta);
-    const glm::mat4& getProjectionMatrix() const;
-    const glm::mat4& getViewMatrix() const;
-    const glm::mat4& getViewProjectionMatrix() const;
-    float getZoomLevel() const;
-    glm::vec2 getPosition() const;
+    void init(float texWidth, float texHeight,
+              float windowWidth, float windowHeight,
+              float nearPlane = -1.0f, float farPlane = 1.0f,
+              float zoomLevel = 1.0f);
+
+    void setTextureSize(float texWidth, float texHeight);
+
+    void setWindowSize(float windowWidth, float windowHeight);
+
     void setZoomLevel(float zoomLevel);
     void addToZoom(float delta);
+
     void setPosition(const glm::vec2& pos);
     void translate(const glm::vec2& delta);
 
+    float getZoomLevel() const;
+    glm::vec2 getPosition() const;
+
+    const glm::mat4& getProjectionMatrix() const;
+    const glm::mat4& getViewMatrix() const;
+    const glm::mat4& getViewProjectionMatrix() const;
+
 private:
-    float _windowAspectRatio;
-    float _imageAspectRatio;
-    float _near;
-    float _far;
+    void recalculateProjection();
+    void recalculateView();
+
+private:
+    float _texWidth, _texHeight;
+    float _windowWidth, _windowHeight;
+    float _near, _far;
     float _zoomLevel;
-    glm::vec2 _position;
+
+    glm::vec2 _position; // "camera" position in world coords
+
     glm::mat4 _projectionMatrix;
     glm::mat4 _viewMatrix;
     glm::mat4 _viewProjectionMatrix;
 };
 
-}
+} // namespace Veloxr
 

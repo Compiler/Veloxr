@@ -13,9 +13,10 @@ void main() {
     // blend for testing :D
     //outColor = 0.5 * texture(texSamplers[0], fragTexCoord.xy) + 0.5 * texture(texSamplers[1], fragTexCoord.xy);
 
+    return ;
+     //Debug code
      float edgeThreshold = 0.01;
 
-     //Debug code
     bool nearLeft   = (fragTexCoord.x <= edgeThreshold);
     bool nearRight  = (fragTexCoord.x >= 1.0 - edgeThreshold);
     bool nearBottom = (fragTexCoord.y <= edgeThreshold);

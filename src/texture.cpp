@@ -25,6 +25,8 @@ void OIIOTexture::init(std::string filename) {
     _loaded = true;
     OIIO::ImageSpec spec = in->spec();
     auto orientation = spec.get_int_attribute("Orientation", 1);
+    //_orientation = orientation == 3 ? 180 : orientation == 8 ? 270 : orientation == 6 ? 90 : 0;
+    _orientation = orientation;//orientation == 3 ? 180 : orientation == 8 ? 270 : orientation == 6 ? 90 : 0;
     std::cout << "Texture Orientation is " << orientation << std::endl;
 
 }

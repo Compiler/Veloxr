@@ -10,6 +10,7 @@ namespace Veloxr {
     struct TextureData {
         uint32_t width, height, channels;
         std::vector<unsigned char> pixelData;
+        uint32_t rotateIndex=0;
     };
 
     struct TiledResult {

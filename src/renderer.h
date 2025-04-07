@@ -359,7 +359,7 @@ public:
 
         now = std::chrono::high_resolution_clock::now();
 
-        auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/56000.jpg");
+        auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/landscape.tif");
         std::cout << "Texture creation: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
         timeElapsed = std::chrono::high_resolution_clock::now() - now;
 
@@ -547,11 +547,15 @@ private:
     std::unordered_map<std::string, VkVirtualTexture> createTiledTexture(std::string input_filepath="") {
         std::unordered_map<std::string, VkVirtualTexture>  result;
         Veloxr::OIIOTexture myTexture{input_filepath};
-        _camera.init((float)_windowWidth / (float) _windowHeight, (float)myTexture.getResolution().x / (float)myTexture.getResolution().y);
+        //_camera.init((float)_windowWidth / (float) _windowHeight, (float)myTexture.getResolution().x / (float)myTexture.getResolution().y);
+        _camera.init((float)myTexture.getResolution().x, (float)myTexture.getResolution().y, _windowWidth, _windowHeight);
+        //_camera.translate({myTexture.getResolution().x / 2.0f, myTexture.getResolution().y / 2.0f});
+        _camera.setPosition({ 26634.0f * 0.5f, 6748.0f * 0.5f });
         Veloxr::TextureTiling tiler{};
         auto maxResolution = _deviceUtils->getMaxTextureResolution();
         std::cout << "Tiling...\n";
-        Veloxr::TiledResult tileData = tiler.tile5(myTexture, maxResolution);
+        //Veloxr::TiledResult tileData = tiler.tile4(myTexture, maxResolution);
+        Veloxr::TiledResult tileData = tiler.tile4(myTexture, maxResolution);
         for(const auto& [indx, tileData] : tileData.tiles){
             VkVirtualTexture tileTexture;
             int texWidth    = tileData.width;
@@ -889,6 +893,9 @@ private:
             _windowHeight = height;
         }
         vkDeviceWaitIdle(device);
+        _camera.setWindowSize(_windowWidth, _windowHeight);
+
+        //_camera.setWindowAspectRatio((float)_windowWidth / (float) _windowHeight);
 
         cleanupSwapChain();
 
@@ -939,13 +946,13 @@ private:
         ubo.view = _camera.getViewMatrix();
         ubo.proj = _camera.getProjectionMatrix();
         ubo.model = glm::mat4(1.0f);
-       // ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0,0,1));
+        //ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(270.0f), glm::vec3(0,0,1));
         memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
     }
 
 public:
     void drawFrame() {
-        std::cout << "Drawing frame with extent: " << swapChainExtent.width << "x" << swapChainExtent.height << std::endl;
+        //std::cout << "Drawing frame with extent: " << swapChainExtent.width << "x" << swapChainExtent.height << std::endl;
         vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
         uint32_t imageIndex;
@@ -1646,7 +1653,7 @@ inline void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) 
     Veloxr::OrthographicCamera& camera = app->getCamera();
     float currentZoom = camera.getZoomLevel();
     float sensitivity = currentZoom * 0.1f;
-    camera.addToZoom(-yoffset * sensitivity);
+    camera.addToZoom(yoffset * sensitivity);
 }
 
 inline void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
@@ -1659,7 +1666,7 @@ inline void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
 
         lastX = xpos;
         lastY = ypos;
-        glm::vec2 diffs{-dx/500.0f, -dy/500.0f};
+        glm::vec2 diffs{-dx * 2.0f, -dy * 2.0f};
         diffs *= app->getCamera().getZoomLevel() * 400 * app->deltaMs;
         app->getCamera().translate(diffs);
     }
