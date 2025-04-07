@@ -369,7 +369,9 @@ public:
         now = std::chrono::high_resolution_clock::now();
 
         //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/very_wide.webp");
-        auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/landscape.tif");
+        //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/landscape.tif");
+        auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/56000.jpg");
+        //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg");
         //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/landscape1.jpeg");
         //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/landscape2.jpeg");
         std::cout << "Texture creation: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
@@ -566,7 +568,7 @@ private:
         auto maxResolution = _deviceUtils->getMaxTextureResolution();
         std::cout << "Tiling...\n";
         //Veloxr::TiledResult tileData = tiler.tile4(myTexture, maxResolution);
-        Veloxr::TiledResult tileData = tiler.tile4(myTexture, maxResolution);
+        Veloxr::TiledResult tileData = tiler.tile7(myTexture, maxResolution);
         for(const auto& [indx, tileData] : tileData.tiles){
             VkVirtualTexture tileTexture;
             int texWidth    = tileData.width;
@@ -958,7 +960,7 @@ private:
         ubo.view = _cam.getViewMatrix();
         ubo.proj = _cam.getProjectionMatrix();
         ubo.model = glm::mat4(1.0f);
-        //ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(270.0f), glm::vec3(0,0,1));
+        //ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0,0,1));
         memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
     }
 
@@ -1682,7 +1684,7 @@ inline void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
 
         lastX = xpos;
         lastY = ypos;
-        glm::vec2 diffs{-dx * 2.0f, -dy * 2.0f};
+        glm::vec2 diffs{-dx * 20.0f, -dy * 20.0f};
         diffs *= app->getCam().getZoomLevel() * 400 * app->deltaMs;
         app->getCam().translate(diffs);
     }

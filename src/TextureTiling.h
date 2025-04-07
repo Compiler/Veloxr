@@ -30,6 +30,8 @@ namespace Veloxr {
             TiledResult tile3(OIIOTexture &texture, uint32_t maxResolution=4096*2);
             TiledResult tile4(OIIOTexture &texture, uint32_t maxResolution=4096*2);
             TiledResult tile5(OIIOTexture &texture, uint32_t maxResolution=4096*2);
+            TiledResult tile6(OIIOTexture &texture, uint32_t maxResolution=4096*2);
+            TiledResult tile7(OIIOTexture &texture, uint32_t maxResolution=4096*2);
 
 
     };
