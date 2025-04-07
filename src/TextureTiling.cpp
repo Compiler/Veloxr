@@ -65,7 +65,7 @@ TiledResult TextureTiling::tile5(OIIOTexture &texture, uint32_t deviceMaxDimensi
         std::map<int, TextureData> localTiles;
         std::map<int, std::vector<Vertex>> localVerts;
     };
-    int numThreads = 8;
+    int numThreads = std::min(totalTiles, 16);
     std::vector<ThreadResult> partialResults(numThreads);
     int tilesPerThread = (totalTiles + numThreads - 1) / numThreads;
     auto filename = texture.getFilename();
@@ -146,10 +146,11 @@ TiledResult TextureTiling::tile5(OIIOTexture &texture, uint32_t deviceMaxDimensi
                     }
                 } else {
                     // read_tiles approach for subregion x0..x1, y0..y1
-                    bool ok = in->read_tiles(
+                    bool ok = in->read_tiles(0, 0,
                         int(x0), int(x1),
                         int(y0), int(y1),
                         0, 1, // z range
+                        0, 4,
                         OIIO::TypeDesc::UINT8,
                         tileData.data()
                     );
@@ -166,20 +167,21 @@ TiledResult TextureTiling::tile5(OIIOTexture &texture, uint32_t deviceMaxDimensi
                 data.pixelData = std::move(tileData);
                 localTiles[idx] = data;
 
+                int rowFlipped = (Ny - 1 - row);
                 float tileLeft   = -1.0f + float(col) * stepX;
                 float tileRight  = tileLeft + stepX;
-                float tileTop    = +1.0f - float(row) * stepY;
+                float tileTop    =  1.0f - float(rowFlipped) * stepY;
                 float tileBottom = tileTop - stepY;
 
-                // CCW geometry
-                Vertex v0 = { { tileLeft,  tileTop,    0, 0 }, { 0.0f, 0.0f, float(idx), 0 }, idx };
-                Vertex v1 = { { tileLeft,  tileBottom, 0, 0 }, { 0.0f, 1.0f, float(idx), 0 }, idx };
-                Vertex v2 = { { tileRight, tileBottom, 0, 0 }, { 1.0f, 1.0f, float(idx), 0 }, idx };
-                Vertex v3 = { { tileLeft,  tileTop,    0, 0 }, { 0.0f, 0.0f, float(idx), 0 }, idx };
-                Vertex v4 = { { tileRight, tileBottom, 0, 0 }, { 1.0f, 1.0f, float(idx), 0 }, idx };
-                Vertex v5 = { { tileRight, tileTop,    0, 0 }, { 1.0f, 0.0f, float(idx), 0 }, idx };
+                Vertex v0 = { { tileLeft,  tileTop,    0.0f, 0.0f }, { 0.0f, 1.0f, float(idx), 0.0f }, idx };
+                Vertex v1 = { { tileRight, tileTop,    0.0f, 0.0f }, { 1.0f, 1.0f, float(idx), 0.0f }, idx };
+                Vertex v2 = { { tileRight, tileBottom, 0.0f, 0.0f }, { 1.0f, 0.0f, float(idx), 0.0f }, idx };
+                Vertex v3 = { { tileLeft,  tileTop,    0.0f, 0.0f }, { 0.0f, 1.0f, float(idx), 0.0f }, idx };
+                Vertex v4 = { { tileRight, tileBottom, 0.0f, 0.0f }, { 1.0f, 0.0f, float(idx), 0.0f }, idx };
+                Vertex v5 = { { tileLeft,  tileBottom, 0.0f, 0.0f }, { 0.0f, 0.0f, float(idx), 0.0f }, idx };
 
                 localVerts[idx] = { v0, v1, v2, v3, v4, v5 };
+
                 std::cout << "Tile " << idx << " has completed.\n";
             }
             in->close();

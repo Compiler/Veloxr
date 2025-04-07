@@ -939,7 +939,7 @@ private:
         ubo.view = _camera.getViewMatrix();
         ubo.proj = _camera.getProjectionMatrix();
         ubo.model = glm::mat4(1.0f);
-        ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0,0,1));
+       // ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0,0,1));
         memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
     }
 
