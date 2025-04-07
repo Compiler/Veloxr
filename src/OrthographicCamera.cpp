@@ -125,6 +125,8 @@ void OrthographicCamera::recalculateProjection() {
               << " right=" << right
               << " bottom=" << bottom
               << " top=" << top << "\n";
+
+
 }
 
 void OrthographicCamera::recalculateView() {
@@ -133,6 +135,10 @@ void OrthographicCamera::recalculateView() {
 
     _viewMatrix = transform;
     _viewProjectionMatrix = _projectionMatrix * _viewMatrix;
+    std::cout
+        << "Camera position= (" << _position.x 
+        << ", " << _position.y << ")\n";
+
 }
 
 const glm::mat4& OrthographicCamera::getProjectionMatrix() const {

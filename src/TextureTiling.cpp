@@ -11,7 +11,8 @@ OIIO_NAMESPACE_USING
 
 
 TiledResult TextureTiling::tile4(OIIOTexture &texture, uint32_t deviceMaxDimension) {
-    TiledResult result;
+
+     TiledResult result;
     if (!texture.isInitialized()) {
         std::cerr << "Cannot tile a texture that is not initialized\n";
         return result;
@@ -22,63 +23,62 @@ TiledResult TextureTiling::tile4(OIIOTexture &texture, uint32_t deviceMaxDimensi
     uint32_t h = texture.getResolution().y;
     uint64_t totalPixels = (uint64_t)w * (uint64_t)h;
     bool tooManyPixels = (totalPixels > maxPixels);
-    bool tooWide       = (w > deviceMaxDimension);
-    bool tooTall       = (h > deviceMaxDimension);
+    bool tooWide = (w > deviceMaxDimension);
+    bool tooTall = (h > deviceMaxDimension);
 
-    // Base case, return the pixel data
-    if (true || !tooManyPixels && !tooWide && !tooTall) {
+    std::cout << "MaxPixels=" << maxPixels << " totalPixels=" << totalPixels << " deviceMaxDimension=" << deviceMaxDimension << "\n";
+    std::cout << "Resolution=" << w << "x" << h << " Channels=" << texture.getNumChannels() << "\n";
+    std::cout << "tooManyPixels=" << tooManyPixels << " tooWide=" << tooWide << " tooTall=" << tooTall << "\n";
+
+    if (true || (!tooManyPixels && !tooWide && !tooTall)) {
         TextureData one;
         one.width = w;
         one.height = h;
         one.channels = 4;
         one.pixelData = texture.load(texture.getFilename());
         result.tiles[0] = one;
-        float aspectRatio = (float)w / (float)h;
 
-        float left   = 0.0f;// * (aspectRatio);
-        float right  = w;// * (aspectRatio);
-        float top    = 0.0f;//-1.0f / (aspectRatio);
-        float bottom = h;//+1.0f / (aspectRatio);
-        int idx      = 0;
+        std::cout << "Loaded pixelData.size()=" << one.pixelData.size() << "\n";
+
+        float left = 0.0f;
+        float right = w;
+        float top = 0.0f;
+        float bottom = h;
+        int idx = 0;
 
         std::vector<Vertex> singleTileVerts = {
-            { { left,   top,    0.0f, 0.0f }, { 0.0f, 0.0f, float(idx), 0.0f }, idx },
-            { { left,   bottom, 0.0f, 0.0f }, { 0.0f, 1.0f, float(idx), 0.0f }, idx },
-            { { right,  bottom, 0.0f, 0.0f }, { 1.0f, 1.0f, float(idx), 0.0f }, idx },
-
-            { { left,   top,    0.0f, 0.0f }, { 0.0f, 0.0f, float(idx), 0.0f }, idx },
-            { { right,  bottom, 0.0f, 0.0f }, { 1.0f, 1.0f, float(idx), 0.0f }, idx },
-            { { right,  top,    0.0f, 0.0f }, { 1.0f, 0.0f, float(idx), 0.0f }, idx },
+            { { left, top, 0.0f, 0.0f }, { 0.0f, 0.0f, float(idx), 0.0f }, idx },
+            { { left, bottom, 0.0f, 0.0f }, { 0.0f, 1.0f, float(idx), 0.0f }, idx },
+            { { right, bottom, 0.0f, 0.0f }, { 1.0f, 1.0f, float(idx), 0.0f }, idx },
+            { { left, top, 0.0f, 0.0f }, { 0.0f, 0.0f, float(idx), 0.0f }, idx },
+            { { right, bottom, 0.0f, 0.0f }, { 1.0f, 1.0f, float(idx), 0.0f }, idx },
+            { { right, top, 0.0f, 0.0f }, { 1.0f, 0.0f, float(idx), 0.0f }, idx },
         };
-        for(auto& v : singleTileVerts) {
 
-            glm::vec2 uv = {v.texCoord.x, v.texCoord.y};
-            glm::vec2 result;
+        for (auto &v : singleTileVerts) {
+            glm::vec2 uv = { v.texCoord.x, v.texCoord.y };
+            glm::vec2 res;
             switch (texture.getOrientation()) {
-                case 1: 
-                    result = uv;
-                    break;
-                case 3: 
-                    result = glm::vec2(1.0f - uv.x, 1.0f - uv.y);
-                    break;
+                case 1:
+                    res = uv; break;
+                case 3:
+                    res = glm::vec2(1.0f - uv.x, 1.0f - uv.y); break;
                 case 6:
-                    result = glm::vec2(uv.y, 1.0f - uv.x);
-                    break;
-                case 8: 
-                    result = glm::vec2(1.0f - uv.y, uv.x);
-                    break;
+                    res = glm::vec2(uv.y, 1.0f - uv.x); break;
+                case 8:
+                    res = glm::vec2(1.0f - uv.y, uv.x); break;
                 default:
-                    result = uv;
-                    break;
+                    res = uv; break;
             }
-            v.texCoord.x = result.x;
-            v.texCoord.y = result.y;
+            v.texCoord.x = res.x;
+            v.texCoord.y = res.y;
         }
         result.vertices.insert(result.vertices.end(), singleTileVerts.begin(), singleTileVerts.end());
-        std::cout << "Tile " << idx << "(" << one.width << " x " << one.height << ")has completed.\n";
+        std::cout << "Tile " << idx << "(" << one.width << " x " << one.height << ") completed\n";
         return result;
     }
     return result;
+
 }
 
 TiledResult TextureTiling::tile5(OIIOTexture &texture, uint32_t deviceMaxDimension) {

@@ -359,7 +359,10 @@ public:
 
         now = std::chrono::high_resolution_clock::now();
 
+        //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/very_wide.webp");
         auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/landscape.tif");
+        //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/landscape1.jpeg");
+        //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/landscape2.jpeg");
         std::cout << "Texture creation: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
         timeElapsed = std::chrono::high_resolution_clock::now() - now;
 
@@ -1029,7 +1032,7 @@ private:
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = swapChainExtent;
 
-        VkClearValue clearColor = {{{1.0f, 0.0f, 1.0f, 1.0f}}};
+        VkClearValue clearColor = {{{0.25f, 0.25f, 0.25f, 1.0f}}};
         renderPassInfo.clearValueCount = 1;
         renderPassInfo.pClearValues = &clearColor;
 
@@ -1370,6 +1373,10 @@ private:
         swapChainImageFormat = surfaceFormat.format;
         swapChainColorSpace = surfaceFormat.colorSpace;
         swapChainExtent = extent;
+
+        std::cout << "Swap Chain Extent chosen: "
+          << swapChainExtent.width << " x " 
+          << swapChainExtent.height << std::endl;
 
         if (indices.graphicsFamily != indices.presentFamily) {
             createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
