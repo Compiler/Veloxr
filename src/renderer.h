@@ -14,6 +14,7 @@
 #include <utility>
 #include <vulkan/vulkan_core.h>
 #include <OrthographicCamera.h>
+#include <OrthoCam.h>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <texture.h>
@@ -42,8 +43,6 @@
 #include <algorithm> 
 #include <fstream>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image/stb_image.h>
 #include <device.h>
 
 
@@ -81,6 +80,7 @@
 #define PREFIX std::string("/mnt/c")
 #endif
 static std::vector<char> readFile(const std::string& filename) {
+    std::cout << "Loading file: " << filename << std::endl;
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
     if (!file.is_open()) {
@@ -95,7 +95,7 @@ static std::vector<char> readFile(const std::string& filename) {
     return buffer;
 }
 
-void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
+inline void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
     auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
     if (func != nullptr) {
         func(instance, debugMessenger, pAllocator);
@@ -103,7 +103,7 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
 }
 
 // Hook extension functions and load them
-VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
+inline VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
     auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
     if (func != nullptr) {
         return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
@@ -113,10 +113,10 @@ VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMes
 }
 
 
-const auto LEFT = -0.9f;
-const auto RIGHT = 0.9f;
-const auto TOP = -0.9f;
-const auto BOT = 0.9f;
+inline const auto LEFT = -0.9f;
+inline const auto RIGHT = 0.9f;
+inline const auto TOP = -0.9f;
+inline const auto BOT = 0.9f;
 // TODO:
 //      - Alpha layer transparency
 //          - Where there are no colors, but there is an alpha layer, fill with alpha checkerboard
@@ -126,7 +126,7 @@ const auto BOT = 0.9f;
 //      - Aspect Ratio
 //      - Return parsable coordinates of what is being viewed.
 //          - 
-std::vector<Veloxr::Vertex> vertices = {
+inline std::vector<Veloxr::Vertex> vertices = {
     {{RIGHT, BOT, 0, 0}, {1.0f, 1.0f, 1, 0}, 0},
     {{LEFT, BOT, 0, 0}, {0.0f, 1.0f, 1, 0}, 0},
     {{LEFT, TOP, 0, 0}, {0.0f, 0.0f, 1, 0}, 0},
@@ -144,10 +144,10 @@ struct UniformBufferObject {
     alignas(16) glm::vec4 time;
 };
 
-bool mousePressed = false;
-double lastX = 0.0, lastY = 0.0;
-
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+inline bool mousePressed = false;
+inline double lastX = 0.0, lastY = 0.0;
+inline void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+inline void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
     if (button == GLFW_MOUSE_BUTTON_LEFT) {
         if (action == GLFW_PRESS) {
             mousePressed = true;
@@ -156,10 +156,12 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
             mousePressed = false;
         }
     }
+
+
 }
 
-void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) ;
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) ;
+inline void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) ;
+inline void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) ;
 
 class RendererCore {
 public:
@@ -170,8 +172,17 @@ public:
         render();
         destroy();
     }
+    void setWindowDimensions(int width, int height) {
+        _windowWidth = width;
+        _windowHeight = height;
+        frameBufferResized = true;
+    }
     /*const*/Veloxr::OrthographicCamera& getCamera() {
         return _camera;
+    }
+
+    /*const*/Veloxr::OrthoCam& getCam() {
+        return _cam;
     }
 
 private: // No client
@@ -179,15 +190,18 @@ private: // No client
     GLFWwindow* window;
     const int WIDTH = 1920;
     const int HEIGHT = 1080;
+    int _windowWidth, _windowHeight;
 
 private: // Client
 
     VkInstance instance;
+    bool noClientWindow = false;
 
     VkDebugUtilsMessengerEXT debugMessenger;
     bool enableValidationLayers = true;
 
     Veloxr::OrthographicCamera _camera;
+    Veloxr::OrthoCam _cam;
 
 
     const std::vector<const char*> validationLayers = {
@@ -231,6 +245,7 @@ private: // Client
         VkImageView textureImageView;
         VkSampler textureSampler;
         Veloxr::OIIOTexture textureData;
+        int samplerIndex;
 
         void destroy(VkDevice device) {
             vkDestroySampler(device, textureSampler, nullptr);
@@ -268,10 +283,9 @@ private:
 
     void* getWindowHandleFromRaw(void* rawHandle) {
 #ifdef __APPLE__
-        // For macOS, we need to ensure we have a CAMetalLayer
+        // mac: we need to ensure we have a CAMetalLayer
         NSView* nsView = (__bridge NSView*)rawHandle;
 
-        // Make sure the view is layer-backed
         if (![nsView layer] || ![nsView.layer isKindOfClass:[CAMetalLayer class]]) {
             [nsView setWantsLayer:YES];
             CAMetalLayer* metalLayer = [CAMetalLayer layer];
@@ -280,7 +294,6 @@ private:
 
         return (__bridge void*)nsView.layer;
 #else
-        // For Windows and other platforms, use the handle directly
         return rawHandle;
 #endif
 
@@ -288,7 +301,6 @@ private:
 
     void createSurfaceFromWindowHandle(void* windowHandle) {
 #ifdef _WIN32
-        // Windows implementation
         VkWin32SurfaceCreateInfoKHR createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
         createInfo.hwnd = static_cast<HWND>(windowHandle);
@@ -297,8 +309,8 @@ private:
         if (vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, &surface) != VK_SUCCESS) {
             throw std::runtime_error("failed to create window surface!");
         }
+        std::cout << "Windows surface created!\n";
 #elif defined(__APPLE__)
-        // macOS implementation using Metal
         VkMetalSurfaceCreateInfoEXT createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
         createInfo.pLayer = static_cast<CAMetalLayer*>(windowHandle);
@@ -308,27 +320,39 @@ private:
         }
 #endif
     }
-
-    void init() {
-        auto now = std::chrono::high_resolution_clock::now();
-        auto nowTop = std::chrono::high_resolution_clock::now();
+    void initGlfw() {
 
         glfwInit();
-
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-
-        window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+        _windowWidth = WIDTH;
+        _windowHeight = HEIGHT;
+        window = glfwCreateWindow(_windowWidth, _windowHeight, "Vulkan", nullptr, nullptr);
         glfwSetWindowUserPointer(window, this);
         glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
         glfwSetMouseButtonCallback(window, mouse_button_callback);
         glfwSetCursorPosCallback(window, cursor_position_callback);
         glfwSetScrollCallback(window, scroll_callback);
+        glfwSetKeyCallback(window, key_callback);
+
+    }
+public:
+
+    void init(void* windowHandle = nullptr) {
+        auto now = std::chrono::high_resolution_clock::now();
+        auto nowTop = std::chrono::high_resolution_clock::now();
+
+        if(!windowHandle) {
+            std::cout << "Providing window, no client window specified\n";
+            initGlfw();
+            noClientWindow = true;
+        }
 
         auto timeElapsed = std::chrono::high_resolution_clock::now() - now;
         std::cout << "Init glfw: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
         createVulkanInstance();
         setupDebugMessenger();
-        createSurface();
+        if(noClientWindow) createSurface();
+        else createSurfaceFromWindowHandle(windowHandle);
 
         _deviceUtils = std::make_unique<Veloxr::Device>(instance, surface, enableValidationLayers);
         _deviceUtils->create();
@@ -339,12 +363,15 @@ private:
         createCommandPool();
 
         now = std::chrono::high_resolution_clock::now();
-        //addTexture(PREFIX+"/Users/ljuek/Downloads/56000.jpg");
 
-        auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg");
+        //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/very_wide.webp");
+        //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/landscape.tif");
+        auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/56000.jpg");
+        //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg");
+        //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/landscape1.jpeg");
+        //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/landscape2.jpeg");
         std::cout << "Texture creation: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
         timeElapsed = std::chrono::high_resolution_clock::now() - now;
-        //addTexture(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg");
 
 
 
@@ -365,18 +392,19 @@ private:
         auto timeElapsedTop = std::chrono::high_resolution_clock::now() - now;
         std::cout << "Init(): " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsedTop).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsedTop).count() << "microseconds.\n";
     }
+private:
 
     void addTexture(std::string input_filepath) {
         _textureMap[input_filepath] = {};
-        const auto& [textureImage, textureImageMemory, textureHelper] = createTextureImage(input_filepath);
+        //const auto& [textureImage, textureImageMemory, textureHelper] = createTextureImage(input_filepath);
 
-        auto imageView = createTextureImageView(textureImage);
-        auto sampler = createTextureSampler();
-        _textureMap[input_filepath].textureImage = textureImage;
-        _textureMap[input_filepath].textureImageMemory = textureImageMemory;
-        _textureMap[input_filepath].textureImageView = imageView;
-        _textureMap[input_filepath].textureSampler = sampler;
-        _textureMap[input_filepath].textureData = textureHelper;
+        //auto imageView = createTextureImageView(textureImage);
+        //auto sampler = createTextureSampler();
+        //_textureMap[input_filepath].textureImage = textureImage;
+        //_textureMap[input_filepath].textureImageMemory = textureImageMemory;
+        //_textureMap[input_filepath].textureImageView = imageView;
+        //_textureMap[input_filepath].textureSampler = sampler;
+        //_textureMap[input_filepath].textureData = textureHelper;
     }
 
     VkSampler createTextureSampler(std::string input_filepath="") {
@@ -529,15 +557,18 @@ private:
     std::unordered_map<std::string, VkVirtualTexture> createTiledTexture(std::string input_filepath="") {
         std::unordered_map<std::string, VkVirtualTexture>  result;
         Veloxr::OIIOTexture myTexture{input_filepath};
-        _camera.init((float)myTexture.getResolution().x / (float)myTexture.getResolution().y);
+        //_camera.init((float)_windowWidth / (float) _windowHeight, (float)myTexture.getResolution().x / (float)myTexture.getResolution().y);
+        _camera.init((float)myTexture.getResolution().x, (float)myTexture.getResolution().y, _windowWidth, _windowHeight);
+        _cam.init(0, _windowWidth, 0, _windowHeight, -1, 1);
         Veloxr::TextureTiling tiler{};
         auto maxResolution = _deviceUtils->getMaxTextureResolution();
         std::cout << "Tiling...\n";
-        Veloxr::TiledResult tileData = tiler.tile4(myTexture, maxResolution * maxResolution);
-        for(int i = 0; i < tileData.tiles.size(); i++){
+        //Veloxr::TiledResult tileData = tiler.tile4(myTexture, maxResolution);
+        Veloxr::TiledResult tileData = tiler.tile7(myTexture, maxResolution);
+        for(const auto& [indx, tileData] : tileData.tiles){
             VkVirtualTexture tileTexture;
-            int texWidth    = tileData.tiles[i].width;
-            int texHeight   = tileData.tiles[i].height;
+            int texWidth    = tileData.width;
+            int texHeight   = tileData.height;
             int texChannels = 4;//myTexture.getNumChannels();
 
             std::cout << "HELP MY CHANNELS ARE " << myTexture.getNumChannels() << std::endl;
@@ -557,7 +588,7 @@ private:
             void* data;
             vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
             //memcpy(data, res.begin()->pixelData.data()/*myTexture.load(input_filepath).data()*/, static_cast<size_t>(imageSize));
-            memcpy(data, tileData.tiles[i].pixelData.data()/*myTexture.load(input_filepath).data()*/, static_cast<size_t>(imageSize));
+            memcpy(data, tileData.pixelData.data()/*myTexture.load(input_filepath).data()*/, static_cast<size_t>(imageSize));
             vkUnmapMemory(device, stagingBufferMemory);
 
             VkImage textureImage;
@@ -580,80 +611,30 @@ private:
             auto sampler = createTextureSampler();
             tileTexture.textureImageView = imageView;
             tileTexture.textureSampler = sampler;
+            tileTexture.samplerIndex = indx;
 
-            _textureMap[input_filepath + "_tile_" + std::to_string(i)] = tileTexture;
+            _textureMap[input_filepath + "_tile_" + std::to_string(indx)] = tileTexture;
         }
         vertices = std::vector<Veloxr::Vertex>(tileData.vertices.begin(), tileData.vertices.end());
         for(Veloxr::Vertex& vertice : vertices) {
-            std::cout << "Vertex pos : " << vertice.pos.x << ", " << vertice.pos.y << "\n";
-            std::cout << "Vertex texCoord: " << vertice.texCoord.x << ", " << vertice.texCoord.y << "\n";
-            std::cout << "Vertex texUnit: " << vertice.textureUnit << "\n";
+            const auto& [position, texCoords, texUnit] = vertice;
+            std::cout << "[" << position.x << ", " << position.y << "]\t\t|\t\t[" << texCoords.x << ", " << texCoords.y << "]\t|\t" << texUnit << std::endl;
         }
-
+        float minX = +9999.0f, maxX = -9999.0f;
+        float minY = +9999.0f, maxY = -9999.0f;
+        for (auto &v : vertices) {
+            minX = std::min(minX, v.pos.x);
+            maxX = std::max(maxX, v.pos.x);
+            minY = std::min(minY, v.pos.y);
+            maxY = std::max(maxY, v.pos.y);
+        }
+        std::cout << "Final geometry bounding box: X in [" 
+            << minX << ", " << maxX << "], Y in [" 
+            << minY << ", " << maxY << "]\n";
 
         return {};
     }
 
-    std::tuple<VkImage, VkDeviceMemory, Veloxr::OIIOTexture> createTextureImage(std::string input_filepath="") {
-        //cv::Mat image = cv::imread("C:/Users/ljuek/Downloads/16kmarble.jpeg", cv::IMREAD_UNCHANGED);
-        Test t{};
-        //t.run2(PREFIX + "/Users/ljuek/Downloads/Colonial.jpg", PREFIX+"/Users/ljuek/Downloads/Colonial_1.jpg");
-
-
-        Veloxr::OIIOTexture myTexture{input_filepath};
-        Veloxr::TextureTiling tiler{};
-        auto maxResolution = _deviceUtils->getMaxTextureResolution();
-        std::cout << "Tiling...\n";
-       // auto res = tiler.tile(myTexture, maxResolution * maxResolution);
-        Veloxr::TiledResult tileData = tiler.tile2(myTexture, maxResolution * maxResolution);
-//        int texWidth    = myTexture.getResolution().x;
- //       int texHeight   = myTexture.getResolution().y;
-  //      int texChannels = 4;//myTexture.getNumChannels();
-  
-
-        //int texWidth    = res.begin()->width;
-        //int texHeight   = res.begin()->height;
-        //int texChannels = 4;//myTexture.getNumChannels();
-                            //
-        
-        int texWidth    = tileData.tiles.begin()->width;
-        int texHeight   = tileData.tiles.begin()->height;
-        int texChannels = 4;//myTexture.getNumChannels();
-        _camera.init((float)texWidth / (float)texHeight);
-
-        std::cout << "HELP MY CHANNELS ARE " << myTexture.getNumChannels() << std::endl;
-        VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth) * 
-            static_cast<VkDeviceSize>(texHeight) *
-            static_cast<VkDeviceSize>(texChannels);
-
-        std::cout << "Loading texture of size " 
-            << texWidth << " x " << texHeight << ": " 
-            << (imageSize / 1024.0 / 1024.0) << " MB" << std::endl;
-
-
-        VkBuffer stagingBuffer;
-        VkDeviceMemory stagingBufferMemory;
-        createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-
-        void* data;
-        vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
-        //memcpy(data, res.begin()->pixelData.data()/*myTexture.load(input_filepath).data()*/, static_cast<size_t>(imageSize));
-        memcpy(data, tileData.tiles.begin()->pixelData.data()/*myTexture.load(input_filepath).data()*/, static_cast<size_t>(imageSize));
-        vkUnmapMemory(device, stagingBufferMemory);
-
-        VkImage textureImage;
-        VkDeviceMemory textureImageMemory;
-        createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
-
-        transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-        copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
-        transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-
-        vkDestroyBuffer(device, stagingBuffer, nullptr);
-        vkFreeMemory(device, stagingBufferMemory, nullptr);
-        return {textureImage, textureImageMemory, myTexture};
-    }
 
     VkCommandBuffer beginSingleTimeCommands() {
         VkCommandBufferAllocateInfo allocInfo{};
@@ -745,11 +726,16 @@ private:
             bufferInfo.range = sizeof(UniformBufferObject);
 
             std::vector<VkDescriptorImageInfo> imageInfos;
+            std::map<int, VkDescriptorImageInfo> orderedSamplers;
             for (auto& [filepath, structure] : _textureMap) {
                 VkDescriptorImageInfo imageInfo{};
                 imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 imageInfo.imageView = structure.textureImageView;
                 imageInfo.sampler = structure.textureSampler;
+                orderedSamplers[structure.samplerIndex] = (imageInfo);
+            }
+
+            for(auto& [_, imageInfo] : orderedSamplers) {
                 imageInfos.push_back(imageInfo);
             }
 
@@ -780,7 +766,7 @@ private:
         poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
         poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * _textureMap.size());// static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+        poolSizes[1].descriptorCount = static_cast<uint32_t>(32 * MAX_FRAMES_IN_FLIGHT);//static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * _textureMap.size());// static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
         VkDescriptorPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -819,7 +805,7 @@ private:
         VkDescriptorSetLayoutBinding samplerLayoutBinding{};
         samplerLayoutBinding.binding = 1;
         samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        samplerLayoutBinding.descriptorCount = 16;//static_cast<uint32_t>(_textureMap.size());
+        samplerLayoutBinding.descriptorCount = 32;//static_cast<uint32_t>(_textureMap.size());
         samplerLayoutBinding.pImmutableSamplers = nullptr;
         samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
@@ -906,12 +892,20 @@ private:
     void recreateSwapChain() {
         // TODO: This is client only
         int width = 0, height = 0;
-        glfwGetFramebufferSize(window, &width, &height);
-        while (width == 0 || height == 0) {
+        if(noClientWindow) {
             glfwGetFramebufferSize(window, &width, &height);
-            glfwWaitEvents();
+            while (width == 0 || height == 0) {
+                glfwGetFramebufferSize(window, &width, &height);
+                glfwWaitEvents();
+            }
+            _windowWidth = width;
+            _windowHeight = height;
         }
         vkDeviceWaitIdle(device);
+        _camera.setWindowSize(_windowWidth, _windowHeight);
+        _cam.setProjection(0, _windowWidth, 0, _windowHeight, -1, 1);
+
+        //_camera.setWindowAspectRatio((float)_windowWidth / (float) _windowHeight);
 
         cleanupSwapChain();
 
@@ -959,21 +953,24 @@ private:
     void updateUniformBuffers(uint32_t currentImage) {
         UniformBufferObject ubo{};
         float time = 1;
-        ubo.view = _camera.getViewMatrix();
-        ubo.proj = _camera.getProjectionMatrix();
+        ubo.view = _cam.getViewMatrix();
+        ubo.proj = _cam.getProjectionMatrix();
         ubo.model = glm::mat4(1.0f);
-        ubo.time.x = glfwGetTime();
+        //ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0,0,1));
         memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
     }
 
+public:
     void drawFrame() {
+        //std::cout << "Drawing frame with extent: " << swapChainExtent.width << "x" << swapChainExtent.height << std::endl;
         vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
         uint32_t imageIndex;
 
         VkResult result = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
 
-        if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || frameBufferResized) {
+            std::cout << "Resizing swapchain\n";
             frameBufferResized = false;
             recreateSwapChain();
             return;
@@ -1024,6 +1021,7 @@ private:
         currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 
     }
+private:
 
     void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
 
@@ -1041,7 +1039,7 @@ private:
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = swapChainExtent;
 
-        VkClearValue clearColor = {{{1.0f, 0.0f, 1.0f, 1.0f}}};
+        VkClearValue clearColor = {{{0.25f, 0.25f, 0.25f, 1.0f}}};
         renderPassInfo.clearValueCount = 1;
         renderPassInfo.pClearValues = &clearColor;
 
@@ -1270,8 +1268,8 @@ private:
         rasterizer.rasterizerDiscardEnable = VK_FALSE;
         rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
         rasterizer.lineWidth = 1.0f;
-        rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-        rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+        rasterizer.cullMode = VK_CULL_MODE_NONE;
+        rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         rasterizer.depthBiasEnable = VK_FALSE;
         rasterizer.depthBiasConstantFactor = 0.0f; 
         rasterizer.depthBiasClamp = 0.0f; 
@@ -1383,6 +1381,10 @@ private:
         swapChainColorSpace = surfaceFormat.colorSpace;
         swapChainExtent = extent;
 
+        std::cout << "Swap Chain Extent chosen: "
+          << swapChainExtent.width << " x " 
+          << swapChainExtent.height << std::endl;
+
         if (indices.graphicsFamily != indices.presentFamily) {
             createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
             createInfo.queueFamilyIndexCount = 2;
@@ -1411,6 +1413,7 @@ private:
     }
 
     void createSurface() {
+        std::cout << "NO client, creating glfw surface\n";
         if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
             throw std::runtime_error("failed to create window surface!");
         }
@@ -1444,8 +1447,10 @@ private:
             return capabilities.currentExtent;
         } else {
             // TODO: This is user side, need client side passthrough
-            int width, height;
-            glfwGetFramebufferSize(window, &width, &height);
+            int width = _windowWidth, height = _windowHeight;
+            if(noClientWindow) {
+                glfwGetFramebufferSize(window, &width, &height);
+            }
 
             VkExtent2D actualExtent = {
                 static_cast<uint32_t>(width),
@@ -1489,6 +1494,7 @@ private:
 
     }
 
+public:
     void destroy() {
 
         cleanupSwapChain();
@@ -1530,6 +1536,7 @@ private:
 
         glfwTerminate();
     }
+private:
 
     void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
         createInfo = {};
@@ -1576,11 +1583,12 @@ private:
 
     }
 
-    // Won't need this in library. Pass in the vulkan instance.
-    void createVulkanInstance(){
+    // Won't need this in library. Pass in the vulkan instance. (Addendum) I am wrong.
+    void createVulkanInstance() {
         if (enableValidationLayers && !checkValidationLayerSupport()) {
             throw std::runtime_error("validation layers requested, but not available!");
         }
+
         VkApplicationInfo appInfo{};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         appInfo.pApplicationName = "ImageRenderer";
@@ -1596,33 +1604,41 @@ private:
         uint32_t glfwExtensionCount = 0;
         const char** glfwExtensions;
 
-        glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-        createInfo.enabledExtensionCount = glfwExtensionCount;
-        createInfo.ppEnabledExtensionNames = glfwExtensions;
-        createInfo.enabledLayerCount = 0;
-
         // ifdef macos / molten
         std::vector<const char*> requiredExtensions;
+        if(noClientWindow) {
+            glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
-        for(uint32_t i = 0; i < glfwExtensionCount; i++) {
-            requiredExtensions.emplace_back(glfwExtensions[i]);
+            createInfo.enabledExtensionCount = glfwExtensionCount;
+            createInfo.ppEnabledExtensionNames = glfwExtensions;
+            createInfo.enabledLayerCount = 0;
+
+
+            for(uint32_t i = 0; i < glfwExtensionCount; i++) {
+                requiredExtensions.emplace_back(glfwExtensions[i]);
+            }
+
+            requiredExtensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
         }
 
-        requiredExtensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
-        if(enableValidationLayers) requiredExtensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        requiredExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);  // This is the critical addition!
 
-        #ifdef _WIN32
-        requiredExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
-        #elif defined(__APPLE__)
+#ifdef __APPLE__
+        requiredExtensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
         requiredExtensions.push_back(VK_EXT_METAL_SURFACE_EXTENSION_NAME);
-        //#elif defined(__linux__)
-        //requiredExtensions.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
-        #endif
+#elif defined(_WIN32)
+        requiredExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+#endif
 
+        if (enableValidationLayers) {
+            requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        }
+
+#ifdef __APPLE__
         createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+#endif
 
-        createInfo.enabledExtensionCount = (uint32_t) requiredExtensions.size();
+        createInfo.enabledExtensionCount = static_cast<uint32_t>(requiredExtensions.size());
         createInfo.ppEnabledExtensionNames = requiredExtensions.data();
 
         VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
@@ -1631,31 +1647,30 @@ private:
             createInfo.ppEnabledLayerNames = validationLayers.data();
 
             populateDebugMessengerCreateInfo(debugCreateInfo);
-            createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*) &debugCreateInfo;
+            createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
         } else {
             createInfo.enabledLayerCount = 0;
-
             createInfo.pNext = nullptr;
         }
 
         if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
             throw std::runtime_error("failed to create instance!");
         }
-        std::cout << "Created a valid instance!\n";
 
+        std::cout << "Created a valid instance!\n";
     }
 };
 
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+inline void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
     //printf("Scrolled: x = %.2f, y = %.2f\n", xoffset, yoffset);
     auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
-    Veloxr::OrthographicCamera& camera = app->getCamera();
-    float currentZoom = camera.getZoom();
+    auto& camera = app->getCam();
+    float currentZoom = camera.getZoomLevel();
     float sensitivity = currentZoom * 0.1f;
-    camera.addToZoom(-yoffset * sensitivity);
+    camera.addToZoom(yoffset * sensitivity);
 }
 
-void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
+inline void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
     if (mousePressed) {
         auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
         double dx = xpos - lastX;
@@ -1665,8 +1680,21 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
 
         lastX = xpos;
         lastY = ypos;
-        glm::vec2 diffs{-dx/500.0f, -dy/500.0f};
-        diffs *= app->getCamera().getZoomLevel() * 400 * app->deltaMs;
-        app->getCamera().translate(diffs);
+        glm::vec2 diffs{-dx * 20.0f, -dy * 20.0f};
+        diffs *= app->getCam().getZoomLevel() * 400 * app->deltaMs;
+        app->getCam().translate(diffs);
     }
 }
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+        glfwSetWindowShouldClose(window, true);  
+    }
+
+    if (key == GLFW_KEY_W && action == GLFW_PRESS) {
+        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
+        app->getCamera().incrementTexWidth();
+    }
+
+}
+

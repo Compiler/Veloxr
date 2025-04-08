@@ -36,6 +36,7 @@ class Device {
         VkQueue _graphicsQueue, _presentQueue;
         bool _enableValidationLayers;
         uint32_t _maxTextureResolution;
+        uint32_t _maxSamplers;
 
         const std::vector<const char*> deviceExtensions = {
             VK_KHR_SWAPCHAIN_EXTENSION_NAME

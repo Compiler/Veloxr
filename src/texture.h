@@ -18,6 +18,7 @@ namespace Veloxr {
             inline const Point& getResolution() const { return _resolution; }
             inline const std::string& getFilename() const { return _filename; }
             inline const int& getNumChannels() const { return _numChannels; }
+            inline const int& getOrientation() const { return _orientation; }
             std::vector<unsigned char> load(std::string filename="");
             inline const bool isInitialized() const { return _loaded; }
 
@@ -25,6 +26,7 @@ namespace Veloxr {
             Point _resolution;
             std::string _filename;
             int _numChannels;
+            int _orientation;
             bool _loaded{false};
 
     };

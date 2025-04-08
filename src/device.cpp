@@ -136,6 +136,9 @@ int Device::_calculateDeviceScore(VkPhysicalDevice device) {
     VkPhysicalDeviceProperties deviceProperties;
     vkGetPhysicalDeviceProperties(device, &deviceProperties);
     _maxTextureResolution = deviceProperties.limits.maxImageDimension2D;
+    _maxSamplers = deviceProperties.limits.maxPerStageDescriptorSamplers;
+    uint32_t desiredSamplerCount = std::min(_maxSamplers, (uint32_t)64 );
+    _maxSamplers = desiredSamplerCount;
     std::cout << "[DEBUG] Physical Device Name: " << deviceProperties.deviceName << "\n";
     std::cout << "[DEBUG] API Version: " << deviceProperties.apiVersion << "\n";
     std::cout << "[DEBUG] Max Texture Resolution: " << _maxTextureResolution << "\n";

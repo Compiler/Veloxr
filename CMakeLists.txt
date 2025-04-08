@@ -16,6 +16,7 @@ add_executable(vulkanrenderer
         src/Vertex.h 
         src/device.h src/device.cpp 
         src/OrthographicCamera.h src/OrthographicCamera.cpp
+        src/OrthoCam.h src/OrthoCam.cpp
         src/texture.h src/texture.cpp 
         src/TextureTiling.h src/TextureTiling.cpp 
     )
