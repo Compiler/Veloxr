@@ -391,6 +391,7 @@ public:
         createSyncObjects();
         auto timeElapsedTop = std::chrono::high_resolution_clock::now() - now;
         std::cout << "Init(): " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsedTop).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsedTop).count() << "microseconds.\n";
+        _textureMap.clear();
     }
 private:
 
@@ -564,7 +565,7 @@ private:
         auto maxResolution = _deviceUtils->getMaxTextureResolution();
         std::cout << "Tiling...\n";
         //Veloxr::TiledResult tileData = tiler.tile4(myTexture, maxResolution);
-        Veloxr::TiledResult tileData = tiler.tile7(myTexture, maxResolution);
+        Veloxr::TiledResult tileData = tiler.tile8(myTexture, maxResolution);
         for(const auto& [indx, tileData] : tileData.tiles){
             VkVirtualTexture tileTexture;
             int texWidth    = tileData.width;
