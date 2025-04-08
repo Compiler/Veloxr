@@ -283,10 +283,9 @@ private:
 
     void* getWindowHandleFromRaw(void* rawHandle) {
 #ifdef __APPLE__
-        // For macOS, we need to ensure we have a CAMetalLayer
+        // mac: we need to ensure we have a CAMetalLayer
         NSView* nsView = (__bridge NSView*)rawHandle;
 
-        // Make sure the view is layer-backed
         if (![nsView layer] || ![nsView.layer isKindOfClass:[CAMetalLayer class]]) {
             [nsView setWantsLayer:YES];
             CAMetalLayer* metalLayer = [CAMetalLayer layer];
@@ -295,7 +294,6 @@ private:
 
         return (__bridge void*)nsView.layer;
 #else
-        // For Windows and other platforms, use the handle directly
         return rawHandle;
 #endif
 
@@ -303,7 +301,6 @@ private:
 
     void createSurfaceFromWindowHandle(void* windowHandle) {
 #ifdef _WIN32
-        // Windows implementation
         VkWin32SurfaceCreateInfoKHR createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
         createInfo.hwnd = static_cast<HWND>(windowHandle);
@@ -314,7 +311,6 @@ private:
         }
         std::cout << "Windows surface created!\n";
 #elif defined(__APPLE__)
-        // macOS implementation using Metal
         VkMetalSurfaceCreateInfoEXT createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
         createInfo.pLayer = static_cast<CAMetalLayer*>(windowHandle);

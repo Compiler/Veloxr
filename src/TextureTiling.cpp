@@ -15,7 +15,6 @@ TiledResult TextureTiling::tile7(OIIOTexture &texture, uint32_t deviceMaxDimensi
         return result;
     }
 
-    // -- Grab raw (file) resolution --
     uint32_t w = texture.getResolution().x;
     uint32_t h = texture.getResolution().y;
 
@@ -40,13 +39,12 @@ TiledResult TextureTiling::tile7(OIIOTexture &texture, uint32_t deviceMaxDimensi
         TextureData one;
         one.width    = w;
         one.height   = h;
-        one.channels = 4; // forcing RGBA
+        one.channels = 4; 
         one.pixelData = texture.load(texture.getFilename());
         result.tiles[0] = one;
 
         std::cout << "Loaded pixelData.size()=" << one.pixelData.size() << "\n";
 
-        // Grab orientation
         int orientation = texture.getOrientation();
         uint32_t orientedW = w;
         uint32_t orientedH = h;
@@ -177,15 +175,12 @@ TiledResult TextureTiling::tile7(OIIOTexture &texture, uint32_t deviceMaxDimensi
                         continue;
                     }
 
-                    // Allocate space for the tile data (RGBA forced)
                     std::vector<unsigned char> tileData(
                             size_t(thisTileW)*size_t(thisTileH)*size_t(forcedChannels),
                             255
                             );
 
-                    // Read subregion
                     if (!fileIsTiled) {
-                        // read_scanline approach
                         std::vector<unsigned char> rowBuffer(size_t(rawW)*size_t(originalChannels));
                         std::vector<unsigned char> rgbaRow  (size_t(rawW)*size_t(forcedChannels), 255);
 
@@ -196,7 +191,6 @@ TiledResult TextureTiling::tile7(OIIOTexture &texture, uint32_t deviceMaxDimensi
                                     << scanY << ": " << in->geterror() << std::endl;
                                 break;
                             }
-                            // Expand to forcedChannels, still dont know how to handle colors
                             for (uint32_t x = 0; x < rawW; x++) {
                                 for (uint32_t c = 0; c < originalChannels && c < forcedChannels; c++) {
                                     rgbaRow[size_t(x)*forcedChannels + c] =
@@ -204,7 +198,6 @@ TiledResult TextureTiling::tile7(OIIOTexture &texture, uint32_t deviceMaxDimensi
                                 }
                             }
 
-                            // Copy subregion [x0..x1)
                             size_t rowOffsetInTile = 
                                 size_t(scanY - y0) * size_t(thisTileW) * size_t(forcedChannels);
                             size_t rowOffsetInBuf =
@@ -461,12 +454,12 @@ TiledResult TextureTiling::tile6(OIIOTexture &texture, uint32_t deviceMaxDimensi
     uint32_t Nx = (rawW + deviceMaxDimension - 1) / deviceMaxDimension;
     uint32_t Ny = (rawH + deviceMaxDimension - 1) / deviceMaxDimension;
 
-    uint32_t tileW = (rawW + Nx - 1) / Nx;  // ceiling division
+    uint32_t tileW = (rawW + Nx - 1) / Nx;  
     uint32_t tileH = (rawH + Ny - 1) / Ny;  
 
     float aspectRatio = (float)orientedW / (float)orientedH;
-    float stepX       = 2.0f / float(Nx);  // each tile's width in X dimension
-    float stepY       = 2.0f / float(Ny);  // each tile's height in Y dimension
+    float stepX       = 2.0f / float(Nx);  
+    float stepY       = 2.0f / float(Ny);  
 
     int totalTiles = Nx * Ny;
 
@@ -574,8 +567,8 @@ TiledResult TextureTiling::tile6(OIIOTexture &texture, uint32_t deviceMaxDimensi
                 }
 
                 TextureData data;
-                data.width     = thisTileW;  // raw subregion width
-                data.height    = thisTileH;  // raw subregion height
+                data.width     = thisTileW;  
+                data.height    = thisTileH;  
                 data.channels  = forcedChannels;
                 data.pixelData = std::move(tileData);
 
@@ -625,6 +618,7 @@ TiledResult TextureTiling::tile6(OIIOTexture &texture, uint32_t deviceMaxDimensi
                     glm::vec2 uv(v.texCoord.x, v.texCoord.y);
                     glm::vec2 res;
                     switch (orientation) {
+                        // I am actually not sure if this is 180,90,270 but i think..?
                         case 1: // no rotation
                             res = uv;
                             break;
@@ -669,12 +663,10 @@ TiledResult TextureTiling::tile6(OIIOTexture &texture, uint32_t deviceMaxDimensi
         for (int t = 0; t < numThreads; t++) {
             auto itTiles = partialResults[t].localTiles.find(idx);
             if (itTiles != partialResults[t].localTiles.end()) {
-                // Move or copy the tile data into the final result
                 result.tiles[idx] = std::move(itTiles->second);
             }
             auto itVerts = partialResults[t].localVerts.find(idx);
             if (itVerts != partialResults[t].localVerts.end()) {
-                // Append all vertices
                 auto &theseVerts = itVerts->second;
                 result.vertices.insert(result.vertices.end(),
                         theseVerts.begin(),
@@ -903,7 +895,6 @@ TiledResult TextureTiling::tile5(OIIOTexture &texture, uint32_t deviceMaxDimensi
                 );
 
                 if (!fileIsTiled) {
-                    // read_scanline approach
                     std::vector<unsigned char> rowBuffer(size_t(w) * size_t(originalChannels));
                     std::vector<unsigned char> rgbaRow(size_t(w) * size_t(forcedChannels), 255);
 
@@ -931,7 +922,6 @@ TiledResult TextureTiling::tile5(OIIOTexture &texture, uint32_t deviceMaxDimensi
                                size_t(thisTileW) * size_t(forcedChannels));
                     }
                 } else {
-                    // read_tiles approach for subregion x0..x1, y0..y1
                     bool ok = in->read_tiles(0, 0,
                         int(x0), int(x1),
                         int(y0), int(y1),
@@ -978,7 +968,6 @@ TiledResult TextureTiling::tile5(OIIOTexture &texture, uint32_t deviceMaxDimensi
         th.join();
     }
 
-    // gather all tile indices
     std::set<int> allIndices;
     for (int t = 0; t < numThreads; t++) {
         for (auto &kv : partialResults[t].localTiles) {
@@ -986,7 +975,6 @@ TiledResult TextureTiling::tile5(OIIOTexture &texture, uint32_t deviceMaxDimensi
         }
     }
 
-    // build final TiledResult
     for (int idx : allIndices) {
         for (int t = 0; t < numThreads; t++) {
             auto itTiles = partialResults[t].localTiles.find(idx);

@@ -46,12 +46,12 @@ private:
     float _near, _far;
     float _zoomLevel;
 
-    glm::vec2 _position; // "camera" position in world coords
+    glm::vec2 _position; 
 
     glm::mat4 _projectionMatrix;
     glm::mat4 _viewMatrix;
     glm::mat4 _viewProjectionMatrix;
 };
 
-} // namespace Veloxr
+} 
 
