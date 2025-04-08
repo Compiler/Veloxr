@@ -566,7 +566,7 @@ private:
         std::cout << "Tiling...\n";
         //Veloxr::TiledResult tileData = tiler.tile4(myTexture, maxResolution);
         Veloxr::TiledResult tileData = tiler.tile8(myTexture, maxResolution);
-        for(const auto& [indx, tileData] : tileData.tiles){
+        for( auto& [indx, tileData] : tileData.tiles){
             VkVirtualTexture tileTexture;
             int texWidth    = tileData.width;
             int texHeight   = tileData.height;
@@ -615,6 +615,8 @@ private:
             tileTexture.samplerIndex = indx;
 
             _textureMap[input_filepath + "_tile_" + std::to_string(indx)] = tileTexture;
+            tileData.pixelData.clear();
+
         }
         vertices = std::vector<Veloxr::Vertex>(tileData.vertices.begin(), tileData.vertices.end());
         for(Veloxr::Vertex& vertice : vertices) {
