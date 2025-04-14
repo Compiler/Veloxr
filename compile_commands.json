@@ -1,0 +1,38 @@
+[
+{
+  "directory": "/home/luke/Code/VulkanRenderer/build",
+  "command": "/usr/bin/clang++ -DPROJECT_ROOT_DIR=\\\"/home/luke/Code/VulkanRenderer\\\" -I/home/luke/Code/VulkanRenderer/src -I/home/luke/Code/VulkanRenderer/include -isystem /usr/include/opencv4 -isystem /usr/include/Imath -g -std=gnu++20 -o CMakeFiles/vulkanrenderer.dir/src/main.cpp.o -c /home/luke/Code/VulkanRenderer/src/main.cpp",
+  "file": "/home/luke/Code/VulkanRenderer/src/main.cpp",
+  "output": "CMakeFiles/vulkanrenderer.dir/src/main.cpp.o"
+},
+{
+  "directory": "/home/luke/Code/VulkanRenderer/build",
+  "command": "/usr/bin/clang++ -DPROJECT_ROOT_DIR=\\\"/home/luke/Code/VulkanRenderer\\\" -I/home/luke/Code/VulkanRenderer/src -I/home/luke/Code/VulkanRenderer/include -isystem /usr/include/opencv4 -isystem /usr/include/Imath -g -std=gnu++20 -o CMakeFiles/vulkanrenderer.dir/src/device.cpp.o -c /home/luke/Code/VulkanRenderer/src/device.cpp",
+  "file": "/home/luke/Code/VulkanRenderer/src/device.cpp",
+  "output": "CMakeFiles/vulkanrenderer.dir/src/device.cpp.o"
+},
+{
+  "directory": "/home/luke/Code/VulkanRenderer/build",
+  "command": "/usr/bin/clang++ -DPROJECT_ROOT_DIR=\\\"/home/luke/Code/VulkanRenderer\\\" -I/home/luke/Code/VulkanRenderer/src -I/home/luke/Code/VulkanRenderer/include -isystem /usr/include/opencv4 -isystem /usr/include/Imath -g -std=gnu++20 -o CMakeFiles/vulkanrenderer.dir/src/OrthographicCamera.cpp.o -c /home/luke/Code/VulkanRenderer/src/OrthographicCamera.cpp",
+  "file": "/home/luke/Code/VulkanRenderer/src/OrthographicCamera.cpp",
+  "output": "CMakeFiles/vulkanrenderer.dir/src/OrthographicCamera.cpp.o"
+},
+{
+  "directory": "/home/luke/Code/VulkanRenderer/build",
+  "command": "/usr/bin/clang++ -DPROJECT_ROOT_DIR=\\\"/home/luke/Code/VulkanRenderer\\\" -I/home/luke/Code/VulkanRenderer/src -I/home/luke/Code/VulkanRenderer/include -isystem /usr/include/opencv4 -isystem /usr/include/Imath -g -std=gnu++20 -o CMakeFiles/vulkanrenderer.dir/src/OrthoCam.cpp.o -c /home/luke/Code/VulkanRenderer/src/OrthoCam.cpp",
+  "file": "/home/luke/Code/VulkanRenderer/src/OrthoCam.cpp",
+  "output": "CMakeFiles/vulkanrenderer.dir/src/OrthoCam.cpp.o"
+},
+{
+  "directory": "/home/luke/Code/VulkanRenderer/build",
+  "command": "/usr/bin/clang++ -DPROJECT_ROOT_DIR=\\\"/home/luke/Code/VulkanRenderer\\\" -I/home/luke/Code/VulkanRenderer/src -I/home/luke/Code/VulkanRenderer/include -isystem /usr/include/opencv4 -isystem /usr/include/Imath -g -std=gnu++20 -o CMakeFiles/vulkanrenderer.dir/src/texture.cpp.o -c /home/luke/Code/VulkanRenderer/src/texture.cpp",
+  "file": "/home/luke/Code/VulkanRenderer/src/texture.cpp",
+  "output": "CMakeFiles/vulkanrenderer.dir/src/texture.cpp.o"
+},
+{
+  "directory": "/home/luke/Code/VulkanRenderer/build",
+  "command": "/usr/bin/clang++ -DPROJECT_ROOT_DIR=\\\"/home/luke/Code/VulkanRenderer\\\" -I/home/luke/Code/VulkanRenderer/src -I/home/luke/Code/VulkanRenderer/include -isystem /usr/include/opencv4 -isystem /usr/include/Imath -g -std=gnu++20 -o CMakeFiles/vulkanrenderer.dir/src/TextureTiling.cpp.o -c /home/luke/Code/VulkanRenderer/src/TextureTiling.cpp",
+  "file": "/home/luke/Code/VulkanRenderer/src/TextureTiling.cpp",
+  "output": "CMakeFiles/vulkanrenderer.dir/src/TextureTiling.cpp.o"
+}
+]

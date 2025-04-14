@@ -366,8 +366,8 @@ public:
 
         //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/very_wide.webp");
         //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/landscape.tif");
-        auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/56000.jpg");
         //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg");
+        auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/56000.jpg");
         //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/landscape1.jpeg");
         //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/landscape2.jpeg");
         std::cout << "Texture creation: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
