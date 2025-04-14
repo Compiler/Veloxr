@@ -15,7 +15,7 @@ void main() {
 
     return ;
      //Debug code
-     float edgeThreshold = 0.01;
+     float edgeThreshold = 0.0005;
 
     bool nearLeft   = (fragTexCoord.x <= edgeThreshold);
     bool nearRight  = (fragTexCoord.x >= 1.0 - edgeThreshold);

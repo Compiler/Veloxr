@@ -71,7 +71,10 @@ TiledResult TextureTiling::tile8(OIIOTexture &texture, uint32_t deviceMaxDimensi
 
         for (auto &v : singleTileVerts) {
             glm::vec2 uv(v.texCoord.x, v.texCoord.y);
+
+            glm::vec2 oldPos(v.pos.x, v.pos.y);
             glm::vec2 res;
+
             switch (orientation) {
                 case 1:
                     std::cout << "Tile has no orientation change.\n";
@@ -95,6 +98,8 @@ TiledResult TextureTiling::tile8(OIIOTexture &texture, uint32_t deviceMaxDimensi
             }
             v.texCoord.x = res.x;
             v.texCoord.y = res.y;
+            //v.pos.x = newPos.x;
+            //v.pos.y = newPos.y;
         }
 
         result.vertices.insert(result.vertices.end(),
@@ -104,6 +109,7 @@ TiledResult TextureTiling::tile8(OIIOTexture &texture, uint32_t deviceMaxDimensi
         std::cout << "Single-tile approach used. \n";
         std::cout << "Tile " << idx
                   << " (" << one.width << " x " << one.height << ") completed\n";
+        result.boundingBox = {0, 0, right, top};
         return result;
     }
 
@@ -226,10 +232,10 @@ TiledResult TextureTiling::tile8(OIIOTexture &texture, uint32_t deviceMaxDimensi
                 data.pixelData = std::move(tileData);
                 localTiles[idx] = std::move(data);
 
-                float tileLeft   = (float(x0) / float(rawW)) * float(orientedW);
-                float tileRight  = (float(x1) / float(rawW)) * float(orientedW);
-                float tileTop    = (float(y0) / float(rawH)) * float(orientedH);
-                float tileBottom = (float(y1) / float(rawH)) * float(orientedH);
+                float tileLeft   = (float(x0));
+                float tileRight  = (float(x1));
+                float tileTop    = (float(y0));
+                float tileBottom = (float(y1));
 
                 Vertex v0 = { { tileLeft,  tileTop,    0.0f, 0.0f }, { 0.0f, 0.0f, float(idx), 0.0f }, idx };
                 Vertex v1 = { { tileLeft,  tileBottom, 0.0f, 0.0f }, { 0.0f, 1.0f, float(idx), 0.0f }, idx };
@@ -239,32 +245,6 @@ TiledResult TextureTiling::tile8(OIIOTexture &texture, uint32_t deviceMaxDimensi
                 Vertex v5 = { { tileRight, tileTop,    0.0f, 0.0f }, { 1.0f, 0.0f, float(idx), 0.0f }, idx };
 
                 std::vector<Vertex> theseVerts = { v0, v1, v2, v3, v4, v5 };
-
-                // Apply EXIF orientation to each tile's UV
-                for (auto &v : theseVerts) {
-                    glm::vec2 uv(v.texCoord.x, v.texCoord.y);
-                    glm::vec2 res;
-                    switch (orientation) {
-                        case 1:
-                            res = uv;
-                            break;
-                        case 3:
-                            res = glm::vec2(1.0f - uv.x, 1.0f - uv.y);
-                            break;
-                        case 6:
-                            res = glm::vec2(uv.y, 1.0f - uv.x);
-                            break;
-                        case 8:
-                            res = glm::vec2(1.0f - uv.y, uv.x);
-                            break;
-                        default:
-                            res = uv;
-                            break;
-                    }
-                    v.texCoord.x = res.x;
-                    v.texCoord.y = res.y;
-                }
-
                 localVerts[idx] = std::move(theseVerts);
 
                 std::cout << "Tile " << idx << " (thread " << t << ") completed.\n";
@@ -296,6 +276,15 @@ TiledResult TextureTiling::tile8(OIIOTexture &texture, uint32_t deviceMaxDimensi
                                        verts.end());
             }
         }
+    }
+
+    applyExifOrientation(result.vertices, orientation, w, h );
+
+    for(const auto& v : result.vertices) {
+        result.boundingBox.x = std::min(v.pos.x, result.boundingBox.x);
+        result.boundingBox.y = std::min(v.pos.y, result.boundingBox.y);
+        result.boundingBox.z = std::max(v.pos.y, result.boundingBox.z);
+        result.boundingBox.w = std::max(v.pos.y, result.boundingBox.w);
     }
 
     OIIO::ImageCache::destroy(ic);
