@@ -16,6 +16,7 @@ namespace Veloxr {
     struct TiledResult {
         std::map<int, TextureData> tiles;
         std::vector<Vertex>      vertices;
+        glm::vec4 boundingBox;
     };
 
 

@@ -177,9 +177,6 @@ public:
         _windowHeight = height;
         frameBufferResized = true;
     }
-    /*const*/Veloxr::OrthographicCamera& getCamera() {
-        return _camera;
-    }
 
     /*const*/Veloxr::OrthoCam& getCam() {
         return _cam;
@@ -200,7 +197,6 @@ private: // Client
     VkDebugUtilsMessengerEXT debugMessenger;
     bool enableValidationLayers = true;
 
-    Veloxr::OrthographicCamera _camera;
     Veloxr::OrthoCam _cam;
 
 
@@ -365,9 +361,9 @@ public:
         now = std::chrono::high_resolution_clock::now();
 
         //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/very_wide.webp");
-        //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/landscape.tif");
+        auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/landscape.tif");
         //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg");
-        auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/56000.jpg");
+        //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/56000.jpg");
         //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/landscape1.jpeg");
         //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/landscape2.jpeg");
         std::cout << "Texture creation: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
@@ -558,14 +554,13 @@ private:
     std::unordered_map<std::string, VkVirtualTexture> createTiledTexture(std::string input_filepath="") {
         std::unordered_map<std::string, VkVirtualTexture>  result;
         Veloxr::OIIOTexture myTexture{input_filepath};
-        //_camera.init((float)_windowWidth / (float) _windowHeight, (float)myTexture.getResolution().x / (float)myTexture.getResolution().y);
-        _camera.init((float)myTexture.getResolution().x, (float)myTexture.getResolution().y, _windowWidth, _windowHeight);
         _cam.init(0, _windowWidth, 0, _windowHeight, -1, 1);
         Veloxr::TextureTiling tiler{};
         auto maxResolution = _deviceUtils->getMaxTextureResolution();
         std::cout << "Tiling...\n";
         //Veloxr::TiledResult tileData = tiler.tile4(myTexture, maxResolution);
         Veloxr::TiledResult tileData = tiler.tile8(myTexture, maxResolution);
+        std::cout << "Done! Bounding box: (" << tileData.boundingBox.x << ", " << tileData.boundingBox.y << ", " << tileData.boundingBox.z << ", " << tileData.boundingBox.w << ") " << std::endl;
         for(const auto& [indx, tileData] : tileData.tiles){
             VkVirtualTexture tileTexture;
             int texWidth    = tileData.width;
@@ -632,6 +627,15 @@ private:
         std::cout << "Final geometry bounding box: X in [" 
             << minX << ", " << maxX << "], Y in [" 
             << minY << ", " << maxY << "]\n";
+        //_cam.setPosition({(maxX - minX) / 2.0f, (maxY - minY) / 2.0f});
+        auto deltaX = std::abs(maxX - minX);
+        auto deltaY = std::abs(maxY - minY);
+        float offsetX = 0.0f, offsetY = 0.0f;
+        if(deltaX > deltaY) {
+            offsetY = -deltaY / 2.0f;
+        }
+        _cam.setPosition({offsetX, offsetY});
+        _cam.fitViewport(minX, maxX, minY, maxY);
 
         return {};
     }
@@ -903,10 +907,8 @@ private:
             _windowHeight = height;
         }
         vkDeviceWaitIdle(device);
-        _camera.setWindowSize(_windowWidth, _windowHeight);
         _cam.setProjection(0, _windowWidth, 0, _windowHeight, -1, 1);
 
-        //_camera.setWindowAspectRatio((float)_windowWidth / (float) _windowHeight);
 
         cleanupSwapChain();
 
@@ -1668,7 +1670,8 @@ inline void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) 
     auto& camera = app->getCam();
     float currentZoom = camera.getZoomLevel();
     float sensitivity = currentZoom * 0.1f;
-    camera.addToZoom(yoffset * sensitivity);
+    camera.zoomToCenter(yoffset*sensitivity);
+    //camera.addToZoom(yoffset * sensitivity);
 }
 
 inline void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
@@ -1694,7 +1697,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
     if (key == GLFW_KEY_W && action == GLFW_PRESS) {
         auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
-        app->getCamera().incrementTexWidth();
     }
 
 }

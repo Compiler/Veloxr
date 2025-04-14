@@ -109,6 +109,7 @@ TiledResult TextureTiling::tile8(OIIOTexture &texture, uint32_t deviceMaxDimensi
         std::cout << "Single-tile approach used. \n";
         std::cout << "Tile " << idx
                   << " (" << one.width << " x " << one.height << ") completed\n";
+        result.boundingBox = {0, 0, right, top};
         return result;
     }
 
@@ -276,7 +277,15 @@ TiledResult TextureTiling::tile8(OIIOTexture &texture, uint32_t deviceMaxDimensi
             }
         }
     }
+
     applyExifOrientation(result.vertices, orientation, w, h );
+
+    for(const auto& v : result.vertices) {
+        result.boundingBox.x = std::min(v.pos.x, result.boundingBox.x);
+        result.boundingBox.y = std::min(v.pos.y, result.boundingBox.y);
+        result.boundingBox.z = std::max(v.pos.y, result.boundingBox.z);
+        result.boundingBox.w = std::max(v.pos.y, result.boundingBox.w);
+    }
 
     OIIO::ImageCache::destroy(ic);
 
