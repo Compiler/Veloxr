@@ -137,7 +137,8 @@ TiledResult TextureTiling::tile8(OIIOTexture &texture, uint32_t deviceMaxDimensi
     int numThreads = std::min(totalTiles, 16);
     int tilesPerThread = (totalTiles + numThreads - 1) / numThreads;
 
-    OIIO::ImageCache *ic = OIIO::ImageCache::create(true);
+    // OIIO::ImageCache *ic = OIIO::ImageCache::create(true);
+    std::shared_ptr<OIIO::ImageCache> ic = OIIO::ImageCache::create(true);
     ic->attribute("max_memory_MB", 1024.0f);
     OIIO::ImageSpec const *mainSpec = ic->imagespec(OIIO::ustring(texture.getFilename()), 0, 0);
     if (!mainSpec) {
