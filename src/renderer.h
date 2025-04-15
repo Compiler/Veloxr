@@ -65,10 +65,9 @@
 #include <vulkan/vulkan_win32.h>
 #elif defined(__APPLE__)
 #define VK_USE_PLATFORM_METAL_EXT
-#include <Cocoa/Cocoa.h>
-#include <QuartzCore/CAMetalLayer.h>
 #include <vulkan/vulkan_metal.h>
 #include <vulkan/vulkan_macos.h>
+#include <MetalSurfaceHelper.h>
 #elif defined(__linux__)
 #define VK_USE_PLATFORM_XLIB_KHR
 #include <X11/Xlib.h>
@@ -279,16 +278,7 @@ private:
 
     void* getWindowHandleFromRaw(void* rawHandle) {
 #ifdef __APPLE__
-        // mac: we need to ensure we have a CAMetalLayer
-        NSView* nsView = (__bridge NSView*)rawHandle;
-
-        if (![nsView layer] || ![nsView.layer isKindOfClass:[CAMetalLayer class]]) {
-            [nsView setWantsLayer:YES];
-            CAMetalLayer* metalLayer = [CAMetalLayer layer];
-            [nsView setLayer:metalLayer];
-        }
-
-        return (__bridge void*)nsView.layer;
+        return GetMetalLayerforNSView(rawHandle);
 #else
         return rawHandle;
 #endif
