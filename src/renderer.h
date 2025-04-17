@@ -278,7 +278,7 @@ private:
 
     void* getWindowHandleFromRaw(void* rawHandle) {
 #ifdef __APPLE__
-        return GetMetalLayerforNSView(rawHandle);
+        return GetMetalLayerForNSView(rawHandle);
 #else
         return rawHandle;
 #endif
