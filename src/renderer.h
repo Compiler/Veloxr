@@ -55,7 +55,14 @@
 #define MAX_FRAMES_IN_FLIGHT 2
 #endif
 
+
+
+#ifdef _WIN32
+#include <opencv2/opencv.hpp>
+#elif defined(__APPLE__)
 #include <opencv4/opencv2/opencv.hpp>
+#endif
+
 #define CV_IO_MAX_IMAGE_PIXELS 40536870912
 
 //Platform
