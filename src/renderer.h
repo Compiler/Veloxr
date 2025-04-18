@@ -633,6 +633,8 @@ private:
         float offsetX = 0.0f, offsetY = 0.0f;
         if(deltaX > deltaY) {
             offsetY = -deltaY / 2.0f;
+        } else {
+            offsetX = -deltaX / 2.0f;
         }
         _cam.setPosition({offsetX, offsetY});
         _cam.fitViewport(minX, maxX, minY, maxY);
@@ -1042,7 +1044,8 @@ private:
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = swapChainExtent;
 
-        VkClearValue clearColor = {{{0.25f, 0.25f, 0.25f, 1.0f}}};
+        float col = 0.0125f;
+        VkClearValue clearColor = {{{col, col, col, 1.0f}}};
         renderPassInfo.clearValueCount = 1;
         renderPassInfo.pClearValues = &clearColor;
 
