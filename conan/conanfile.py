@@ -44,5 +44,5 @@ class conanRecipe(ConanFile):
     def package_info(self):
         self.cpp_info.components["veloxr"].libs = ["veloxr_lib"]
         self.cpp_info.components["veloxr"].set_property(
-            "cmake_target_name", "veloxr_lib::veloxr"
+            "cmake_target_name", "veloxr::veloxr_lib"
         )
