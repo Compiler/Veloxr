@@ -18,4 +18,5 @@ conan create conan/conanfile.py  \
     --remote=topaz-conan \
     -pr:h=conan/profile_mac_x86_64 \
     -pr:b=conan/profile_mac_x86_64
-# conan upload "$PKG_REF" -r topaz-conan
+
+conan upload veloxr/$VERSION -r topaz-conan

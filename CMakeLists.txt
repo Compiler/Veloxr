@@ -14,7 +14,6 @@ find_package(OpenImageIO REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(Vulkan REQUIRED)
 
-# Library source files (excluding main.cpp which is for the executable only)
 set(LIB_SOURCES
     src/Vertex.h 
     src/device.h src/device.cpp 
@@ -51,7 +50,6 @@ target_link_libraries(veloxr_lib
         opencv::opencv
 )
 
-# Then, create the executable that uses the library
 add_executable(vulkanrenderer src/main.cpp src/test.h)
 
 if (MSVC)

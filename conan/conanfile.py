@@ -23,12 +23,6 @@ class conanRecipe(ConanFile):
         tc.variables["VERSION"] = self.version
         tc.generate()
 
-        # for dep in self.dependencies.values():
-        #     # if not dep.package_folder:
-        #     #     continue
-        #     copy(self, "*", src=os.path.join(dep.package_folder, "bin"), dst="bin")
-        #     copy(self, "*", src=os.path.join(dep.package_folder, "lib"), dst="lib")
-
     def layout(self):
         cmake_layout(self)
 
