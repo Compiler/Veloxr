@@ -23,7 +23,7 @@ set(LIB_SOURCES
     src/TextureTiling.h src/TextureTiling.cpp
 )
 
-# First, create the library
+# Create the library
 add_library(veloxr_lib STATIC ${LIB_SOURCES})
 
 if (MSVC)
@@ -37,10 +37,15 @@ target_compile_definitions(veloxr_lib
 
 set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
-target_include_directories(veloxr_lib PUBLIC ${Vulkan_INCLUDE_DIRS})
-target_include_directories(veloxr_lib PUBLIC "src/")
-target_include_directories(veloxr_lib PUBLIC "${INCLUDE_DIR}")
-target_include_directories(veloxr_lib PRIVATE ${OpenCV_INCLUDE_DIRS})
+target_include_directories(veloxr_lib 
+    PUBLIC 
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+        $<BUILD_INTERFACE:${INCLUDE_DIR}>
+        $<INSTALL_INTERFACE:include>
+    PRIVATE 
+        ${Vulkan_INCLUDE_DIRS}
+        ${OpenCV_INCLUDE_DIRS}
+)
 
 target_link_libraries(veloxr_lib
     PUBLIC
@@ -61,23 +66,33 @@ target_link_libraries(vulkanrenderer
         veloxr_lib
 )
 
-# Install the executable to bin directory and the library to lib directory
+# Installation setup
 install(TARGETS vulkanrenderer
     RUNTIME DESTINATION bin
 )
 
 install(TARGETS veloxr_lib
+    EXPORT veloxrTargets
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
+    RUNTIME DESTINATION bin
+    INCLUDES DESTINATION include
 )
 
-# Install header files
+# Export the targets
+install(EXPORT veloxrTargets
+    FILE veloxrTargets.cmake
+    NAMESPACE veloxr::
+    DESTINATION lib/cmake/veloxr
+)
+
+# Install header files (preserve folder structure)
 install(DIRECTORY include/
     DESTINATION include/veloxr
     FILES_MATCHING PATTERN "*.h"
 )
 
-# Install source header files if needed
+# Install source header files (that are part of the public API)
 install(DIRECTORY src/
     DESTINATION include/veloxr
     FILES_MATCHING PATTERN "*.h"
