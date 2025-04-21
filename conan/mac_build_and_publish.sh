@@ -1,0 +1,21 @@
+#!/bin/bash
+set -euo pipefail
+IFS=$'\n\t'
+
+# build for both armv8 and x86_64
+VERSION=${1:?"missing version arg"}
+
+python -m black conan/conanfile.py
+
+conan create conan/conanfile.py  \
+    --version=$VERSION \
+    --remote=topaz-conan \
+    -pr:h=conan/profile_mac_armv8 \
+    -pr:b=conan/profile_mac_armv8
+
+conan create conan/conanfile.py  \
+    --version=$VERSION \
+    --remote=topaz-conan \
+    -pr:h=conan/profile_mac_x86_64 \
+    -pr:b=conan/profile_mac_x86_64
+# conan upload "$PKG_REF" -r topaz-conan
