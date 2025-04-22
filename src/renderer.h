@@ -333,7 +333,8 @@ private:
     }
 public:
 
-    void init(void* windowHandle = nullptr) {
+    void init(void* windowHandle = nullptr, std::string filepath = "") {
+        _currentFilepath = filepath;
         auto now = std::chrono::high_resolution_clock::now();
         auto nowTop = std::chrono::high_resolution_clock::now();
 
@@ -367,7 +368,7 @@ public:
         now = std::chrono::high_resolution_clock::now();
 
         //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/very_wide.webp");
-        if(_currentFilepath.empty()) _currentFilepath = PREFIX+"/Users/ljuek/Downloads/landscape.tif";
+        if(_currentFilepath.empty()) _currentFilepath = PREFIX+"/Users/ljuek/Downloads/Colonial.jpg";
         auto res = createTiledTexture(_currentFilepath);
         //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg");
         //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/56000.jpg");
