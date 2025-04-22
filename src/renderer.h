@@ -13,15 +13,18 @@
 #include <set>
 #include <utility>
 #include <vulkan/vulkan_core.h>
-#include <OrthographicCamera.h>
-#include <OrthoCam.h>
+
+// Use direct paths to headers instead of angle bracket includes
+#include "OrthographicCamera.h"
+#include "OrthoCam.h"
+
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-#include <texture.h>
-#include <Vertex.h>
-#include <TextureTiling.h>
 
-
+// Use direct paths to headers instead of angle bracket includes
+#include "texture.h"
+#include "Vertex.h"
+#include "TextureTiling.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE

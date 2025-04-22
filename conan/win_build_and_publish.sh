@@ -20,4 +20,6 @@ else
         -pr:b=conan/profile_win2019
 fi
 
+conan upload veloxr/$VERSION -r topaz-conan
+
 #conan upload "$PKG_REF" -r topaz-conan

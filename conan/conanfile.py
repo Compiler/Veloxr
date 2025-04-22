@@ -16,6 +16,10 @@ class conanRecipe(ConanFile):
         self.requires("glfw/3.4")
         self.requires("opencv/4.8.1@josh/veloxr")
         self.requires("openimageio/3.0.4.0@josh/veloxr")
+        # self.requires("vulkan-loader/1.3.268.0")
+        self.requires("glm/1.0.1")
+    
+    def build_requirements(self):
         self.requires("vulkan-loader/1.3.268.0")
 
     def generate(self):
@@ -31,6 +35,7 @@ class conanRecipe(ConanFile):
         copy(self, "CMakeLists.txt", folder, self.export_sources_folder)
         copy(self, "src/*", folder, self.export_sources_folder)
         copy(self, "include/*", folder, self.export_sources_folder)
+        copy(self, "spirv/*", folder, self.export_sources_folder)
 
     def build(self):
         cmake = CMake(self)
@@ -42,7 +47,5 @@ class conanRecipe(ConanFile):
         cmake.install()
 
     def package_info(self):
-        self.cpp_info.components["veloxr"].libs = ["veloxr_lib"]
-        self.cpp_info.components["veloxr"].set_property(
-            "cmake_target_name", "veloxr::veloxr_lib"
-        )
+        self.cpp_info.libs = ["veloxr_lib"]
+        self.cpp_info.set_property("cmake_target_name", "veloxr::veloxr_lib")

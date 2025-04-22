@@ -13,6 +13,7 @@ find_package(OpenCV REQUIRED)
 find_package(OpenImageIO REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(Vulkan REQUIRED)
+find_package(glm REQUIRED)
 
 set(LIB_SOURCES
     src/Vertex.h 
@@ -30,10 +31,10 @@ if (MSVC)
     target_compile_options(veloxr_lib PRIVATE /utf-8)
 endif()
 
-target_compile_definitions(veloxr_lib
-    PRIVATE 
-        PROJECT_ROOT_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}\"
-)
+# target_compile_definitions(veloxr_lib
+#     PRIVATE 
+#         PROJECT_ROOT_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}\"
+# )
 
 set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
@@ -53,6 +54,7 @@ target_link_libraries(veloxr_lib
         Vulkan::Vulkan
         OpenImageIO::OpenImageIO
         opencv::opencv
+        glm::glm
 )
 
 add_executable(vulkanrenderer src/main.cpp src/test.h)
@@ -86,14 +88,27 @@ install(EXPORT veloxrTargets
     DESTINATION lib/cmake/veloxr
 )
 
+# Dont need anything in install after using glm from conan
 # Install header files (preserve folder structure)
-install(DIRECTORY include/
-    DESTINATION include/veloxr
-    FILES_MATCHING PATTERN "*.h"
-)
+# install(DIRECTORY include/
+#     DESTINATION include/veloxr
+#     FILES_MATCHING PATTERN "*.h"
+# )
 
 # Install source header files (that are part of the public API)
 install(DIRECTORY src/
-    DESTINATION include/veloxr
+    DESTINATION include
     FILES_MATCHING PATTERN "*.h"
+)
+
+# Install shader files
+install(DIRECTORY src/shaders/
+    DESTINATION shaders
+    FILES_MATCHING PATTERN "*.vert" PATTERN "*.frag" PATTERN "*.comp" PATTERN "*.geom" PATTERN "*.tesc" PATTERN "*.tese" PATTERN "*.spv"
+)
+
+# Simple install of SPIRV files from project directory
+install(DIRECTORY spirv/
+    DESTINATION spirv
+    FILES_MATCHING PATTERN "*.spv"
 )
