@@ -166,6 +166,7 @@ class RendererCore {
 public:
 
     float deltaMs;
+
     void run() {
         init();
         render();
@@ -177,6 +178,14 @@ public:
         frameBufferResized = true;
     }
 
+    void setTextureFilePath(std::string filepath) {
+        _currentFilepath = filepath;
+        destroy();
+        run();
+
+    }
+
+
     /*const*/Veloxr::OrthoCam& getCam() {
         return _cam;
     }
@@ -187,6 +196,7 @@ private: // No client
     const int WIDTH = 1920;
     const int HEIGHT = 1080;
     int _windowWidth, _windowHeight;
+    std::string _currentFilepath;
 
 private: // Client
 
@@ -346,18 +356,25 @@ public:
         physicalDevice = _deviceUtils->getPhysicalDevice();
         graphicsQueue = _deviceUtils->getGraphicsQueue();
         presentQueue = _deviceUtils->getPresentationQueue();
+        setupTexturePasses();
+    }
+
+    void setupTexturePasses() {
         createCommandPool();
 
+        auto now = std::chrono::high_resolution_clock::now();
+        auto nowTop = std::chrono::high_resolution_clock::now();
         now = std::chrono::high_resolution_clock::now();
 
         //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/very_wide.webp");
-        auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/landscape.tif");
+        if(_currentFilepath.empty()) _currentFilepath = PREFIX+"/Users/ljuek/Downloads/landscape.tif";
+        auto res = createTiledTexture(_currentFilepath);
         //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg");
         //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/56000.jpg");
         //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/landscape1.jpeg");
         //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/landscape2.jpeg");
+        auto timeElapsed = std::chrono::high_resolution_clock::now() - now;
         std::cout << "Texture creation: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
-        timeElapsed = std::chrono::high_resolution_clock::now() - now;
 
 
 
@@ -378,6 +395,8 @@ public:
         auto timeElapsedTop = std::chrono::high_resolution_clock::now() - now;
         std::cout << "Init(): " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsedTop).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsedTop).count() << "microseconds.\n";
         _textureMap.clear();
+
+
     }
 private:
 
@@ -1687,6 +1706,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
     if (key == GLFW_KEY_W && action == GLFW_PRESS) {
         auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
+        app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg");
     }
 
 }
