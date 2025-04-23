@@ -13,6 +13,7 @@
 #include <set>
 #include <utility>
 #include <vulkan/vulkan_core.h>
+#include <filesystem>
 
 // Use direct paths to headers instead of angle bracket includes
 #include "OrthographicCamera.h"
@@ -437,7 +438,7 @@ private:
         samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
         samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
 
-        // TODO: Test with/without this.
+        // TODO: Test with/without this.createGraphicsPipeline
         samplerInfo.anisotropyEnable = VK_FALSE;
         samplerInfo.maxAnisotropy = 1.0f;
         samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
@@ -1214,8 +1215,13 @@ private:
 
     // Immutable.
     void createGraphicsPipeline() {
-        auto vertShaderCode = readFile(std::string(PROJECT_ROOT_DIR) + "/spirv/vert.spv");
-        auto fragShaderCode = readFile(std::string(PROJECT_ROOT_DIR) + "/spirv/frag.spv");
+        // Determine shader path relative to executable
+        std::filesystem::path exePath = getExecutablePath();
+        // Assumes executable is in 'bin/' and shaders are in 'spirv/' under the same root install prefix
+        std::filesystem::path spirvDir = exePath.parent_path().parent_path() / "spirv";
+
+        auto vertShaderCode = readFile((spirvDir / "vert.spv").string());
+        auto fragShaderCode = readFile((spirvDir / "frag.spv").string());
 
         VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
         VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
@@ -1681,6 +1687,46 @@ private:
         }
 
         std::cout << "Created a valid instance!\n";
+    }
+
+    // Helper function to get the executable path
+    std::filesystem::path getExecutablePath() {
+#ifdef _WIN32
+        std::vector<wchar_t> pathBuf;
+        DWORD copied = 0;
+        do {
+            pathBuf.resize(pathBuf.size() + MAX_PATH);
+            copied = GetModuleFileNameW(NULL, pathBuf.data(), static_cast<DWORD>(pathBuf.size()));
+        } while (copied >= pathBuf.size());
+        pathBuf.resize(copied);
+        return std::filesystem::path(pathBuf.begin(), pathBuf.end());
+#elif defined(__linux__)
+        char result[PATH_MAX];
+        ssize_t count = readlink("/proc/self/exe", result, PATH_MAX);
+        if (count < 0) {
+             throw std::runtime_error("Failed to get executable path using readlink");
+        }
+        return std::filesystem::path(std::string(result, count));
+#elif defined(__APPLE__)
+        char path[PATH_MAX]; // Using PATH_MAX for consistency
+        uint32_t size = sizeof(path);
+        if (_NSGetExecutablePath(path, &size) == 0) {
+            return std::filesystem::path(std::string(path));
+        } else {
+            // Buffer was too small, reallocate and try again
+            std::vector<char> pathBuf(size);
+            if (_NSGetExecutablePath(pathBuf.data(), &size) == 0) {
+                 return std::filesystem::path(std::string(pathBuf.begin(), pathBuf.end()));
+            } else {
+                 throw std::runtime_error("Failed to get executable path using _NSGetExecutablePath after resize");
+            }
+        }
+#else
+        // Placeholder for other platforms or error
+        // Returning empty path, might need better error handling or default.
+         throw std::runtime_error("Unsupported platform for getExecutablePath");
+         return std::filesystem::path(); 
+#endif
     }
 };
 

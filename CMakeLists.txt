@@ -31,10 +31,6 @@ if (MSVC)
     target_compile_options(veloxr_lib PRIVATE /utf-8)
 endif()
 
-# target_compile_definitions(veloxr_lib
-#     PRIVATE 
-#         PROJECT_ROOT_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}\"
-# )
 
 set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
