@@ -4,6 +4,8 @@ IFS=$'\n\t'
 
 #conan remove "*" --confirm
 
+rm -rf build
+
 conan install conan/conanfile.py -of . \
     --version=2.3.0 \
     -pr:h=conan/profile_win2019 \

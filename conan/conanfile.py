@@ -46,15 +46,10 @@ class conanRecipe(ConanFile):
         cmake = CMake(self)
         cmake.install()
         # Copy the executable to the package bin directory
-        copy(self, "vulkanrenderer*", 
-             src=os.path.join(self.build_folder, "build"),
-             dst=os.path.join(self.package_folder, "bin"),
-             keep_path=False)
+        self.copy("vulkanrenderer*", src="build", dst="bin", keep_path=False)
+
     def package_info(self):
         self.cpp_info.libs = ["veloxr_lib"]
         self.cpp_info.set_property("cmake_target_name", "veloxr::veloxr_lib")
         # Add the executable to the package info
         self.cpp_info.bindirs = ["bin"]
-        
-        # Set a user variable for the SPIRV shader path
-        self.cpp_info.user_info.spirv_dir = os.path.join(self.package_folder, "spirv")
