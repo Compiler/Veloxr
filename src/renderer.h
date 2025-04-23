@@ -190,8 +190,8 @@ public:
 
     void setTextureFilePath(std::string filepath) {
         _currentFilepath = filepath;
-        destroy();
-        run();
+        destroyTextureData();
+        setupTexturePasses();
 
     }
 
@@ -1518,8 +1518,8 @@ private:
     }
 
 public:
-    void destroy() {
 
+    void destroyTextureData() {
         cleanupSwapChain();
 
         for(auto& [name, data] : _textureMap) data.destroy(device);
@@ -1528,6 +1528,12 @@ public:
             vkDestroyBuffer(device, uniformBuffers[i], nullptr);
             vkFreeMemory(device, uniformBuffersMemory[i], nullptr);
         }
+        vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+        vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
+    }
+    void destroy() {
+
+        destroyTextureData();
         vkDestroyDescriptorPool(device, descriptorPool, nullptr);
         vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 
