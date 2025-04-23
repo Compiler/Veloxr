@@ -57,7 +57,7 @@ target_link_libraries(veloxr_lib
         glm::glm
 )
 
-add_executable(vulkanrenderer src/main.cpp src/test.h)
+add_executable(vulkanrenderer src/main.cpp)
 
 if (MSVC)
     target_compile_options(vulkanrenderer PRIVATE /utf-8)
