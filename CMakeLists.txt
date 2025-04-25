@@ -17,6 +17,7 @@ option(VALIDATION_LAYERS "Enable validation layers" OFF)
 
 set(LIB_SOURCES
     src/Vertex.h 
+    src/renderer.h src/renderer.cpp
     src/device.h src/device.cpp 
     src/OrthographicCamera.h src/OrthographicCamera.cpp
     src/OrthoCam.h src/OrthoCam.cpp
