@@ -132,8 +132,6 @@ inline const auto BOT = 0.9f;
 //          - Where there are no colors, but there is an alpha layer, fill with alpha checkerboard
 //              - Always same size on screen. 
 //              - Repeat smallest memory footprint
-//      - Zoom / Pan
-//      - Aspect Ratio
 //      - Return parsable coordinates of what is being viewed.
 //          - 
 inline std::vector<Veloxr::Vertex> vertices = {
@@ -178,23 +176,10 @@ public:
 
     float deltaMs;
 
-    void run() {
-        init();
-        render();
-        destroy();
-    }
-    void setWindowDimensions(int width, int height) {
-        _windowWidth = width;
-        _windowHeight = height;
-        frameBufferResized = true;
-    }
+    void run(); 
+    void setWindowDimensions(int width, int height); 
 
-    void setTextureFilePath(std::string filepath) {
-        _currentFilepath = filepath;
-        destroyTextureData();
-        setupTexturePasses();
-
-    }
+    void setTextureFilePath(std::string filepath); 
 
 
     /*const*/Veloxr::OrthoCam& getCam() {
