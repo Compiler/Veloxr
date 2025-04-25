@@ -106,7 +106,7 @@ void RendererCore::addTexture(std::string input_filepath) {
     //_textureMap[input_filepath].textureData = textureHelper;
 }
 
-VkSampler RenderCore::createTextureSampler(std::string input_filepath) {
+VkSampler RendererCore::createTextureSampler(std::string input_filepath) {
 
     VkSampler textureSampler;
     VkSamplerCreateInfo samplerInfo{};
