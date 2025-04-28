@@ -9,6 +9,13 @@ class conanRecipe(ConanFile):
     settings = "os", "build_type", "arch"
     generators = "CMakeDeps"
 
+    options = {
+        "validation_layers": [True, False],
+    }
+    default_options = {
+        "validation_layers": False,
+    }
+
     def configure(self):
         self.options["opencv"].with_jpeg = "libjpeg-turbo"
 
@@ -25,6 +32,7 @@ class conanRecipe(ConanFile):
     def generate(self):
         tc = CMakeToolchain(self, generator="Ninja")
         tc.variables["VERSION"] = self.version
+        tc.variables["VALIDATION_LAYERS"] = self.options.validation_layers
         tc.generate()
 
     def layout(self):
@@ -35,7 +43,6 @@ class conanRecipe(ConanFile):
         copy(self, "CMakeLists.txt", folder, self.export_sources_folder)
         copy(self, "src/*", folder, self.export_sources_folder)
         copy(self, "include/*", folder, self.export_sources_folder)
-        copy(self, "spirv/*", folder, self.export_sources_folder)
 
     def build(self):
         cmake = CMake(self)
@@ -46,7 +53,7 @@ class conanRecipe(ConanFile):
         cmake = CMake(self)
         cmake.install()
         # Copy the executable to the package bin directory
-        self.copy("vulkanrenderer*", src="build", dst="bin", keep_path=False)
+        copy(self, "vulkanrenderer*", src="build", dst="bin", keep_path=False)
 
     def package_info(self):
         self.cpp_info.libs = ["veloxr_lib"]

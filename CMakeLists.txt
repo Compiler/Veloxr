@@ -7,13 +7,13 @@ endif()
 
 set(CMAKE_CXX_STANDARD 20)
 
-# set(OpenCV_DIR "C:/Users/ljuek/Code/opencv-install/lib/cmake/opencv4")
-
 find_package(OpenCV REQUIRED)
 find_package(OpenImageIO REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(Vulkan REQUIRED)
 find_package(glm REQUIRED)
+
+option(VALIDATION_LAYERS "Enable validation layers" OFF)
 
 set(LIB_SOURCES
     src/Vertex.h 
@@ -30,6 +30,9 @@ add_library(veloxr_lib STATIC ${LIB_SOURCES})
 if (MSVC)
     target_compile_options(veloxr_lib PRIVATE /utf-8)
 endif()
+
+add_compile_definitions(VALIDATION_LAYERS=$<BOOL:${VALIDATION_LAYERS}>)
+message(STATUS "Validation layers are ${VALIDATION_LAYERS}")
 
 
 set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")

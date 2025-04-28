@@ -215,7 +215,12 @@ private: // Client
     bool noClientWindow = false;
 
     VkDebugUtilsMessengerEXT debugMessenger;
+
+#ifdef VALIDATION_LAYERS
     bool enableValidationLayers = true;
+#else
+    bool enableValidationLayers = false;
+#endif
 
     Veloxr::OrthoCam _cam;
 

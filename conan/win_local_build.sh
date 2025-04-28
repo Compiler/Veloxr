@@ -8,6 +8,7 @@ rm -rf build
 
 conan install conan/conanfile.py -of . \
     --version=2.3.0 \
+    --options="&:validation_layers=False" \
     -pr:h=conan/profile_win2019 \
     -pr:b=conan/profile_win2019
 

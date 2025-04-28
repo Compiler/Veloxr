@@ -15,6 +15,7 @@ else
     conan create conan/conanfile.py  \
         --update \
         --version=$VERSION \
+        --options="&:validation_layers=False" \
         --remote=topaz-conan \
         -pr:h=conan/profile_win2019 \
         -pr:b=conan/profile_win2019
