@@ -111,3 +111,38 @@ install(DIRECTORY spirv/
     DESTINATION spirv
     FILES_MATCHING PATTERN "*.spv"
 )
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    # # Add debug info for release builds if needed
+    target_compile_options(vulkanrenderer PRIVATE "$<$<CONFIG:Release>:/Zi>")
+    target_link_options(vulkanrenderer PRIVATE "$<$<CONFIG:Release>:/DEBUG;/INCREMENTAL:NO;/OPT:REF;/OPT:ICF>")
+
+    # Copy runtime DLLs that vulkanrenderer depends on
+    add_custom_command(TARGET vulkanrenderer POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_RUNTIME_DLLS:vulkanrenderer>" "$<TARGET_FILE_DIR:vulkanrenderer>"
+        COMMAND_EXPAND_LISTS)
+    
+    # Copy additional DLLs from module paths
+    list(TRANSFORM CMAKE_MODULE_PATH APPEND "/bin/*")
+    file(GLOB_RECURSE DYNAMIC_LIBS ${CMAKE_MODULE_PATH})
+    add_custom_command(TARGET vulkanrenderer POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy ${DYNAMIC_LIBS} "$<TARGET_FILE_DIR:vulkanrenderer>"
+        COMMAND_EXPAND_LISTS)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    target_compile_options(vulkanrenderer PRIVATE "$<$<CONFIG:Release>:-g>")
+    set_target_properties(vulkanrenderer PROPERTIES BUILD_RPATH "@executable_path")
+    # Fix rpath issues with macOS libraries
+    add_custom_command(TARGET vulkanrenderer POST_BUILD
+        COMMAND ${CMAKE_COMMAND} "-DTARGET_FILE=$<TARGET_FILE:vulkanrenderer>" -P "${CMAKE_SOURCE_DIR}/conan/fix_mac_libs.cmake")
+    
+    # Find and copy all dylib files from Conan packages
+    foreach(DIR_PATH ${CMAKE_MODULE_PATH})
+        file(GLOB LIB_FILES "${DIR_PATH}/lib/*.dylib")
+        foreach(LIB ${LIB_FILES})
+            add_custom_command(TARGET vulkanrenderer POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different 
+                "${LIB}" "$<TARGET_FILE_DIR:vulkanrenderer>"
+                COMMENT "Copying ${LIB} to build directory")
+        endforeach()
+    endforeach()
+endif()

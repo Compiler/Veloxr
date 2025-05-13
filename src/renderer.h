@@ -79,6 +79,7 @@
 #include <vulkan/vulkan_metal.h>
 #include <vulkan/vulkan_macos.h>
 #include <MetalSurfaceHelper.h>
+#include <mach-o/dyld.h>
 #elif defined(__linux__)
 #define VK_USE_PLATFORM_XLIB_KHR
 #include <X11/Xlib.h>
