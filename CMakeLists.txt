@@ -7,51 +7,142 @@ endif()
 
 set(CMAKE_CXX_STANDARD 20)
 
-set(OpenCV_DIR "C:/Users/ljuek/Code/opencv-install/lib/cmake/opencv4")
+find_package(OpenCV REQUIRED)
+find_package(OpenImageIO REQUIRED)
+find_package(glfw3 CONFIG REQUIRED)
+find_package(Vulkan REQUIRED)
+find_package(glm REQUIRED)
 
-#add_library(vulkanrenderer STATIC src/main.cpp src/test.h)
-add_executable(vulkanrenderer 
-        src/main.cpp 
-        src/test.h 
-        src/Vertex.h 
-        src/device.h src/device.cpp 
-        src/OrthographicCamera.h src/OrthographicCamera.cpp
-        src/OrthoCam.h src/OrthoCam.cpp
-        src/texture.h src/texture.cpp 
-        src/TextureTiling.h src/TextureTiling.cpp 
-    )
+option(VALIDATION_LAYERS "Enable validation layers" OFF)
+
+set(LIB_SOURCES
+    src/Vertex.h 
+    src/device.h src/device.cpp 
+    src/OrthographicCamera.h src/OrthographicCamera.cpp
+    src/OrthoCam.h src/OrthoCam.cpp
+    src/texture.h src/texture.cpp 
+    src/TextureTiling.h src/TextureTiling.cpp
+)
+
+# Create the library
+add_library(veloxr_lib STATIC ${LIB_SOURCES})
+
+if (MSVC)
+    target_compile_options(veloxr_lib PRIVATE /utf-8)
+endif()
+
+add_compile_definitions(VALIDATION_LAYERS=$<BOOL:${VALIDATION_LAYERS}>)
+message(STATUS "Validation layers are ${VALIDATION_LAYERS}")
+
+
+set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
+
+target_include_directories(veloxr_lib 
+    PUBLIC 
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+        $<BUILD_INTERFACE:${INCLUDE_DIR}>
+        $<INSTALL_INTERFACE:include>
+    PRIVATE 
+        ${Vulkan_INCLUDE_DIRS}
+        ${OpenCV_INCLUDE_DIRS}
+)
+
+target_link_libraries(veloxr_lib
+    PUBLIC
+        glfw
+        Vulkan::Vulkan
+        OpenImageIO::OpenImageIO
+        opencv::opencv
+        glm::glm
+)
+
+add_executable(vulkanrenderer src/main.cpp)
 
 if (MSVC)
     target_compile_options(vulkanrenderer PRIVATE /utf-8)
 endif()
-target_compile_definitions(vulkanrenderer
-    PRIVATE 
-        PROJECT_ROOT_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}\"
-)
-
-set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
-
-
-find_package(Vulkan REQUIRED)
-target_include_directories(${PROJECT_NAME} PUBLIC ${Vulkan_INCLUDE_DIRS})
-target_include_directories(${PROJECT_NAME} PUBLIC "src/")
-
-target_include_directories(vulkanrenderer PUBLIC
-    "${INCLUDE_DIR}"
-)
-
-find_package(OpenCV REQUIRED)
-target_include_directories(vulkanrenderer PRIVATE ${OpenCV_INCLUDE_DIRS})
-
-find_package(OpenImageIO REQUIRED)
-
-
-find_package(glfw3 CONFIG REQUIRED)
 
 target_link_libraries(vulkanrenderer
     PRIVATE
-        glfw
-        Vulkan::Vulkan
-        OpenImageIO::OpenImageIO
-        ${OpenCV_LIBS}
+        veloxr_lib
 )
+
+# Installation setup
+install(TARGETS vulkanrenderer
+    RUNTIME DESTINATION bin
+)
+
+install(TARGETS veloxr_lib
+    EXPORT veloxrTargets
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+    RUNTIME DESTINATION bin
+    INCLUDES DESTINATION include
+)
+
+# Export the targets
+install(EXPORT veloxrTargets
+    FILE veloxrTargets.cmake
+    NAMESPACE veloxr::
+    DESTINATION lib/cmake/veloxr
+)
+
+# Dont need anything in install after using glm from conan
+# Install header files (preserve folder structure)
+# install(DIRECTORY include/
+#     DESTINATION include/veloxr
+#     FILES_MATCHING PATTERN "*.h"
+# )
+
+# Install source header files (that are part of the public API)
+install(DIRECTORY src/
+    DESTINATION include
+    FILES_MATCHING PATTERN "*.h"
+)
+
+# Install shader files
+install(DIRECTORY src/shaders/
+    DESTINATION shaders
+    FILES_MATCHING PATTERN "*.vert" PATTERN "*.frag" PATTERN "*.comp" PATTERN "*.geom" PATTERN "*.tesc" PATTERN "*.tese" PATTERN "*.spv"
+)
+
+# Simple install of SPIRV files from project directory
+install(DIRECTORY spirv/
+    DESTINATION spirv
+    FILES_MATCHING PATTERN "*.spv"
+)
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    # # Add debug info for release builds if needed
+    target_compile_options(vulkanrenderer PRIVATE "$<$<CONFIG:Release>:/Zi>")
+    target_link_options(vulkanrenderer PRIVATE "$<$<CONFIG:Release>:/DEBUG;/INCREMENTAL:NO;/OPT:REF;/OPT:ICF>")
+
+    # Copy runtime DLLs that vulkanrenderer depends on
+    add_custom_command(TARGET vulkanrenderer POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_RUNTIME_DLLS:vulkanrenderer>" "$<TARGET_FILE_DIR:vulkanrenderer>"
+        COMMAND_EXPAND_LISTS)
+    
+    # Copy additional DLLs from module paths
+    list(TRANSFORM CMAKE_MODULE_PATH APPEND "/bin/*")
+    file(GLOB_RECURSE DYNAMIC_LIBS ${CMAKE_MODULE_PATH})
+    add_custom_command(TARGET vulkanrenderer POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy ${DYNAMIC_LIBS} "$<TARGET_FILE_DIR:vulkanrenderer>"
+        COMMAND_EXPAND_LISTS)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    target_compile_options(vulkanrenderer PRIVATE "$<$<CONFIG:Release>:-g>")
+    set_target_properties(vulkanrenderer PROPERTIES BUILD_RPATH "@executable_path")
+    # Fix rpath issues with macOS libraries
+    add_custom_command(TARGET vulkanrenderer POST_BUILD
+        COMMAND ${CMAKE_COMMAND} "-DTARGET_FILE=$<TARGET_FILE:vulkanrenderer>" -P "${CMAKE_SOURCE_DIR}/conan/fix_mac_libs.cmake")
+    
+    # Find and copy all dylib files from Conan packages
+    foreach(DIR_PATH ${CMAKE_MODULE_PATH})
+        file(GLOB LIB_FILES "${DIR_PATH}/lib/*.dylib")
+        foreach(LIB ${LIB_FILES})
+            add_custom_command(TARGET vulkanrenderer POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different 
+                "${LIB}" "$<TARGET_FILE_DIR:vulkanrenderer>"
+                COMMENT "Copying ${LIB} to build directory")
+        endforeach()
+    endforeach()
+endif()
