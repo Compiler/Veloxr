@@ -114,20 +114,22 @@ install(DIRECTORY spirv/
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     # # Add debug info for release builds if needed
-    target_compile_options(vulkanrenderer PRIVATE "$<$<CONFIG:Release>:/Zi>")
-    target_link_options(vulkanrenderer PRIVATE "$<$<CONFIG:Release>:/DEBUG;/INCREMENTAL:NO;/OPT:REF;/OPT:ICF>")
+    # target_compile_options(vulkanrenderer PRIVATE "$<$<CONFIG:Release>:/Zi>")
+    # target_link_options(vulkanrenderer PRIVATE "$<$<CONFIG:Release>:/DEBUG;/INCREMENTAL:NO;/OPT:REF;/OPT:ICF>")
 
     # Copy runtime DLLs that vulkanrenderer depends on
     add_custom_command(TARGET vulkanrenderer POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_RUNTIME_DLLS:vulkanrenderer>" "$<TARGET_FILE_DIR:vulkanrenderer>"
         COMMAND_EXPAND_LISTS)
-    
-    # Copy additional DLLs from module paths
+
     list(TRANSFORM CMAKE_MODULE_PATH APPEND "/bin/*")
-    file(GLOB_RECURSE DYNAMIC_LIBS ${CMAKE_MODULE_PATH})
-    add_custom_command(TARGET vulkanrenderer POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy ${DYNAMIC_LIBS} "$<TARGET_FILE_DIR:vulkanrenderer>"
-        COMMAND_EXPAND_LISTS)
+    message(STATUS "***CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
+    file(GLOB DYNAMIC_LIBS ${CMAKE_MODULE_PATH})
+    foreach(DLL_FILE ${DYNAMIC_LIBS})
+        add_custom_command(TARGET vulkanrenderer POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy
+            "${DLL_FILE}" "$<TARGET_FILE_DIR:vulkanrenderer>")
+    endforeach()
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     target_compile_options(vulkanrenderer PRIVATE "$<$<CONFIG:Release>:-g>")
     set_target_properties(vulkanrenderer PROPERTIES BUILD_RPATH "@executable_path")
