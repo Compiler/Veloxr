@@ -90,6 +90,9 @@
 #else
 #define PREFIX std::string("/mnt/c")
 #endif
+
+
+// CLIENT SIDE CALLBACKS, IGNORE UNTIL CLASS RENDERCORE
 static std::vector<char> readFile(const std::string& filename) {
     std::cout << "[Veloxr]" << "Loading file: " << filename << std::endl;
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
@@ -173,29 +176,57 @@ inline void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
 inline void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) ;
 
 class RendererCore {
+
+//Client side API
 public:
-
-    float deltaMs;
-
-    void run(); 
+    // Change size of window to render into. 
     void setWindowDimensions(int width, int height); 
 
+    // Set the texture to load, will reinitialize the pipeline.
     void setTextureFilePath(std::string filepath); 
 
+    // Initialize the renderer, given a window pointer to render into.
+    void init(void* windowHandle = nullptr, std::string filepath = ""); 
+    void setupTexturePasses(); 
 
-    /*const*/Veloxr::OrthoCam& getCam() {
+    // Camera API. Use this object to access camera movement related data, zoom, pan, etc.
+    /*
+            void setPosition(const glm::vec3& pos);
+            void setPosition(const glm::vec2& pos);
+            void translate(const glm::vec2& delta);
+            void setRotation(float rot);
+            void setProjection(float left, float right, float bottom, float top, float nearPlane, float farPlane);
+            const glm::mat4& getProjectionMatrix() const;
+            const glm::mat4& getViewMatrix() const;
+            glm::mat4 getViewProjectionMatrix() const;
+            void setZoomLevel(float zoomLevel);
+            inline const float getZoomLevel() const { return _zoomLevel;}
+            void addToZoom(float delta);
+            void zoomToCenter(float zoomDelta);
+            void zoomCentered(const glm::vec2& anchorPoint, float zoomDelta);
+            void fitViewport(float left, float right, float bottom, float top);
+    */
+    Veloxr::OrthoCam& getCam() {
         return _cam;
     }
 
-private: // No client
+    // Cleanup calls.
+    void destroyTextureData(); 
+
+    void destroy(); 
+
+private: // No client -- internal
 
     GLFWwindow* window;
     const int WIDTH = 1920;
     const int HEIGHT = 1080;
     int _windowWidth, _windowHeight;
     std::string _currentFilepath;
+    // Frame delta for smooth panning
+    float deltaMs;
+    // For friend classes / drivers
+    void run(); 
 
-private: // Client
 
     VkInstance instance;
     bool noClientWindow = false;
@@ -246,6 +277,7 @@ private: // Client
     VkDescriptorPool descriptorPool;
     std::vector<VkDescriptorSet> descriptorSets;
 
+    // Structure for holding the VRAM data
     struct VkVirtualTexture {
         VkImage textureImage;
         VkDeviceMemory textureImageMemory;
@@ -268,8 +300,6 @@ private: // Client
     std::vector<VkSemaphore> renderFinishedSemaphores;
     std::vector<VkFence> inFlightFences;
     bool frameBufferResized = false;
-
-private:
 
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
             VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -333,11 +363,7 @@ private:
         glfwSetKeyCallback(window, key_callback);
 
     }
-public:
 
-    void init(void* windowHandle = nullptr, std::string filepath = ""); 
-
-    void setupTexturePasses(); 
 private:
     // texture utilities ------------------------------------------------
     void addTexture(std::string input_filepath);
@@ -382,7 +408,6 @@ private:
     void updateUniformBuffers(uint32_t currentImage);
 
 
-public:
     void drawFrame() {
         //std::cout << "[Veloxr]" << "Drawing frame with extent: " << swapChainExtent.width << "x" << swapChainExtent.height << std::endl;
         vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
@@ -443,7 +468,6 @@ public:
         currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 
     }
-private:
 
     void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
 
@@ -923,52 +947,6 @@ private:
 
 public:
 
-    void destroyTextureData() {
-        cleanupSwapChain();
-
-        for(auto& [name, data] : _textureMap) data.destroy(device);
-
-        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            vkDestroyBuffer(device, uniformBuffers[i], nullptr);
-            vkFreeMemory(device, uniformBuffersMemory[i], nullptr);
-        }
-        vkDestroyDescriptorPool(device, descriptorPool, nullptr);
-        vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
-    }
-    void destroy() {
-
-        destroyTextureData();
-        vkDestroyDescriptorPool(device, descriptorPool, nullptr);
-        vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
-
-        vkDestroyPipeline(device, graphicsPipeline, nullptr);
-        vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
-        vkDestroyRenderPass(device, renderPass, nullptr);
-
-        vkDestroyBuffer(device, vertexBuffer, nullptr);
-        vkFreeMemory(device, vertexBufferMemory, nullptr);
-
-        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
-            vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
-            vkDestroyFence(device, inFlightFences[i], nullptr);
-        }
-
-        vkDestroyCommandPool(device, commandPool, nullptr);
-
-        vkDestroyDevice(device, nullptr);
-
-        if (enableValidationLayers) {
-            DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
-        }
-
-        vkDestroySurfaceKHR(instance, surface, nullptr);
-        vkDestroyInstance(instance, nullptr);
-
-        glfwDestroyWindow(window);
-
-        glfwTerminate();
-    }
 private:
 
     void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
