@@ -59,7 +59,7 @@ void Device::_createLogicalDevice() {
     vkGetDeviceQueue(_logicalDevice, indices.graphicsFamily.value(), 0, &_graphicsQueue);
     vkGetDeviceQueue(_logicalDevice, indices.presentFamily.value(), 0, &_presentQueue);
 
-    std::cout << "Finished logical device creation! Queue / Present indices: " << indices.graphicsFamily.value() << " " << indices.presentFamily.value() << std::endl;
+    std::cout << "[Veloxr]" << "Finished logical device creation! Queue / Present indices: " << indices.graphicsFamily.value() << " " << indices.presentFamily.value() << std::endl;
 
 }
 
@@ -96,7 +96,7 @@ Veloxr::QueueFamilyIndices Device::findQueueFamilies(VkPhysicalDevice device) co
 }
 QueueFamilyIndices Device::_findQueueFamilies(VkPhysicalDevice device) {
     QueueFamilyIndices indices;
-    std::cout << "Finding device " << device << " queue families\n";
+    std::cout << "[Veloxr]" << "Finding device " << device << " queue families\n";
 
     uint32_t queueFamilyCount = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
@@ -139,9 +139,9 @@ int Device::_calculateDeviceScore(VkPhysicalDevice device) {
     _maxSamplers = deviceProperties.limits.maxPerStageDescriptorSamplers;
     uint32_t desiredSamplerCount = std::min(_maxSamplers, (uint32_t)64 );
     _maxSamplers = desiredSamplerCount;
-    std::cout << "[DEBUG] Physical Device Name: " << deviceProperties.deviceName << "\n";
-    std::cout << "[DEBUG] API Version: " << deviceProperties.apiVersion << "\n";
-    std::cout << "[DEBUG] Max Texture Resolution: " << _maxTextureResolution << "\n";
+    std::cout << "[Veloxr]" << "[DEBUG] Physical Device Name: " << deviceProperties.deviceName << "\n";
+    std::cout << "[Veloxr]" << "[DEBUG] API Version: " << deviceProperties.apiVersion << "\n";
+    std::cout << "[Veloxr]" << "[DEBUG] Max Texture Resolution: " << _maxTextureResolution << "\n";
 
     VkPhysicalDeviceFeatures deviceFeatures;
     vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
@@ -153,7 +153,7 @@ int Device::_calculateDeviceScore(VkPhysicalDevice device) {
         std::cerr << "Device " << device << " does not contained swapChain needs.\n";
         return -1;
     }
-    std::cout << "Device " << device << " ready to score.\n";
+    std::cout << "[Veloxr]" << "Device " << device << " ready to score.\n";
 
 
     int score = 0;
@@ -166,7 +166,7 @@ int Device::_calculateDeviceScore(VkPhysicalDevice device) {
     if(deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
         score *= 2;
     }
-    std::cout << "Score for device " << deviceProperties.deviceID << " (" << deviceProperties.deviceName << ") = " << score << std::endl;
+    std::cout << "[Veloxr]" << "Score for device " << deviceProperties.deviceID << " (" << deviceProperties.deviceName << ") = " << score << std::endl;
     return score;
 }
 

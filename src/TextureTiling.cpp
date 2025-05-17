@@ -28,12 +28,12 @@ TiledResult TextureTiling::tile8(OIIOTexture &texture, uint32_t deviceMaxDimensi
     bool tooWide       = (w > deviceMaxDimension);
     bool tooTall       = (h > deviceMaxDimension);
 
-    std::cout << "MaxPixels=" << maxPixels
+    std::cout << "[Veloxr]" << "MaxPixels=" << maxPixels
               << " totalPixels=" << totalPixels
               << " deviceMaxDimension=" << deviceMaxDimension << "\n";
-    std::cout << "Resolution (raw) = " << w << " x " << h
+    std::cout << "[Veloxr]" << "Resolution (raw) = " << w << " x " << h
               << " Channels=" << texture.getNumChannels() << "\n";
-    std::cout << "tooManyPixels=" << tooManyPixels
+    std::cout << "[Veloxr]" << "tooManyPixels=" << tooManyPixels
               << " tooWide=" << tooWide
               << " tooTall=" << tooTall << "\n";
 
@@ -45,7 +45,7 @@ TiledResult TextureTiling::tile8(OIIOTexture &texture, uint32_t deviceMaxDimensi
         one.pixelData = texture.load(texture.getFilename());
         result.tiles[0] = one;
 
-        std::cout << "Loaded pixelData.size()=" << one.pixelData.size() << "\n";
+        std::cout << "[Veloxr]" << "Loaded pixelData.size()=" << one.pixelData.size() << "\n";
 
         int orientation = texture.getOrientation();
         uint32_t orientedW = w;
@@ -77,19 +77,19 @@ TiledResult TextureTiling::tile8(OIIOTexture &texture, uint32_t deviceMaxDimensi
 
             switch (orientation) {
                 case 1:
-                    std::cout << "Tile has no orientation change.\n";
+                    std::cout << "[Veloxr]" << "Tile has no orientation change.\n";
                     res = uv; 
                     break;
                 case 3:
-                    std::cout << "Tile has 180 rotation.\n";
+                    std::cout << "[Veloxr]" << "Tile has 180 rotation.\n";
                     res = glm::vec2(1.0f - uv.x, 1.0f - uv.y);
                     break;
                 case 6:
-                    std::cout << "Tile has 90 rotation.\n";
+                    std::cout << "[Veloxr]" << "Tile has 90 rotation.\n";
                     res = glm::vec2(uv.y, 1.0f - uv.x);
                     break;
                 case 8:
-                    std::cout << "Tile has 270 rotation.\n";
+                    std::cout << "[Veloxr]" << "Tile has 270 rotation.\n";
                     res = glm::vec2(1.0f - uv.y, uv.x);
                     break;
                 default:
@@ -106,20 +106,20 @@ TiledResult TextureTiling::tile8(OIIOTexture &texture, uint32_t deviceMaxDimensi
                                singleTileVerts.begin(),
                                singleTileVerts.end());
 
-        std::cout << "Single-tile approach used. \n";
-        std::cout << "Tile " << idx
+        std::cout << "[Veloxr]" << "Single-tile approach used. \n";
+        std::cout << "[Veloxr]" << "Tile " << idx
                   << " (" << one.width << " x " << one.height << ") completed\n";
         result.boundingBox = {0, 0, right, top};
         return result;
     }
 
-    std::cout << "Texture too big for single tile. Doing multi-tiling.\n";
+    std::cout << "[Veloxr]" << "Texture too big for single tile. Doing multi-tiling.\n";
 
     uint32_t rawW = w; 
     uint32_t rawH = h;
 
     int orientation = texture.getOrientation();
-    std::cout << "[INFO] Orientation = " << orientation << "\n";
+    std::cout << "[Veloxr]" << "[INFO] Orientation = " << orientation << "\n";
 
     uint32_t orientedW = rawW;
     uint32_t orientedH = rawH;
@@ -248,7 +248,7 @@ TiledResult TextureTiling::tile8(OIIOTexture &texture, uint32_t deviceMaxDimensi
                 std::vector<Vertex> theseVerts = { v0, v1, v2, v3, v4, v5 };
                 localVerts[idx] = std::move(theseVerts);
 
-                std::cout << "Tile " << idx << " (thread " << t << ") completed.\n";
+                std::cout << "[Veloxr]" << "Tile " << idx << " (thread " << t << ") completed.\n";
             }
         });
     }
@@ -312,12 +312,12 @@ TiledResult TextureTiling::tile7(OIIOTexture &texture, uint32_t deviceMaxDimensi
     bool tooWide       = (w > deviceMaxDimension);
     bool tooTall       = (h > deviceMaxDimension);
 
-    std::cout << "MaxPixels=" << maxPixels
+    std::cout << "[Veloxr]" << "MaxPixels=" << maxPixels
               << " totalPixels=" << totalPixels
               << " deviceMaxDimension=" << deviceMaxDimension << "\n";
-    std::cout << "Resolution (raw) = " << w << " x " << h
+    std::cout << "[Veloxr]" << "Resolution (raw) = " << w << " x " << h
               << " Channels=" << texture.getNumChannels() << "\n";
-    std::cout << "tooManyPixels=" << tooManyPixels
+    std::cout << "[Veloxr]" << "tooManyPixels=" << tooManyPixels
               << " tooWide=" << tooWide
               << " tooTall=" << tooTall << "\n";
 
@@ -330,7 +330,7 @@ TiledResult TextureTiling::tile7(OIIOTexture &texture, uint32_t deviceMaxDimensi
         one.pixelData = texture.load(texture.getFilename());
         result.tiles[0] = one;
 
-        std::cout << "Loaded pixelData.size()=" << one.pixelData.size() << "\n";
+        std::cout << "[Veloxr]" << "Loaded pixelData.size()=" << one.pixelData.size() << "\n";
 
         int orientation = texture.getOrientation();
         uint32_t orientedW = w;
@@ -359,19 +359,19 @@ TiledResult TextureTiling::tile7(OIIOTexture &texture, uint32_t deviceMaxDimensi
             glm::vec2 res;
             switch (orientation) {
                 case 1:
-                    std::cout << "Tile has no orientation change.\n";
+                    std::cout << "[Veloxr]" << "Tile has no orientation change.\n";
                     res = uv;
                     break;
                 case 3:
-                    std::cout << "Tile has 180° rotation.\n";
+                    std::cout << "[Veloxr]" << "Tile has 180° rotation.\n";
                     res = glm::vec2(1.0f - uv.x, 1.0f - uv.y);
                     break;
                 case 6:
-                    std::cout << "Tile has 90° rotation.\n";
+                    std::cout << "[Veloxr]" << "Tile has 90° rotation.\n";
                     res = glm::vec2(uv.y, 1.0f - uv.x);
                     break;
                 case 8:
-                    std::cout << "Tile has 270° rotation.\n";
+                    std::cout << "[Veloxr]" << "Tile has 270° rotation.\n";
                     res = glm::vec2(1.0f - uv.y, uv.x);
                     break;
                 default:
@@ -386,19 +386,19 @@ TiledResult TextureTiling::tile7(OIIOTexture &texture, uint32_t deviceMaxDimensi
                                singleTileVerts.begin(),
                                singleTileVerts.end());
 
-        std::cout << "Single-tile approach used. \n";
-        std::cout << "Tile " << idx
+        std::cout << "[Veloxr]" << "Single-tile approach used. \n";
+        std::cout << "[Veloxr]" << "Tile " << idx
                   << " (" << one.width << " x " << one.height << ") completed\n";
         return result;
     } else {
 
-        std::cout << "Texture too big for single tile. Doing multi-tiling.\n";
+        std::cout << "[Veloxr]" << "Texture too big for single tile. Doing multi-tiling.\n";
 
         uint32_t rawW = w; 
         uint32_t rawH = h;
 
         int orientation = texture.getOrientation();
-        std::cout << "[INFO] Orientation = " << orientation << "\n";
+        std::cout << "[Veloxr]" << "[INFO] Orientation = " << orientation << "\n";
 
         uint32_t orientedW = rawW;
         uint32_t orientedH = rawH;
@@ -584,7 +584,7 @@ TiledResult TextureTiling::tile7(OIIOTexture &texture, uint32_t deviceMaxDimensi
 
                     localVerts[idx] = std::move(theseVerts);
 
-                    std::cout << "Tile " << idx << " (thread " << t << ") completed.\n";
+                    std::cout << "[Veloxr]" << "Tile " << idx << " (thread " << t << ") completed.\n";
                     }
                     in->close();
             });
@@ -639,12 +639,12 @@ TiledResult TextureTiling::tile6(OIIOTexture &texture, uint32_t deviceMaxDimensi
     bool tooWide         = (rawW > deviceMaxDimension);
     bool tooTall         = (rawH > deviceMaxDimension);
 
-    std::cout << "MaxPixels=" << maxPixels
+    std::cout << "[Veloxr]" << "MaxPixels=" << maxPixels
               << " totalPixels=" << totalPixels
               << " deviceMaxDimension=" << deviceMaxDimension << "\n";
-    std::cout << "Resolution (raw) = " << rawW << " x " << rawH
+    std::cout << "[Veloxr]" << "Resolution (raw) = " << rawW << " x " << rawH
               << " Channels=" << texture.getNumChannels() << "\n";
-    std::cout << "tooManyPixels=" << tooManyPixels
+    std::cout << "[Veloxr]" << "tooManyPixels=" << tooManyPixels
               << " tooWide=" << tooWide
               << " tooTall=" << tooTall << "\n";
 
@@ -662,7 +662,7 @@ TiledResult TextureTiling::tile6(OIIOTexture &texture, uint32_t deviceMaxDimensi
         one.pixelData = texture.load(texture.getFilename());
         result.tiles[0] = one;
 
-        std::cout << "Loaded pixelData.size()=" << one.pixelData.size() << "\n";
+        std::cout << "[Veloxr]" << "Loaded pixelData.size()=" << one.pixelData.size() << "\n";
         if (orientation == 6 || orientation == 8) {
             std::swap(w, h);
         }
@@ -688,22 +688,22 @@ TiledResult TextureTiling::tile6(OIIOTexture &texture, uint32_t deviceMaxDimensi
 
             switch (orientation) {
                 case 1: {
-                    std::cout << "Tile has no orientation change.\n";
+                            std::cout << "[Veloxr]" << "Tile has no orientation change.\n";
                     res = uv;
                     break;
                 }
                 case 3: {
-                    std::cout << "Tile has 180 rotation.\n";
+                            std::cout << "[Veloxr]" << "Tile has 180 rotation.\n";
                     res = glm::vec2(1.0f - uv.x, 1.0f - uv.y);
                     break;
                 }
                 case 6: {
-                    std::cout << "Tile has 90 rotation.\n";
+                            std::cout << "[Veloxr]" << "Tile has 90 rotation.\n";
                     res = glm::vec2(uv.y, 1.0f - uv.x);
                     break;
                 }
                 case 8: {
-                    std::cout << "Tile has 270 rotation.\n";
+                            std::cout << "[Veloxr]" << "Tile has 270 rotation.\n";
                     res = glm::vec2(1.0f - uv.y, uv.x);
                     break; 
                 }
@@ -721,20 +721,20 @@ TiledResult TextureTiling::tile6(OIIOTexture &texture, uint32_t deviceMaxDimensi
                               singleTileVerts.begin(),
                               singleTileVerts.end());
 
-        std::cout << "Tile " << idx
+        std::cout << "[Veloxr]" << "Tile " << idx
                   << " (" << one.width << " x " << one.height << ") completed\n";
         return result;
 
     }
 
     int orientation = texture.getOrientation();  
-    std::cout << "[INFO] Image EXIF orientation = " << orientation << "\n";
+    std::cout << "[Veloxr]" << "[INFO] Image EXIF orientation = " << orientation << "\n";
 
     uint32_t orientedW = rawW;
     uint32_t orientedH = rawH;
     if (orientation == 6 || orientation == 8) {
         std::swap(orientedW, orientedH);
-        std::cout << "[DEBUG] Swapped orientedW/orientedH => "
+        std::cout << "[Veloxr]" << "[DEBUG] Swapped orientedW/orientedH => "
             << orientedW << " x " << orientedH << "\n";
     }
 
@@ -928,7 +928,7 @@ TiledResult TextureTiling::tile6(OIIOTexture &texture, uint32_t deviceMaxDimensi
 
                 localVerts[idx] = std::move(verts);
 
-                std::cout << "Tile " << idx << " has completed.\n";
+                std::cout << "[Veloxr]" << "Tile " << idx << " has completed.\n";
                 }
 
                 in->close();
@@ -983,12 +983,12 @@ TiledResult TextureTiling::tile4(OIIOTexture &texture, uint32_t deviceMaxDimensi
     bool tooWide = (w > deviceMaxDimension);
     bool tooTall = (h > deviceMaxDimension);
 
-    std::cout << "MaxPixels=" << maxPixels
+    std::cout << "[Veloxr]" << "MaxPixels=" << maxPixels
               << " totalPixels=" << totalPixels
               << " deviceMaxDimension=" << deviceMaxDimension << "\n";
-    std::cout << "Resolution=" << w << "x" << h
+    std::cout << "[Veloxr]" << "Resolution=" << w << "x" << h
               << " Channels=" << texture.getNumChannels() << "\n";
-    std::cout << "tooManyPixels=" << tooManyPixels
+    std::cout << "[Veloxr]" << "tooManyPixels=" << tooManyPixels
               << " tooWide=" << tooWide
               << " tooTall=" << tooTall << "\n";
 
@@ -1004,7 +1004,7 @@ TiledResult TextureTiling::tile4(OIIOTexture &texture, uint32_t deviceMaxDimensi
         one.pixelData = texture.load(texture.getFilename());
         result.tiles[0] = one;
 
-        std::cout << "Loaded pixelData.size()=" << one.pixelData.size() << "\n";
+        std::cout << "[Veloxr]" << "Loaded pixelData.size()=" << one.pixelData.size() << "\n";
         if (orientation == 6 || orientation == 8) {
             std::swap(w, h);
         }
@@ -1030,22 +1030,22 @@ TiledResult TextureTiling::tile4(OIIOTexture &texture, uint32_t deviceMaxDimensi
 
             switch (orientation) {
                 case 1: {
-                    std::cout << "Tile has no orientation change.\n";
+                            std::cout << "[Veloxr]" << "Tile has no orientation change.\n";
                     res = uv;
                     break;
                 }
                 case 3: {
-                    std::cout << "Tile has 180 rotation.\n";
+                            std::cout << "[Veloxr]" << "Tile has 180 rotation.\n";
                     res = glm::vec2(1.0f - uv.x, 1.0f - uv.y);
                     break;
                 }
                 case 6: {
-                    std::cout << "Tile has 90 rotation.\n";
+                            std::cout << "[Veloxr]" << "Tile has 90 rotation.\n";
                     res = glm::vec2(uv.y, 1.0f - uv.x);
                     break;
                 }
                 case 8: {
-                    std::cout << "Tile has 270 rotation.\n";
+                            std::cout << "[Veloxr]" << "Tile has 270 rotation.\n";
                     res = glm::vec2(1.0f - uv.y, uv.x);
                     break; 
                 }
@@ -1063,7 +1063,7 @@ TiledResult TextureTiling::tile4(OIIOTexture &texture, uint32_t deviceMaxDimensi
                               singleTileVerts.begin(),
                               singleTileVerts.end());
 
-        std::cout << "Tile " << idx
+        std::cout << "[Veloxr]" << "Tile " << idx
                   << " (" << one.width << " x " << one.height << ") completed\n";
         return result;
     }
@@ -1113,7 +1113,7 @@ TiledResult TextureTiling::tile5(OIIOTexture &texture, uint32_t deviceMaxDimensi
             { { right,  top,    0.0f, 0.0f }, { 1.0f, 0.0f, float(idx), 0.0f }, idx },
         };
         result.vertices.insert(result.vertices.end(), singleTileVerts.begin(), singleTileVerts.end());
-        std::cout << "Tile " << idx << " has completed.\n";
+        std::cout << "[Veloxr]" << "Tile " << idx << " has completed.\n";
         return result;
     }
 
@@ -1245,7 +1245,7 @@ TiledResult TextureTiling::tile5(OIIOTexture &texture, uint32_t deviceMaxDimensi
 
                 localVerts[idx] = { v0, v1, v2, v3, v4, v5 };
 
-                std::cout << "Tile " << idx << " has completed.\n";
+                std::cout << "[Veloxr]" << "Tile " << idx << " has completed.\n";
             }
             in->close();
         }));
