@@ -212,8 +212,12 @@ public:
 
     // Cleanup calls.
     void destroyTextureData(); 
-
     void destroy(); 
+
+    // Frame delta for smooth panning
+    float deltaMs;
+    // For default clients, do not call as an Application with a window handle.
+    void run(); 
 
 private: // No client -- internal
 
@@ -222,10 +226,7 @@ private: // No client -- internal
     const int HEIGHT = 1080;
     int _windowWidth, _windowHeight;
     std::string _currentFilepath;
-    // Frame delta for smooth panning
-    float deltaMs;
     // For friend classes / drivers
-    void run(); 
 
 
     VkInstance instance;
