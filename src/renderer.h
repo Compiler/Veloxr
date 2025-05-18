@@ -18,6 +18,7 @@
 // Use direct paths to headers instead of angle bracket includes
 #include "OrthographicCamera.h"
 #include "OrthoCam.h"
+#include "DataUtils.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -179,11 +180,14 @@ class RendererCore {
 
 //Client side API
 public:
+    // Structure for passing data to Veloxr
+
     // Change size of window to render into. 
     void setWindowDimensions(int width, int height); 
 
     // Set the texture to load, will reinitialize the pipeline.
     void setTextureFilePath(std::string filepath); 
+    void setTextureBuffer(Veloxr::VeloxrBuffer&& buffer); 
 
     // Initialize the renderer, given a window pointer to render into.
     void init(void* windowHandle = nullptr, std::string filepath = ""); 
@@ -219,6 +223,7 @@ public:
     // For default clients, do not call as an Application with a window handle.
     void run(); 
 
+
 private: // No client -- internal
 
     GLFWwindow* window;
@@ -226,6 +231,7 @@ private: // No client -- internal
     const int HEIGHT = 1080;
     int _windowWidth, _windowHeight;
     std::string _currentFilepath;
+    Veloxr::VeloxrBuffer _currentDataBuffer;
     // For friend classes / drivers
 
 
@@ -377,8 +383,8 @@ private:
                                VkImageLayout oldLayout, VkImageLayout newLayout);
     void copyBufferToImage(VkBuffer buffer, VkImage image,
                            uint32_t width, uint32_t height);
-    std::unordered_map<std::string, VkVirtualTexture>
-        createTiledTexture(std::string input_filepath = "");
+    std::unordered_map<std::string, VkVirtualTexture> createTiledTexture(std::string input_filepath = "");
+    std::unordered_map<std::string, VkVirtualTexture> createTiledTexture(std::string input_filepath = "");
 
     // one-shot command buffers ----------------------------------------
     VkCommandBuffer beginSingleTimeCommands();
