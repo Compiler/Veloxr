@@ -384,7 +384,7 @@ private:
     void copyBufferToImage(VkBuffer buffer, VkImage image,
                            uint32_t width, uint32_t height);
     std::unordered_map<std::string, VkVirtualTexture> createTiledTexture(std::string input_filepath = "");
-    std::unordered_map<std::string, VkVirtualTexture> createTiledTexture(std::string input_filepath = "");
+    std::unordered_map<std::string, VkVirtualTexture> createTiledTexture(Veloxr::VeloxrBuffer&& buffer);
 
     // one-shot command buffers ----------------------------------------
     VkCommandBuffer beginSingleTimeCommands();

@@ -72,7 +72,7 @@ void RendererCore::setupTexturePasses() {
     //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/very_wide.webp");
     std::unordered_map<std::string, RendererCore::VkVirtualTexture> res; 
     if (_currentDataBuffer.empty() == false) {
-        res = createTiledTexture(_currentDataBuffer);
+        res = createTiledTexture(std::move(_currentDataBuffer));
     } else if (_currentFilepath.empty() == false) {
         res = createTiledTexture(_currentFilepath);
     } else {
@@ -272,59 +272,52 @@ std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::cr
     _cam.init(0, _windowWidth, 0, _windowHeight, -1, 1);
     Veloxr::TextureTiling tiler{};
     auto maxResolution = _deviceUtils->getMaxTextureResolution();
-    std::cout << "[Veloxr]" << "Tiling...\n";
-    //Veloxr::TiledResult tileData = tiler.tile4(myTexture, maxResolution);
-    Veloxr::TiledResult tileData = tiler.tile8(myTexture, maxResolution);
-    std::cout << "[Veloxr]" << "Done! Bounding box: (" << tileData.boundingBox.x << ", " << tileData.boundingBox.y << ", " << tileData.boundingBox.z << ", " << tileData.boundingBox.w << ") " << std::endl;
-    for(const auto& [indx, tileData] : tileData.tiles){
-        VkVirtualTexture tileTexture;
-        int texWidth    = tileData.width;
-        int texHeight   = tileData.height;
-        int texChannels = 4;//myTexture.getNumChannels();
+    std::cout << "[Veloxr]" << "Not Tiling...\n";
 
-        std::cout << "[Veloxr]" << "HELP MY CHANNELS ARE " << myTexture.getNumChannels() << std::endl;
-        VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth) * 
-            static_cast<VkDeviceSize>(texHeight) *
-            static_cast<VkDeviceSize>(texChannels);
+    VkVirtualTexture tileTexture;
+    int texWidth    = buffer.width;
+    int texHeight   = buffer.height;
+    int texChannels = 4;//buffer.numChannels;//myTexture.getNumChannels();
 
-        std::cout << "[Veloxr]" << "Loading texture of size " 
-            << texWidth << " x " << texHeight << ": " 
-            << (imageSize / 1024.0 / 1024.0) << " MB" << std::endl;
+    VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth) * 
+        static_cast<VkDeviceSize>(texHeight) *
+        static_cast<VkDeviceSize>(texChannels);
 
-        VkBuffer stagingBuffer;
-        VkDeviceMemory stagingBufferMemory;
-        createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+    std::cout << "[Veloxr]" << "Loading texture of size " 
+        << texWidth << " x " << texHeight << ": " 
+        << (imageSize / 1024.0 / 1024.0) << " MB" << std::endl;
 
-        void* data;
-        vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
-        //memcpy(data, res.begin()->pixelData.data()/*myTexture.load(input_filepath).data()*/, static_cast<size_t>(imageSize));
-        memcpy(data, tileData.pixelData.data()/*myTexture.load(input_filepath).data()*/, static_cast<size_t>(imageSize));
-        vkUnmapMemory(device, stagingBufferMemory);
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+    createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
-        VkImage textureImage;
-        VkDeviceMemory textureImageMemory;
-        createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
+    void* data;
+    vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
+    memcpy(data, buffer.data.data(), static_cast<size_t>(imageSize));
+    vkUnmapMemory(device, stagingBufferMemory);
 
-        transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-        copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
-        transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    VkImage textureImage;
+    VkDeviceMemory textureImageMemory;
+    createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
 
-        vkDestroyBuffer(device, stagingBuffer, nullptr);
-        vkFreeMemory(device, stagingBufferMemory, nullptr);
-        tileTexture.textureImage = textureImage;
-        tileTexture.textureImageMemory = textureImageMemory;
-        tileTexture.textureData = myTexture;
+    transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+    transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-        
-        auto imageView = createTextureImageView(textureImage);
-        auto sampler = createTextureSampler();
-        tileTexture.textureImageView = imageView;
-        tileTexture.textureSampler = sampler;
-        tileTexture.samplerIndex = indx;
+    vkDestroyBuffer(device, stagingBuffer, nullptr);
+    vkFreeMemory(device, stagingBufferMemory, nullptr);
+    tileTexture.textureImage = textureImage;
+    tileTexture.textureImageMemory = textureImageMemory;
 
-        _textureMap[input_filepath + "_tile_" + std::to_string(indx)] = tileTexture;
-    }
-    vertices = std::vector<Veloxr::Vertex>(tileData.vertices.begin(), tileData.vertices.end());
+
+    auto imageView = createTextureImageView(textureImage);
+    auto sampler = createTextureSampler();
+    tileTexture.textureImageView = imageView;
+    tileTexture.textureSampler = sampler;
+    tileTexture.samplerIndex = 0;
+
+    _textureMap["buffer"] = tileTexture;
+    //vertices = std::vector<Veloxr::Vertex>(tileData.vertices.begin(), tileData.vertices.end());
     for(Veloxr::Vertex& vertice : vertices) {
         const auto& [position, texCoords, texUnit] = vertice;
         std::cout << "[Veloxr]" << "[" << position.x << ", " << position.y << "]\t\t|\t\t[" << texCoords.x << ", " << texCoords.y << "]\t|\t" << texUnit << std::endl;
