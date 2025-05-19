@@ -10,6 +10,11 @@ void RendererCore::run() {
     destroy();
 }
 
+void RendererCore::spin() {
+    render();
+    destroy();
+}
+
 void RendererCore::setWindowDimensions(int width, int height) {
     _windowWidth = width;
     _windowHeight = height;
@@ -22,7 +27,7 @@ void RendererCore::setTextureFilePath(std::string filepath){
     setupTexturePasses();
 }
 
-void RendererCore::setTextureBuffer(std::vector<unsigned char>&& buffer){
+void RendererCore::setTextureBuffer(Veloxr::VeloxrBuffer&& buffer){
     destroyTextureData();
     _currentDataBuffer = buffer;
     setupTexturePasses();
@@ -57,11 +62,6 @@ void RendererCore::init(void* windowHandle, std::string filepath) {
 }
 
 
-
-
-// impl
-//
-
 void RendererCore::setupTexturePasses() {
     createCommandPool();
 
@@ -71,12 +71,12 @@ void RendererCore::setupTexturePasses() {
 
     //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/very_wide.webp");
     std::unordered_map<std::string, RendererCore::VkVirtualTexture> res; 
-    if (_currentDataBuffer.empty() == false) {
+    if (_currentDataBuffer.data.empty() == false) {
         res = createTiledTexture(std::move(_currentDataBuffer));
     } else if (_currentFilepath.empty() == false) {
         res = createTiledTexture(_currentFilepath);
     } else {
-        _currentFilepath = PREFIX+"/Users/ljuek/Downloads/Colonial.jpg";
+        _currentFilepath = PREFIX+"/Users/luker/Downloads/Colonial.jpg";
         res = createTiledTexture(_currentFilepath);
     }
     //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg");
@@ -768,7 +768,8 @@ void RendererCore::destroyTextureData() {
     vkDestroyDescriptorPool(device, descriptorPool, nullptr);
     vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
     _currentFilepath = "";
-    _currentDataBuffer.clear();
+    _currentDataBuffer.data.clear();
+    _currentDataBuffer = {};
 }
 
 void RendererCore::destroy() {

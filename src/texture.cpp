@@ -12,6 +12,7 @@ OIIOTexture::OIIOTexture(std::string filename) {
 }
 
 void OIIOTexture::init(std::string filename) {
+    std::cout << "[VELOXR][TEXTURE] Loading texture: " << filename << '\n';
     _filename = filename;
     auto in = ImageInput::open(_filename);
     if (!in) {
@@ -20,13 +21,13 @@ void OIIOTexture::init(std::string filename) {
     const ImageSpec &in_spec = in->spec();
     _resolution = {(uint32_t)in_spec.width, (uint32_t)in_spec.height};
     _numChannels = in_spec.nchannels;
-    _loaded = true;
     OIIO::ImageSpec spec = in->spec();
     auto orientation = spec.get_int_attribute("Orientation", 1);
     _orientation = orientation;
     std::cout << "[Veloxr]" << "Filename=" << _filename << " Orientation=" << orientation << "\n";
     in->close();
     in.reset();
+    _loaded = true;
 }
 
 std::vector<unsigned char> OIIOTexture::load(std::string filename) {
@@ -34,7 +35,7 @@ std::vector<unsigned char> OIIOTexture::load(std::string filename) {
         std::cerr << "OIIOTexture not initialized properly\n";
         static std::vector<unsigned char> err;
         return err;
-    }
+    } else if (filename.empty() && _loaded) filename = _filename;
     if (!_loaded) init(filename);
 
     auto in = OIIO::ImageInput::open(filename);

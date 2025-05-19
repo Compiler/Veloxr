@@ -222,6 +222,7 @@ public:
     float deltaMs;
     // For default clients, do not call as an Application with a window handle.
     void run(); 
+    void spin(); 
 
 
 private: // No client -- internal
@@ -951,8 +952,6 @@ private:
         vkDeviceWaitIdle(device);
 
     }
-
-public:
 
 private:
 
