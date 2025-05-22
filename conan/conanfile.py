@@ -17,13 +17,24 @@ class conanRecipe(ConanFile):
     }
 
     def configure(self):
-        self.options["opencv"].with_jpeg = "libjpeg-turbo"
+        # self.options["opencv"].with_jpeg = "libjpeg-turbo"
+        self.options["opencv"].with_jpeg = False
+        self.options["opencv"].with_png = False
+        self.options["opencv"].with_tiff = False
+        self.options["opencv"].with_jpeg2000 = False
+        self.options["opencv"].with_openexr = False
+        self.options["opencv"].with_eigen = False
+        self.options["opencv"].with_webp = False
+        self.options["opencv"].with_quirc = False
+        
+        self.options["libtiff"].jpeg = "libjpeg-turbo"
+        self.options["openimageio"].shared = True  # Build OIIO as a shared library
+        self.options["openimageio"].with_libjpeg = "libjpeg-turbo"
 
     def requirements(self):
         self.requires("glfw/3.4")
-        self.requires("opencv/4.8.1@josh/veloxr")
-        self.requires("openimageio/3.0.4.0@josh/veloxr")
-        # self.requires("vulkan-loader/1.3.268.0")
+        self.requires("opencv/4.8.1")
+        self.requires("openimageio/3.0.4.0")
         self.requires("glm/1.0.1")
     
     def build_requirements(self):
