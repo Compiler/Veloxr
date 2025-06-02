@@ -11,29 +11,48 @@ class conanRecipe(ConanFile):
 
     options = {
         "validation_layers": [True, False],
+        "build_video": [True, False],
+        "build_photo": [True, False],
     }
     default_options = {
         "validation_layers": False,
+        "build_video": False,
+        "build_photo": False,
     }
 
     def configure(self):
-        # self.options["opencv"].with_jpeg = "libjpeg-turbo"
-        self.options["opencv"].with_jpeg = False
-        self.options["opencv"].with_png = False
-        self.options["opencv"].with_tiff = False
-        self.options["opencv"].with_jpeg2000 = False
-        self.options["opencv"].with_openexr = False
-        self.options["opencv"].with_eigen = False
-        self.options["opencv"].with_webp = False
-        self.options["opencv"].with_quirc = False
+        if self.options.build_photo:
+            self.options["opencv"].with_jpeg = False
+            self.options["opencv"].with_png = False
+            self.options["opencv"].with_tiff = False
+            self.options["opencv"].with_jpeg2000 = False
+            self.options["opencv"].with_openexr = False
+            self.options["opencv"].with_eigen = False
+            self.options["opencv"].with_webp = False
+            self.options["opencv"].with_quirc = False
         
         self.options["libtiff"].jpeg = "libjpeg-turbo"
         self.options["openimageio"].shared = True  # Build OIIO as a shared library
         self.options["openimageio"].with_libjpeg = "libjpeg-turbo"
+        if self.options.build_video:
+            self.options["opencv"].with_jpeg = "libjpeg-turbo"
+            self.options["libtiff"].jpeg = "libjpeg-turbo"
+            if self.settings.os == "Macos" or self.settings.os == "Linux":
+                self.options["libvpx"].shared = True
+            self.options["openimageio"].with_raw = False
+            self.options["openimageio"].build_tools = True
+            if self.settings.os == "Macos":
+                self.options["openimageio"].with_shared_tiff = True
+            if self.settings.os == "Linux":
+                self.options["opencv"].with_gtk = False
+                self.options["opencv"].with_png = False
 
     def requirements(self):
         self.requires("glfw/3.4")
-        self.requires("opencv/4.8.1")
+        if self.options.build_video:
+            self.requires("opencv/4.5.6-oiio3")
+        if self.options.build_photo:
+            self.requires("opencv/4.8.1")
         self.requires("openimageio/3.0.4.0")
         self.requires("glm/1.0.1")
     
