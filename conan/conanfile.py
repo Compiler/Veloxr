@@ -87,8 +87,9 @@ class conanRecipe(ConanFile):
     def package(self):
         cmake = CMake(self)
         cmake.install()
-        # Copy the executable to the package bin directory
-        copy(self, "vulkanrenderer*", src="build", dst="bin", keep_path=False)
+
+        copy(self, "vulkan-1.dll", os.path.join(self.build_folder), os.path.join(self.package_folder, "bin"), keep_path=False)
+        copy(self, "vulkanrenderer.exe", os.path.join(self.build_folder), os.path.join(self.package_folder, "bin"), keep_path=False)
 
     def package_info(self):
         self.cpp_info.libs = ["veloxr_lib"]
