@@ -8,6 +8,7 @@ class conanRecipe(ConanFile):
     name = "veloxr"
     settings = "os", "build_type", "arch"
     generators = "CMakeDeps"
+    settings = "os", "arch", "compiler", "build_type"
 
     options = {
         "validation_layers": [True, False],
@@ -80,6 +81,7 @@ class conanRecipe(ConanFile):
         copy(self, "src/*", folder, self.export_sources_folder)
         copy(self, "include/*", folder, self.export_sources_folder)
         copy(self, "spirv/*", folder, self.export_sources_folder)
+        copy(self, "conan/*", folder, self.export_sources_folder)
 
     def build(self):
         cmake = CMake(self)
@@ -90,9 +92,43 @@ class conanRecipe(ConanFile):
         cmake = CMake(self)
         cmake.install()
 
-        copy(self, "vulkan-1.dll", os.path.join(self.build_folder), os.path.join(self.package_folder, "bin"), keep_path=False)
-        copy(self, "vulkanrenderer.exe", os.path.join(self.build_folder), os.path.join(self.package_folder, "bin"), keep_path=False)
-        copy(self, "spirv/*.spv", self.source_folder, os.path.join(self.package_folder, "spirv"), keep_path=False)
+        if self.settings.os == "Windows":
+            copy(
+                self,
+                "vulkan-1.dll",
+                os.path.join(self.build_folder),
+                os.path.join(self.package_folder, "bin"),
+                keep_path=False,
+            )
+            copy(
+                self,
+                "vulkanrenderer.exe",
+                os.path.join(self.build_folder),
+                os.path.join(self.package_folder, "bin"),
+                keep_path=False,
+            )
+            copy(
+                self,
+                "spirv/*.spv",
+                self.source_folder,
+                os.path.join(self.package_folder, "spirv"),
+                keep_path=False,
+            )
+        elif self.settings.os == "Macos":
+            copy(
+                self,
+                "vulkanrenderer.exe",
+                os.path.join(self.build_folder),
+                os.path.join(self.package_folder, "bin"),
+                keep_path=False,
+            )
+            copy(
+                self,
+                "spirv/*.spv",
+                self.source_folder,
+                os.path.join(self.package_folder, "spirv"),
+                keep_path=False,
+            )
 
     def package_info(self):
         self.cpp_info.libs = ["veloxr_lib"]
