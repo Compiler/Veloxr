@@ -23,6 +23,7 @@ namespace Veloxr {
             const glm::mat4& getProjectionMatrix() const;
             const glm::mat4& getViewMatrix() const;
             glm::mat4 getViewProjectionMatrix() const;
+            glm::vec3 getPosition() const;
 
             // Set the zoom level, relative to world coordinates.
             void setZoomLevel(float zoomLevel);
