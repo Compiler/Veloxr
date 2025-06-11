@@ -61,7 +61,7 @@ const glm::mat4& OrthoCam::getProjectionMatrix() const {
     return projectionMatrix;
 }
 
-glm::vec3 Veloxr::getPosition() const {
+glm::vec3 OrthoCam::getPosition() const {
     return _position;
 }
 
