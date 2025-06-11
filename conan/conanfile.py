@@ -30,7 +30,7 @@ class conanRecipe(ConanFile):
             self.options["opencv"].with_eigen = False
             self.options["opencv"].with_webp = False
             self.options["opencv"].with_quirc = False
-        
+
         self.options["libtiff"].jpeg = "libjpeg-turbo"
         self.options["openimageio"].shared = True  # Build OIIO as a shared library
         self.options["openimageio"].with_libjpeg = "libjpeg-turbo"
@@ -55,7 +55,7 @@ class conanRecipe(ConanFile):
             self.requires("opencv/4.8.1")
         self.requires("openimageio/3.0.4.0")
         self.requires("glm/1.0.1")
-    
+
     def build_requirements(self):
         self.requires("vulkan-loader/1.3.268.0")
 
@@ -66,7 +66,8 @@ class conanRecipe(ConanFile):
         tc.generate()
 
         for dep in self.dependencies.values():
-            if not dep.package_folder: continue
+            if not dep.package_folder:
+                continue
             copy(self, "*", src=os.path.join(dep.package_folder, "bin"), dst="bin")
             copy(self, "*", src=os.path.join(dep.package_folder, "lib"), dst="lib")
 
@@ -88,8 +89,20 @@ class conanRecipe(ConanFile):
         cmake = CMake(self)
         cmake.install()
 
-        copy(self, "vulkan-1.dll", os.path.join(self.build_folder), os.path.join(self.package_folder, "bin"), keep_path=False)
-        copy(self, "vulkanrenderer.exe", os.path.join(self.build_folder), os.path.join(self.package_folder, "bin"), keep_path=False)
+        copy(
+            self,
+            "vulkan-1.dll",
+            os.path.join(self.build_folder),
+            os.path.join(self.package_folder, "bin"),
+            keep_path=False,
+        )
+        copy(
+            self,
+            "vulkanrenderer.exe",
+            os.path.join(self.build_folder),
+            os.path.join(self.package_folder, "bin"),
+            keep_path=False,
+        )
 
     def package_info(self):
         self.cpp_info.libs = ["veloxr_lib"]
