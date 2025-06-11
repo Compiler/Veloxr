@@ -78,6 +78,7 @@ class conanRecipe(ConanFile):
         copy(self, "CMakeLists.txt", folder, self.export_sources_folder)
         copy(self, "src/*", folder, self.export_sources_folder)
         copy(self, "include/*", folder, self.export_sources_folder)
+        copy(self, "spirv/*", folder, self.export_sources_folder)
 
     def build(self):
         cmake = CMake(self)
@@ -90,6 +91,7 @@ class conanRecipe(ConanFile):
 
         copy(self, "vulkan-1.dll", os.path.join(self.build_folder), os.path.join(self.package_folder, "bin"), keep_path=False)
         copy(self, "vulkanrenderer.exe", os.path.join(self.build_folder), os.path.join(self.package_folder, "bin"), keep_path=False)
+        copy(self, "spirv/*.spv", self.source_folder, os.path.join(self.package_folder, "spirv"), keep_path=False)
 
     def package_info(self):
         self.cpp_info.libs = ["veloxr_lib"]
