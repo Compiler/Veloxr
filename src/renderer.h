@@ -942,8 +942,34 @@ private:
 
     }
 
+    const char* vkResultToString(VkResult res) {
+        switch (res) {
+            case VK_SUCCESS: return "VK_SUCCESS";
+            case VK_NOT_READY: return "VK_NOT_READY";
+            case VK_TIMEOUT: return "VK_TIMEOUT";
+            case VK_EVENT_SET: return "VK_EVENT_SET";
+            case VK_EVENT_RESET: return "VK_EVENT_RESET";
+            case VK_INCOMPLETE: return "VK_INCOMPLETE";
+            case VK_ERROR_OUT_OF_HOST_MEMORY: return "VK_ERROR_OUT_OF_HOST_MEMORY";
+            case VK_ERROR_OUT_OF_DEVICE_MEMORY: return "VK_ERROR_OUT_OF_DEVICE_MEMORY";
+            case VK_ERROR_INITIALIZATION_FAILED: return "VK_ERROR_INITIALIZATION_FAILED";
+            case VK_ERROR_DEVICE_LOST: return "VK_ERROR_DEVICE_LOST";
+            case VK_ERROR_MEMORY_MAP_FAILED: return "VK_ERROR_MEMORY_MAP_FAILED";
+            case VK_ERROR_LAYER_NOT_PRESENT: return "VK_ERROR_LAYER_NOT_PRESENT";
+            case VK_ERROR_EXTENSION_NOT_PRESENT: return "VK_ERROR_EXTENSION_NOT_PRESENT";
+            case VK_ERROR_FEATURE_NOT_PRESENT: return "VK_ERROR_FEATURE_NOT_PRESENT";
+            case VK_ERROR_INCOMPATIBLE_DRIVER: return "VK_ERROR_INCOMPATIBLE_DRIVER";
+            case VK_ERROR_TOO_MANY_OBJECTS: return "VK_ERROR_TOO_MANY_OBJECTS";
+            case VK_ERROR_FORMAT_NOT_SUPPORTED: return "VK_ERROR_FORMAT_NOT_SUPPORTED";
+            case VK_ERROR_FRAGMENTED_POOL: return "VK_ERROR_FRAGMENTED_POOL";
+                                           //prob more here
+            default: return "UNKNOWN_VK_RESULT";
+        }
+    }
+
     // Won't need this in library. Pass in the vulkan instance. (Addendum) I am wrong.
     void createVulkanInstance() {
+        std::cout << "[Veloxr] Creating instance.\n";
         if (enableValidationLayers && !checkValidationLayerSupport()) {
             throw std::runtime_error("validation layers requested, but not available!");
         }
@@ -983,9 +1009,11 @@ private:
         requiredExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);  // This is the critical addition!
 
 #ifdef __APPLE__
+        std::cout << "[Veloxr] Pushing back Metal Mac required extensions.\n";
         requiredExtensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
         requiredExtensions.push_back(VK_EXT_METAL_SURFACE_EXTENSION_NAME);
 #elif defined(_WIN32)
+        std::cout << "[Veloxr] Pushing back Win32 required extensions.\n";
         requiredExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
 #endif
 
@@ -1012,7 +1040,10 @@ private:
             createInfo.pNext = nullptr;
         }
 
-        if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
+        std::cout << "[Veloxr] Creating instance.\n";
+        auto res = vkCreateInstance(&createInfo, nullptr, &instance);
+        if (res != VK_SUCCESS) {
+            std::cerr << "[Veloxr] Failed to create instance: " << vkResultToString(res) <<".\n";
             throw std::runtime_error("failed to create instance!");
         }
 

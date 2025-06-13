@@ -46,7 +46,7 @@ void RendererCore::init(void* windowHandle, std::string filepath) {
     }
 
     auto timeElapsed = std::chrono::high_resolution_clock::now() - now;
-    std::cout << "Init glfw: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
+    std::cout << "[Veloxr] Init glfw: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
     createVulkanInstance();
     setupDebugMessenger();
     if(noClientWindow) createSurface();
