@@ -8,35 +8,55 @@ class conanRecipe(ConanFile):
     name = "veloxr"
     settings = "os", "build_type", "arch"
     generators = "CMakeDeps"
+    settings = "os", "arch", "compiler", "build_type"
 
     options = {
         "validation_layers": [True, False],
+        "build_video": [True, False],
+        "build_photo": [True, False],
     }
     default_options = {
         "validation_layers": False,
+        "build_video": False,
+        "build_photo": False,
     }
 
     def configure(self):
-        # self.options["opencv"].with_jpeg = "libjpeg-turbo"
-        self.options["opencv"].with_jpeg = False
-        self.options["opencv"].with_png = False
-        self.options["opencv"].with_tiff = False
-        self.options["opencv"].with_jpeg2000 = False
-        self.options["opencv"].with_openexr = False
-        self.options["opencv"].with_eigen = False
-        self.options["opencv"].with_webp = False
-        self.options["opencv"].with_quirc = False
-        
+        if self.options.build_photo:
+            self.options["opencv"].with_jpeg = False
+            self.options["opencv"].with_png = False
+            self.options["opencv"].with_tiff = False
+            self.options["opencv"].with_jpeg2000 = False
+            self.options["opencv"].with_openexr = False
+            self.options["opencv"].with_eigen = False
+            self.options["opencv"].with_webp = False
+            self.options["opencv"].with_quirc = False
+
         self.options["libtiff"].jpeg = "libjpeg-turbo"
         self.options["openimageio"].shared = True  # Build OIIO as a shared library
         self.options["openimageio"].with_libjpeg = "libjpeg-turbo"
+        if self.options.build_video:
+            self.options["opencv"].with_jpeg = "libjpeg-turbo"
+            self.options["libtiff"].jpeg = "libjpeg-turbo"
+            if self.settings.os == "Macos" or self.settings.os == "Linux":
+                self.options["libvpx"].shared = True
+            self.options["openimageio"].with_raw = False
+            self.options["openimageio"].build_tools = True
+            if self.settings.os == "Macos":
+                self.options["openimageio"].with_shared_tiff = True
+            if self.settings.os == "Linux":
+                self.options["opencv"].with_gtk = False
+                self.options["opencv"].with_png = False
 
     def requirements(self):
         self.requires("glfw/3.4")
-        self.requires("opencv/4.8.1")
+        if self.options.build_video:
+            self.requires("opencv/4.5.6-oiio3")
+        if self.options.build_photo:
+            self.requires("opencv/4.8.1")
         self.requires("openimageio/3.0.4.0")
         self.requires("glm/1.0.1")
-    
+
     def build_requirements(self):
         self.requires("vulkan-loader/1.3.268.0")
 
@@ -47,7 +67,8 @@ class conanRecipe(ConanFile):
         tc.generate()
 
         for dep in self.dependencies.values():
-            if not dep.package_folder: continue
+            if not dep.package_folder:
+                continue
             copy(self, "*", src=os.path.join(dep.package_folder, "bin"), dst="bin")
             copy(self, "*", src=os.path.join(dep.package_folder, "lib"), dst="lib")
 
@@ -59,6 +80,8 @@ class conanRecipe(ConanFile):
         copy(self, "CMakeLists.txt", folder, self.export_sources_folder)
         copy(self, "src/*", folder, self.export_sources_folder)
         copy(self, "include/*", folder, self.export_sources_folder)
+        copy(self, "spirv/*", folder, self.export_sources_folder)
+        copy(self, "conan/*", folder, self.export_sources_folder)
 
     def build(self):
         cmake = CMake(self)
@@ -68,8 +91,44 @@ class conanRecipe(ConanFile):
     def package(self):
         cmake = CMake(self)
         cmake.install()
-        # Copy the executable to the package bin directory
-        copy(self, "vulkanrenderer*", src="build", dst="bin", keep_path=False)
+
+        if self.settings.os == "Windows":
+            copy(
+                self,
+                "vulkan-1.dll",
+                os.path.join(self.build_folder),
+                os.path.join(self.package_folder, "bin"),
+                keep_path=False,
+            )
+            copy(
+                self,
+                "vulkanrenderer.exe",
+                os.path.join(self.build_folder),
+                os.path.join(self.package_folder, "bin"),
+                keep_path=False,
+            )
+            copy(
+                self,
+                "spirv/*.spv",
+                self.source_folder,
+                os.path.join(self.package_folder, "spirv"),
+                keep_path=False,
+            )
+        elif self.settings.os == "Macos":
+            copy(
+                self,
+                "vulkanrenderer.exe",
+                os.path.join(self.build_folder),
+                os.path.join(self.package_folder, "bin"),
+                keep_path=False,
+            )
+            copy(
+                self,
+                "spirv/*.spv",
+                self.source_folder,
+                os.path.join(self.package_folder, "spirv"),
+                keep_path=False,
+            )
 
     def package_info(self):
         self.cpp_info.libs = ["veloxr_lib"]

@@ -8,3 +8,5 @@ compiler.libcxx=libc++
 compiler.cppstd=17
 build_type=Release
 [options]
+[replace_requires]
+libpng/*: libpng/1.6.42
