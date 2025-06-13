@@ -23,6 +23,7 @@ set(LIB_SOURCES
     src/OrthoCam.h src/OrthoCam.cpp
     src/texture.h src/texture.cpp 
     src/TextureTiling.h src/TextureTiling.cpp
+    src/MetalSurfaceHelper.h src/MetalSurfaceHelper.mm
 )
 
 # Create the library
@@ -56,6 +57,14 @@ target_link_libraries(veloxr_lib
         opencv::opencv
         glm::glm
 )
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    target_link_libraries(veloxr_lib
+        PUBLIC
+            "-framework QuartzCore"
+            "-framework Cocoa"
+    )
+endif()
 
 add_executable(vulkanrenderer src/main.cpp)
 
