@@ -27,7 +27,7 @@ set(LIB_SOURCES
 )
 
 # Create the library
-add_library(veloxr_lib STATIC ${LIB_SOURCES})
+add_library(veloxr_lib SHARED ${LIB_SOURCES})
 
 if (MSVC)
     target_compile_options(veloxr_lib PRIVATE /utf-8)
@@ -59,6 +59,13 @@ target_link_libraries(veloxr_lib
 )
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    # Set the install name of the library
+    set_target_properties(veloxr_lib PROPERTIES
+        INSTALL_NAME_DIR "@rpath"
+        BUILD_WITH_INSTALL_RPATH TRUE
+        INSTALL_RPATH "@executable_path/../Frameworks"
+    )
+    
     target_link_libraries(veloxr_lib
         PUBLIC
             "-framework QuartzCore"
