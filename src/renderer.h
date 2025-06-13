@@ -347,9 +347,11 @@ private: // No client -- internal
         }
         std::cout << "[Veloxr]" << "Windows surface created!\n";
 #elif defined(__APPLE__)
+
+            CAMetalLayer* metalLayer = (CAMetalLayer*)GetMetalLayerForNSView(windowHandle);
         VkMetalSurfaceCreateInfoEXT createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
-        createInfo.pLayer = static_cast<CAMetalLayer*>(windowHandle);
+        createInfo.pLayer = metalLayer;
 
         if (vkCreateMetalSurfaceEXT(instance, &createInfo, nullptr, &surface) != VK_SUCCESS) {
             throw std::runtime_error("failed to create window surface!");
