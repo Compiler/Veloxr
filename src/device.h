@@ -38,9 +38,17 @@ class Device {
         uint32_t _maxTextureResolution;
         uint32_t _maxSamplers;
 
+#ifdef __APPLE__
         const std::vector<const char*> deviceExtensions = {
-            VK_KHR_SWAPCHAIN_EXTENSION_NAME
+            VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+           // VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
         };
+#else
+
+        const std::vector<const char*> deviceExtensions = {
+            VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        };
+#endif
 
         const std::vector<const char*> validationLayers = {
             "VK_LAYER_KHRONOS_validation"

@@ -1010,6 +1010,7 @@ private:
 
 #ifdef __APPLE__
         std::cout << "[Veloxr] Pushing back Metal Mac required extensions.\n";
+        requiredExtensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         requiredExtensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
         requiredExtensions.push_back(VK_EXT_METAL_SURFACE_EXTENSION_NAME);
 #elif defined(_WIN32)
