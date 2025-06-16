@@ -953,6 +953,19 @@ private:
         std::cout << "[Veloxr] checkValidationLayerSupport(): " << checkValidationLayerSupport() << std::endl;
         
 #ifdef __APPLE__
+        // Check VK_ICD_FILENAMES
+        const char* icd_path = std::getenv("VK_ICD_FILENAMES");
+        if (icd_path) {
+            std::cout << "[Veloxr] VK_ICD_FILENAMES is set to: " << icd_path << std::endl;
+            if (std::filesystem::exists(icd_path)) {
+                std::cout << "[Veloxr] MoltenVK ICD file exists at the specified path" << std::endl;
+            } else {
+                std::cerr << "[Veloxr] ERROR: MoltenVK ICD file not found at: " << icd_path << std::endl;
+            }
+        } else {
+            std::cerr << "[Veloxr] ERROR: VK_ICD_FILENAMES environment variable is not set" << std::endl;
+        }
+
         // Check Metal availability using our helper function
         if (!checkMetalAvailability()) {
             std::cerr << "[Veloxr] ERROR: Metal is not available on this system!" << std::endl;
