@@ -56,6 +56,8 @@ class conanRecipe(ConanFile):
             self.requires("opencv/4.8.1")
         self.requires("openimageio/3.0.4.0")
         self.requires("glm/1.0.1")
+        if self.settings.os == "Macos":
+            self.requires("moltenvk/1.2.2")
 
     def build_requirements(self):
         self.requires("vulkan-loader/1.3.268.0")

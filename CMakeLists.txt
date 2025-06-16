@@ -12,6 +12,7 @@ find_package(OpenImageIO REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(Vulkan REQUIRED)
 find_package(glm REQUIRED)
+find_package(MoltenVK CONFIG REQUIRED)
 
 option(VALIDATION_LAYERS "Enable validation layers" OFF)
 
@@ -56,6 +57,7 @@ target_link_libraries(veloxr_lib
         OpenImageIO::OpenImageIO
         opencv::opencv
         glm::glm
+        moltenvk::moltenvk
 )
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
