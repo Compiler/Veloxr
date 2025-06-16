@@ -65,6 +65,7 @@ class conanRecipe(ConanFile):
     def generate(self):
         tc = CMakeToolchain(self, generator="Ninja")
         tc.variables["VERSION"] = self.version
+        print(f"[Conan] Setting VALIDATION_LAYERS to: {self.options.validation_layers}")
         tc.variables["VALIDATION_LAYERS"] = self.options.validation_layers
         tc.generate()
 

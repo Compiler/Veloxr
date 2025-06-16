@@ -76,7 +76,8 @@ void RendererCore::setupTexturePasses() {
     } else if (_currentFilepath.empty() == false) {
         res = createTiledTexture(_currentFilepath);
     } else {
-        _currentFilepath = PREFIX+"/Users/luker/Downloads/Colonial.jpg";
+        _currentFilepath = "/Users/joshyoo/Desktop/test_data/old_woman-gigapixel-recover v2-2x-faceai v2-dust.png";
+        std::cout << "[Veloxr] Using default texture path: " << _currentFilepath << std::endl;
         res = createTiledTexture(_currentFilepath);
     }
     //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg");
@@ -567,7 +568,7 @@ void RendererCore::createDescriptorPool() {
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
     poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSizes[1].descriptorCount = static_cast<uint32_t>(32 * MAX_FRAMES_IN_FLIGHT);//static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * _textureMap.size());// static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
     VkDescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -604,7 +605,7 @@ void RendererCore::createDescriptorLayout() {
     VkDescriptorSetLayoutBinding samplerLayoutBinding{};
     samplerLayoutBinding.binding = 1;
     samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    samplerLayoutBinding.descriptorCount = 32;//static_cast<uint32_t>(_textureMap.size());
+    samplerLayoutBinding.descriptorCount = 1;
     samplerLayoutBinding.pImmutableSamplers = nullptr;
     samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 

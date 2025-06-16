@@ -7,8 +7,15 @@ int main() {
         std::cout << "[DRIVER] Running from main.\n";
         //app.run();
 
-        Veloxr::OIIOTexture texture("C:/Users/luker/Downloads/nyx_thumbnail.png");
+        const std::string texturePath = "/Users/joshyoo/Desktop/test_data/old_woman-gigapixel-recover v2-2x-faceai v2-dust.png";
+        std::cout << "[DRIVER] Loading texture from: " << texturePath << std::endl;
+        
+        Veloxr::OIIOTexture texture(texturePath);
         std::vector<unsigned char> data = texture.load();
+        if (data.empty()) {
+            throw std::runtime_error("Failed to load texture data from: " + texturePath);
+        }
+        
         Veloxr::VeloxrBuffer buf;
         buf.data = std::move(data);
         buf.width = texture.getResolution().x;

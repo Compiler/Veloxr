@@ -7,14 +7,29 @@ endif()
 
 set(CMAKE_CXX_STANDARD 20)
 
+# Add Objective-C++ support for macOS
+if(APPLE)
+    set(CMAKE_OBJCXX_STANDARD 20)
+    set(CMAKE_OBJCXX_STANDARD_REQUIRED ON)
+endif()
+
 find_package(OpenCV REQUIRED)
 find_package(OpenImageIO REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(Vulkan REQUIRED)
 find_package(glm REQUIRED)
-find_package(MoltenVK CONFIG REQUIRED)
 
-option(VALIDATION_LAYERS "Enable validation layers" OFF)
+message(STATUS "Looking for MoltenVK package...")
+find_package(MoltenVK CONFIG REQUIRED)
+message(STATUS "MoltenVK_FOUND: ${MoltenVK_FOUND}")
+message(STATUS "MoltenVK_INCLUDE_DIRS: ${MoltenVK_INCLUDE_DIRS}")
+message(STATUS "MoltenVK_LIBRARIES: ${MoltenVK_LIBRARIES}")
+
+# Remove the option command and use a variable that can be set by Conan
+message(STATUS "Initial VALIDATION_LAYERS value: ${VALIDATION_LAYERS}")
+# Force the value to False to test
+set(VALIDATION_LAYERS OFF)
+message(STATUS "After force set VALIDATION_LAYERS value: ${VALIDATION_LAYERS}")
 
 set(LIB_SOURCES
     src/Vertex.h 
@@ -25,6 +40,7 @@ set(LIB_SOURCES
     src/texture.h src/texture.cpp 
     src/TextureTiling.h src/TextureTiling.cpp
     src/MetalSurfaceHelper.h src/MetalSurfaceHelper.mm
+    src/MetalHelper.mm
 )
 
 # Create the library
@@ -34,9 +50,9 @@ if (MSVC)
     target_compile_options(veloxr_lib PRIVATE /utf-8)
 endif()
 
-add_compile_definitions(VALIDATION_LAYERS=$<BOOL:${VALIDATION_LAYERS}>)
-message(STATUS "Validation layers are ${VALIDATION_LAYERS}")
-
+add_compile_definitions(VALIDATION_LAYERS_VALUE=$<BOOL:${VALIDATION_LAYERS}>)
+message(STATUS "Final VALIDATION_LAYERS value: ${VALIDATION_LAYERS}")
+message(STATUS "VALIDATION_LAYERS as bool: $<BOOL:${VALIDATION_LAYERS}>")
 
 set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
@@ -48,6 +64,7 @@ target_include_directories(veloxr_lib
     PRIVATE 
         ${Vulkan_INCLUDE_DIRS}
         ${OpenCV_INCLUDE_DIRS}
+        ${MoltenVK_INCLUDE_DIRS}
 )
 
 target_link_libraries(veloxr_lib
@@ -72,6 +89,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         PUBLIC
             "-framework QuartzCore"
             "-framework Cocoa"
+            "-framework Metal"
+            "-framework MetalKit"
     )
 endif()
 
@@ -153,8 +172,6 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     target_compile_options(vulkanrenderer PRIVATE "$<$<CONFIG:Release>:-g>")
     set_target_properties(vulkanrenderer PROPERTIES BUILD_RPATH "@executable_path")
     # Fix rpath issues with macOS libraries
-    add_custom_command(TARGET vulkanrenderer POST_BUILD
-        COMMAND ${CMAKE_COMMAND} "-DTARGET_FILE=$<TARGET_FILE:vulkanrenderer>" -P "${CMAKE_SOURCE_DIR}/conan/fix_mac_libs.cmake")
     
     # Find and copy all dylib files from Conan packages
     foreach(DIR_PATH ${CMAKE_MODULE_PATH})
@@ -166,4 +183,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
                 COMMENT "Copying ${LIB} to build directory")
         endforeach()
     endforeach()
+
+    add_custom_command(TARGET vulkanrenderer POST_BUILD
+        COMMAND ${CMAKE_COMMAND} "-DTARGET_FILE=$<TARGET_FILE:vulkanrenderer>" -P "${CMAKE_SOURCE_DIR}/conan/fix_mac_libs.cmake")
 endif()

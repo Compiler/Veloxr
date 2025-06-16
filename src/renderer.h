@@ -50,6 +50,12 @@
 
 #include <device.h>
 
+#ifdef __APPLE__
+extern "C" {
+    bool checkMetalAvailability();
+    const char* getMetalDeviceName();
+}
+#endif
 
 #ifndef PROJECT_ROOT_DIR
 #define PROJECT_ROOT_DIR "."
@@ -243,8 +249,8 @@ private: // No client -- internal
 
     VkDebugUtilsMessengerEXT debugMessenger;
 
-#ifdef VALIDATION_LAYERS
-    bool enableValidationLayers = true;
+#ifdef VALIDATION_LAYERS_VALUE
+    bool enableValidationLayers = VALIDATION_LAYERS_VALUE;
 #else
     bool enableValidationLayers = false;
 #endif
@@ -942,8 +948,54 @@ private:
 
     }
 
-    // Won't need this in library. Pass in the vulkan instance. (Addendum) I am wrong.
     void createVulkanInstance() {
+        std::cout << "[Veloxr] enableValidationLayers: " << enableValidationLayers << std::endl;
+        std::cout << "[Veloxr] checkValidationLayerSupport(): " << checkValidationLayerSupport() << std::endl;
+        
+#ifdef __APPLE__
+        // Check Metal availability using our helper function
+        if (!checkMetalAvailability()) {
+            std::cerr << "[Veloxr] ERROR: Metal is not available on this system!" << std::endl;
+            throw std::runtime_error("Metal is not available on this system");
+        }
+        const char* deviceName = getMetalDeviceName();
+        if (deviceName) {
+            std::cout << "[Veloxr] Metal device found: " << deviceName << std::endl;
+        }
+
+        // List all available instance extensions
+        uint32_t extensionCount = 0;
+        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+        std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, availableExtensions.data());
+        
+        std::cout << "\n[Veloxr] Available Vulkan extensions:" << std::endl;
+        bool foundMoltenVK = false;
+        bool foundPortability = false;
+        bool foundMetalSurface = false;
+        for (const auto& extension : availableExtensions) {
+            std::cout << "[Veloxr]   " << extension.extensionName << std::endl;
+            if (strstr(extension.extensionName, "VK_MVK")) {
+                foundMoltenVK = true;
+            }
+            if (strstr(extension.extensionName, "VK_KHR_portability")) {
+                foundPortability = true;
+            }
+            if (strstr(extension.extensionName, "VK_EXT_metal_surface")) {
+                foundMetalSurface = true;
+            }
+        }
+        
+        std::cout << "\n[Veloxr] Required extension status:" << std::endl;
+        std::cout << "[Veloxr]   MoltenVK extensions: " << (foundMoltenVK ? "Found" : "Not found") << std::endl;
+        std::cout << "[Veloxr]   Portability enumeration: " << (foundPortability ? "Found" : "Not found") << std::endl;
+        std::cout << "[Veloxr]   Metal surface: " << (foundMetalSurface ? "Found" : "Not found") << std::endl;
+
+        if (!foundMoltenVK || !foundPortability || !foundMetalSurface) {
+            std::cerr << "[Veloxr] WARNING: Some required extensions are missing!" << std::endl;
+        }
+#endif
+
         if (enableValidationLayers && !checkValidationLayerSupport()) {
             throw std::runtime_error("validation layers requested, but not available!");
         }
@@ -960,51 +1012,52 @@ private:
         createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         createInfo.pApplicationInfo = &appInfo;
 
-        uint32_t glfwExtensionCount = 0;
-        const char** glfwExtensions;
-
-        // ifdef macos / molten
+        // Start with an empty list of extensions
         std::vector<const char*> requiredExtensions;
-        if(noClientWindow) {
-            glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-            createInfo.enabledExtensionCount = glfwExtensionCount;
-            createInfo.ppEnabledExtensionNames = glfwExtensions;
-            createInfo.enabledLayerCount = 0;
-
-
-            for(uint32_t i = 0; i < glfwExtensionCount; i++) {
-                requiredExtensions.emplace_back(glfwExtensions[i]);
-            }
-
-            requiredExtensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
-        }
-
-        requiredExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);  // This is the critical addition!
 
 #ifdef __APPLE__
+        // First, set the portability flag - this is crucial for MoltenVK
+        createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+        std::cout << "[Veloxr] Set VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR flag" << std::endl;
+
+        // Add the core extensions needed for MoltenVK
+        requiredExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
         requiredExtensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
         requiredExtensions.push_back(VK_EXT_METAL_SURFACE_EXTENSION_NAME);
-#elif defined(_WIN32)
-        requiredExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+        std::cout << "[Veloxr] Added core MoltenVK extensions" << std::endl;
 #endif
 
+        // Add GLFW extensions if we're creating our own window
+        if(noClientWindow) {
+            uint32_t glfwExtensionCount = 0;
+            const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+            std::cout << "[Veloxr] GLFW required extensions count: " << glfwExtensionCount << std::endl;
+            
+            for(uint32_t i = 0; i < glfwExtensionCount; i++) {
+                std::cout << "[Veloxr] GLFW extension " << i << ": " << glfwExtensions[i] << std::endl;
+                requiredExtensions.push_back(glfwExtensions[i]);
+            }
+        }
+
+        // Add validation layer extension if enabled
         if (enableValidationLayers) {
             requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         }
 
-#ifdef __APPLE__
-        createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
-#endif
-
+        // Set the final extension list
         createInfo.enabledExtensionCount = static_cast<uint32_t>(requiredExtensions.size());
         createInfo.ppEnabledExtensionNames = requiredExtensions.data();
 
+        std::cout << "\n[Veloxr] Total required extensions: " << requiredExtensions.size() << std::endl;
+        for(const auto& ext : requiredExtensions) {
+            std::cout << "[Veloxr] Required extension: " << ext << std::endl;
+        }
+
+        // Set up validation layers if enabled
         VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
         if (enableValidationLayers) {
             createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
             createInfo.ppEnabledLayerNames = validationLayers.data();
-
             populateDebugMessengerCreateInfo(debugCreateInfo);
             createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
         } else {
@@ -1012,11 +1065,22 @@ private:
             createInfo.pNext = nullptr;
         }
 
-        if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
+        // Create the Vulkan instance
+        VkResult result = vkCreateInstance(&createInfo, nullptr, &instance);
+        if (result != VK_SUCCESS) {
+            std::cerr << "[Veloxr] Failed to create instance with error code: " << result << std::endl;
+            if (result == VK_ERROR_INCOMPATIBLE_DRIVER) {
+                std::cerr << "[Veloxr] ERROR: Incompatible driver - Metal might not be available or properly configured" << std::endl;
+                std::cerr << "[Veloxr] Please ensure MoltenVK is properly installed and configured" << std::endl;
+                std::cerr << "[Veloxr] Check that:" << std::endl;
+                std::cerr << "  1. MoltenVK is properly installed via Conan" << std::endl;
+                std::cerr << "  2. The MoltenVK library is in your library path" << std::endl;
+                std::cerr << "  3. The Metal framework is properly linked" << std::endl;
+            }
             throw std::runtime_error("failed to create instance!");
         }
 
-        std::cout << "[Veloxr]" << "Created a valid instance!\n";
+        std::cout << "[Veloxr] Created a valid instance!\n";
     }
 
     // Helper function to get the executable path
