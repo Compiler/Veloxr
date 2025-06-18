@@ -103,42 +103,28 @@ class conanRecipe(ConanFile):
                 os.path.join(self.package_folder, "bin"),
                 keep_path=False,
             )
-            copy(
-                self,
-                "vulkanrenderer.exe",
-                os.path.join(self.build_folder),
-                os.path.join(self.package_folder, "bin"),
-                keep_path=False,
-            )
-            copy(
-                self,
-                "spirv/*.spv",
-                self.source_folder,
-                os.path.join(self.package_folder, "spirv"),
-                keep_path=False,
-            )
-        elif self.settings.os == "Macos":
-            copy(
-                self,
-                "vulkanrenderer.exe",
-                os.path.join(self.build_folder),
-                os.path.join(self.package_folder, "bin"),
-                keep_path=False,
-            )
-            copy(
-                self,
-                "spirv/*.spv",
-                self.source_folder,
-                os.path.join(self.package_folder, "spirv"),
-                keep_path=False,
-            )
-            copy(
-                self,
-                "spirv/glslc",
-                self.source_folder,
-                os.path.join(self.package_folder, "bin"),
-                keep_path=False,
-            )
+
+        copy(
+            self,
+            "vulkanrenderer.exe",
+            os.path.join(self.build_folder),
+            os.path.join(self.package_folder, "bin"),
+            keep_path=False,
+        )
+        copy(
+            self,
+            "spirv/*.spv",
+            self.source_folder,
+            os.path.join(self.package_folder, "spirv"),
+            keep_path=False,
+        )
+        copy(
+            self,
+            "spirv/glslc",
+            self.source_folder,
+            os.path.join(self.package_folder, "bin"),
+            keep_path=False,
+        )
 
     def package_info(self):
         self.cpp_info.libs = ["veloxr_lib"]
