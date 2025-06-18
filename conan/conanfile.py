@@ -84,7 +84,7 @@ class conanRecipe(ConanFile):
         copy(self, "src/*", folder, self.export_sources_folder)
         copy(self, "include/*", folder, self.export_sources_folder)
         copy(self, "spirv/*", folder, self.export_sources_folder)
-        copy(self, "conan/*", folder, self.export_sources_folder)
+        copy(self, "conan/fix_mac_libs.cmake", folder, self.export_sources_folder)
 
     def build(self):
         cmake = CMake(self)

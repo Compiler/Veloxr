@@ -10,7 +10,6 @@ for option in "build_video=True" "build_photo=True"; do
 # for option in "build_photo=True"; do
     if wmic os get Caption -value | grep -q "2022"; then
         conan create . conan/conanfile.py \
-            --update \
             --version=$VERSION \
             --options="&:validation_layers=False" \
             --options="&:$option" \
@@ -21,7 +20,6 @@ for option in "build_video=True" "build_photo=True"; do
         conan upload veloxr/$VERSION -r topaz-conan
     else
         conan create conan/conanfile.py  \
-            --update \
             --version=$VERSION \
             --options="&:validation_layers=False" \
             --options="&:$option" \
