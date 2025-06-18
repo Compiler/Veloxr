@@ -8,3 +8,5 @@ compiler.runtime=dynamic
 compiler.runtime_type=Release
 build_type=Release
 [options]
+[replace_requires]
+openjpeg/*: openjpeg/2.5.2#8f65ded9b2fcff29c48e563d7c36a100
