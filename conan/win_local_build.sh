@@ -15,6 +15,6 @@ conan install conan/conanfile.py -of . \
     -pr:b=conan/profile_win2019
 
 cmake -S . -B build -G "Ninja" -DBUILD_TOOLS=True -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_TOOLCHAIN_FILE=build/Release/generators/conan_toolchain.cmake
+    -DCMAKE_TOOLCHAIN_FILE=build/generators/conan_toolchain.cmake
 cmake --build build --target clean
 cmake --build build

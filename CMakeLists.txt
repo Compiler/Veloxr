@@ -19,11 +19,15 @@ find_package(glfw3 CONFIG REQUIRED)
 find_package(Vulkan REQUIRED)
 find_package(glm REQUIRED)
 
-message(STATUS "Looking for MoltenVK package...")
-find_package(MoltenVK CONFIG REQUIRED)
-message(STATUS "MoltenVK_FOUND: ${MoltenVK_FOUND}")
-message(STATUS "MoltenVK_INCLUDE_DIRS: ${MoltenVK_INCLUDE_DIRS}")
-message(STATUS "MoltenVK_LIBRARIES: ${MoltenVK_LIBRARIES}")
+
+if (APPLE)
+    message(STATUS "Looking for MoltenVK package...")
+    find_package(MoltenVK CONFIG REQUIRED)
+    message(STATUS "MoltenVK_FOUND: ${MoltenVK_FOUND}")
+    message(STATUS "MoltenVK_INCLUDE_DIRS: ${MoltenVK_INCLUDE_DIRS}")
+    message(STATUS "MoltenVK_LIBRARIES: ${MoltenVK_LIBRARIES}")
+endif()
+
 
 # Remove the option command and use a variable that can be set by Conan
 message(STATUS "Initial VALIDATION_LAYERS value: ${VALIDATION_LAYERS}")
@@ -31,22 +35,38 @@ message(STATUS "Initial VALIDATION_LAYERS value: ${VALIDATION_LAYERS}")
 set(VALIDATION_LAYERS OFF)
 message(STATUS "After force set VALIDATION_LAYERS value: ${VALIDATION_LAYERS}")
 
-set(LIB_SOURCES
-    src/Vertex.h 
-    src/renderer.h src/renderer.cpp
-    src/device.h src/device.cpp 
-    src/OrthographicCamera.h src/OrthographicCamera.cpp
-    src/OrthoCam.h src/OrthoCam.cpp
-    src/texture.h src/texture.cpp 
-    src/TextureTiling.h src/TextureTiling.cpp
-    src/MetalSurfaceHelper.h src/MetalSurfaceHelper.mm
-    src/MetalHelper.mm
-)
+if (APPLE)
+    set(LIB_SOURCES
+        src/Vertex.h 
+        src/renderer.h src/renderer.cpp
+        src/device.h src/device.cpp 
+        src/OrthographicCamera.h src/OrthographicCamera.cpp
+        src/OrthoCam.h src/OrthoCam.cpp
+        src/texture.h src/texture.cpp 
+        src/TextureTiling.h src/TextureTiling.cpp
+        src/MetalSurfaceHelper.h src/MetalSurfaceHelper.mm
+        src/MetalHelper.mm
+    )
+elseif (WIN32)
+    set(LIB_SOURCES
+        src/Vertex.h 
+        src/renderer.h src/renderer.cpp
+        src/device.h src/device.cpp 
+        src/OrthographicCamera.h src/OrthographicCamera.cpp
+        src/OrthoCam.h src/OrthoCam.cpp
+        src/texture.h src/texture.cpp 
+        src/TextureTiling.h src/TextureTiling.cpp
+    )
+endif()
 
 # Create the library
-add_library(veloxr_lib SHARED ${LIB_SOURCES})
+if (APPLE)
+    add_library(veloxr_lib SHARED ${LIB_SOURCES})
+elseif (WIN32)
+    add_library(veloxr_lib STATIC ${LIB_SOURCES})
+endif()
 
-if (MSVC)
+if (WIN32)
     target_compile_options(veloxr_lib PRIVATE /utf-8)
 endif()
 
@@ -56,26 +76,50 @@ message(STATUS "VALIDATION_LAYERS as bool: $<BOOL:${VALIDATION_LAYERS}>")
 
 set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
-target_include_directories(veloxr_lib 
-    PUBLIC 
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
-        $<BUILD_INTERFACE:${INCLUDE_DIR}>
-        $<INSTALL_INTERFACE:include>
-    PRIVATE 
-        ${Vulkan_INCLUDE_DIRS}
-        ${OpenCV_INCLUDE_DIRS}
-        ${MoltenVK_INCLUDE_DIRS}
-)
+if (APPLE)
+    target_include_directories(veloxr_lib 
+        PUBLIC 
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+            $<BUILD_INTERFACE:${INCLUDE_DIR}>
+            $<INSTALL_INTERFACE:include>
+        PRIVATE 
+            ${Vulkan_INCLUDE_DIRS}
+            ${OpenCV_INCLUDE_DIRS}
+            ${MoltenVK_INCLUDE_DIRS}
+    )
+elseif (WIN32)
+    target_include_directories(veloxr_lib 
+        PUBLIC 
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+            $<BUILD_INTERFACE:${INCLUDE_DIR}>
+            $<INSTALL_INTERFACE:include>
+        PRIVATE 
+            ${Vulkan_INCLUDE_DIRS}
+            ${OpenCV_INCLUDE_DIRS}
+    )
+endif()
 
-target_link_libraries(veloxr_lib
-    PUBLIC
-        glfw
-        Vulkan::Vulkan
-        OpenImageIO::OpenImageIO
-        opencv::opencv
-        glm::glm
-        moltenvk::moltenvk
-)
+if (APPLE)
+    target_link_libraries(veloxr_lib
+        PUBLIC
+            glfw
+            Vulkan::Vulkan
+            OpenImageIO::OpenImageIO
+            opencv::opencv
+            glm::glm
+            moltenvk::moltenvk
+    )
+elseif (WIN32)
+    target_link_libraries(veloxr_lib
+        PUBLIC
+            glfw
+            Vulkan::Vulkan
+            OpenImageIO::OpenImageIO
+            opencv::opencv
+            glm::glm
+    )
+endif()
+
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     # Set the install name of the library
@@ -96,7 +140,7 @@ endif()
 
 add_executable(vulkanrenderer src/main.cpp)
 
-if (MSVC)
+if (WIN32)
     target_compile_options(vulkanrenderer PRIVATE /utf-8)
 endif()
 
