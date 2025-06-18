@@ -118,13 +118,6 @@ class conanRecipe(ConanFile):
             os.path.join(self.package_folder, "spirv"),
             keep_path=False,
         )
-        copy(
-            self,
-            "spirv/glslc",
-            self.source_folder,
-            os.path.join(self.package_folder, "bin"),
-            keep_path=False,
-        )
 
     def package_info(self):
         self.cpp_info.libs = ["veloxr_lib"]
