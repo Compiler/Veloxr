@@ -229,7 +229,10 @@ public:
     // For default clients, do not call as an Application with a window handle.
     void run(); 
     void spin(); 
-    glm::vec4 _roi {-100000, -100000, 100000, 100000};
+    glm::vec4 _roi {0, 0, 0, 0};
+    void resetCrop() {
+        _roi = {0, 0, 0, 0};
+    }
     void setCrop(glm::vec4 roi) {
         _roi = roi;
     }

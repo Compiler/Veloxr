@@ -30,6 +30,13 @@ void Device::_createLogicalDevice() {
     }
 
     VkPhysicalDeviceFeatures deviceFeatures{};
+    VkPhysicalDeviceFeatures supported{};
+    vkGetPhysicalDeviceFeatures(_physicalDevice, &supported);
+    if (!supported.shaderClipDistance)
+        throw std::runtime_error("shaderClipDistance not supported");
+    std::cout << "[VELOXR] CLip Distance enabled.\n";
+
+    deviceFeatures.shaderClipDistance = VK_TRUE;
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

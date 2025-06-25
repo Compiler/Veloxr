@@ -23,10 +23,14 @@ out gl_PerVertex {
 void main() {
     vec4 world = vec4(inPosition.x, inPosition.y, 0.0, 1.0);
 
-    gl_ClipDistance[0] =  world.x - ubo.roi.x;
-    gl_ClipDistance[1] =  ubo.roi.z - world.x;
-    gl_ClipDistance[2] =  world.y - ubo.roi.y;
-    gl_ClipDistance[3] =  ubo.roi.w - world.y;
+    if(any(notEqual(ubo.roi, vec4(0.0)))) {
+        gl_ClipDistance[0] =  world.x - ubo.roi.x;
+        gl_ClipDistance[1] =  ubo.roi.z - world.x;
+        gl_ClipDistance[2] =  world.y - ubo.roi.y;
+        gl_ClipDistance[3] =  ubo.roi.w - world.y;
+    } else {
+        gl_ClipDistance[0] = gl_ClipDistance[1] = gl_ClipDistance[2] = gl_ClipDistance[3] = 1.0;
+    }
 
     gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition.xy, 0.0, 1.0);
     fragTexCoord = inTexCoord;
