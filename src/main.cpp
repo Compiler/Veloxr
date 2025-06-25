@@ -7,7 +7,7 @@ int main() {
         std::cout << "[DRIVER] Running from main.\n";
         //app.run();
 
-        const std::string texturePath = "/Users/joshyoo/Desktop/test_data/old_woman-gigapixel-recover v2-2x-faceai v2-dust.png";
+        const std::string texturePath = "C:/Users/ljuek/Downloads/test.png";
         std::cout << "[DRIVER] Loading texture from: " << texturePath << std::endl;
         
         Veloxr::OIIOTexture texture(texturePath);
@@ -22,6 +22,7 @@ int main() {
         buf.height = texture.getResolution().y;
         buf.numChannels = texture.getNumChannels();
         std::cout << "[DRIVER] Sending setTextureBuffer\n";
+	app.setTextureFilePath(texturePath);
         app.init();
         app.setTextureBuffer(std::move(buf));
         app.spin();
