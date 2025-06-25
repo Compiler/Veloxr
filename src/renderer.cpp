@@ -76,7 +76,7 @@ void RendererCore::setupTexturePasses() {
     } else if (_currentFilepath.empty() == false) {
         res = createTiledTexture(_currentFilepath);
     } else {
-        _currentFilepath = "/Users/joshyoo/Desktop/test_data/old_woman-gigapixel-recover v2-2x-faceai v2-dust.png";
+        _currentFilepath = "C:/Users/ljuek/Downloads/test.png";
         std::cout << "[Veloxr] Using default texture path: " << _currentFilepath << std::endl;
         res = createTiledTexture(_currentFilepath);
     }
@@ -751,6 +751,7 @@ void RendererCore::updateUniformBuffers(uint32_t currentImage) {
     ubo.view = _cam.getViewMatrix();
     ubo.proj = _cam.getProjectionMatrix();
     ubo.model = glm::mat4(1.0f);
+    ubo.roi = _roi;
     //ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0,0,1));
     memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
 }

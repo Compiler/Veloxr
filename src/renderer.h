@@ -160,7 +160,7 @@ struct UniformBufferObject {
     alignas(16) glm::mat4 model;
     alignas(16) glm::mat4 view;
     alignas(16) glm::mat4 proj;
-    alignas(16) glm::vec4 time;
+    alignas(16) glm::vec4 roi;
 };
 
 inline bool mousePressed = false;
@@ -229,6 +229,10 @@ public:
     // For default clients, do not call as an Application with a window handle.
     void run(); 
     void spin(); 
+    glm::vec4 _roi {-100000, -100000, 100000, 100000};
+    void setCrop(glm::vec4 roi) {
+        _roi = roi;
+    }
     
     // Make drawFrame accessible to external code
     void drawFrame();

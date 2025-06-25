@@ -22,7 +22,7 @@ int main() {
         buf.height = texture.getResolution().y;
         buf.numChannels = texture.getNumChannels();
         std::cout << "[DRIVER] Sending setTextureBuffer\n";
-	app.setTextureFilePath(texturePath);
+	    //app.setTextureFilePath(texturePath);
         app.init();
         app.setTextureBuffer(std::move(buf));
         app.spin();
