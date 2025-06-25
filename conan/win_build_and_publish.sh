@@ -4,8 +4,6 @@ IFS=$'\n\t'
 
 VERSION=${1:?"missing version arg"}
 
-python -m black conan/conanfile.py
-
 for option in "build_video=True" "build_photo=True"; do
 # for option in "build_photo=True"; do
     if wmic os get Caption -value | grep -q "2022"; then

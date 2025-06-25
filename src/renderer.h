@@ -357,9 +357,9 @@ private: // No client -- internal
         createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
         createInfo.hwnd = static_cast<HWND>(windowHandle);
         createInfo.hinstance = GetModuleHandle(nullptr);
-
-        if (vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, &surface) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create window surface!");
+        auto res = vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, &surface);
+        if (res != VK_SUCCESS) {
+            throw std::runtime_error("failed to create window surface! Error code: " + std::to_string(res));
         }
         std::cout << "[Veloxr]" << "Windows surface created!\n";
 #elif defined(__APPLE__)
@@ -1033,6 +1033,12 @@ private:
         requiredExtensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
         requiredExtensions.push_back(VK_EXT_METAL_SURFACE_EXTENSION_NAME);
         std::cout << "[Veloxr] Added core MoltenVK extensions" << std::endl;
+#endif
+
+#ifdef _WIN32
+        std::cout << "[VELOXR] Setting windows OS flags for surface.\n";
+        requiredExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+        requiredExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
 #endif
 
         // Add GLFW extensions if we're creating our own window
