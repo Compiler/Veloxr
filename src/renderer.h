@@ -145,15 +145,7 @@ inline const auto BOT = 0.9f;
 //              - Repeat smallest memory footprint
 //      - Return parsable coordinates of what is being viewed.
 //          - 
-inline std::vector<Veloxr::Vertex> vertices = {
-    {{RIGHT, BOT, 0, 0}, {1.0f, 1.0f, 1, 0}, 0},
-    {{LEFT, BOT, 0, 0}, {0.0f, 1.0f, 1, 0}, 0},
-    {{LEFT, TOP, 0, 0}, {0.0f, 0.0f, 1, 0}, 0},
 
-    {{LEFT, TOP, 0, 0}, {0.0f, 0.0f, 0, 0}, 0},
-    {{RIGHT, TOP, 0, 0}, {1.0f, 0.0f, 0, 0}, 0},
-    {{RIGHT, BOT, 0, 0}, {1.0f, 1.0f, 0, 0}, 0},
-};
 
 
 struct UniformBufferObject {
@@ -265,6 +257,15 @@ private: // No client -- internal
     Veloxr::OrthoCam _cam;
 
 
+     std::vector<Veloxr::Vertex> vertices = {
+    {{RIGHT, BOT, 0, 0}, {1.0f, 1.0f, 1, 0}, 0},
+    {{LEFT, BOT, 0, 0}, {0.0f, 1.0f, 1, 0}, 0},
+    {{LEFT, TOP, 0, 0}, {0.0f, 0.0f, 1, 0}, 0},
+
+    {{LEFT, TOP, 0, 0}, {0.0f, 0.0f, 0, 0}, 0},
+    {{RIGHT, TOP, 0, 0}, {1.0f, 0.0f, 0, 0}, 0},
+    {{RIGHT, BOT, 0, 0}, {1.0f, 1.0f, 0, 0}, 0},
+};
     const std::vector<const char*> validationLayers = {
         "VK_LAYER_KHRONOS_validation"
     };
