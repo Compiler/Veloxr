@@ -1,13 +1,17 @@
+#include <exception>
 #include <renderer.h>
+#include <stdexcept>
 #include <texture.h>
-int main() {
+int main(int argc, char* argv[]) {
     RendererCore app{};
 
     try {
         std::cout << "[DRIVER] Running from main.\n";
         //app.run();
+        if(argc <= 1) throw std::runtime_error("No filepath supplied.");
+        std::string filepath = argv[1];
 
-        const std::string texturePath = "C:/Users/ljuek/Downloads/test.png";
+        const std::string texturePath = filepath;
         std::cout << "[DRIVER] Loading texture from: " << texturePath << std::endl;
         
         Veloxr::OIIOTexture texture(texturePath);
