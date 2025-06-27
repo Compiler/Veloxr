@@ -23,21 +23,28 @@ void RendererCore::setWindowDimensions(int width, int height) {
 }
 
 void RendererCore::setTextureFilePath(std::string filepath){
-    //destroyTextureData();
+    std::cout << "[Veloxr] Updating texture filepath\n";
     _currentFilepath = filepath;
-    //setupTexturePasses();
+    if(device) {
+        std::cout << "[Veloxr] Updating texture filepath and destroying\n";
+        destroyTextureData();
+        setupTexturePasses();
+    }
 }
 
 void RendererCore::setTextureBuffer(Veloxr::VeloxrBuffer&& buffer){
-    //destroyTextureData();
+        std::cout << "[Veloxr] Updating texture buffer \n";
     _currentDataBuffer = buffer;
-    //setupTexturePasses();
+    if(device) {
+        std::cout << "[Veloxr] Updating texture buffer filepath and destroying\n";
+        destroyTextureData();
+        setupTexturePasses();
+    }
 }
 
 
-void RendererCore::init(void* windowHandle, std::string filepath) {
+void RendererCore::init(void* windowHandle) {
     destroy();
-    _currentFilepath = filepath;
     auto now = std::chrono::high_resolution_clock::now();
     auto nowTop = std::chrono::high_resolution_clock::now();
 
@@ -60,11 +67,18 @@ void RendererCore::init(void* windowHandle, std::string filepath) {
     physicalDevice = _deviceUtils->getPhysicalDevice();
     graphicsQueue = _deviceUtils->getGraphicsQueue();
     presentQueue = _deviceUtils->getPresentationQueue();
-    setupTexturePasses();
+    if(!_currentFilepath.empty() || !_currentDataBuffer.data.empty()) {
+        std::cout << "[Veloxr] [Debug] init called and completed. Setting up texture passes from state\n";
+        setupTexturePasses();
+    }
 }
 
 
 void RendererCore::setupTexturePasses() {
+    if(!device) {
+        std::cout << "[Veloxr] [Debug] [Warn] No device instantiated. Returning early. Do not call setupTexturePasses without setting a filepath or buffer.\n";
+        return;
+    }
     createCommandPool();
 
     auto now = std::chrono::high_resolution_clock::now();

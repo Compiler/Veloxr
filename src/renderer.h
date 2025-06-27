@@ -188,7 +188,7 @@ public:
     void setTextureBuffer(Veloxr::VeloxrBuffer&& buffer); 
 
     // Initialize the renderer, given a window pointer to render into.
-    void init(void* windowHandle = nullptr, std::string filepath = ""); 
+    void init(void* windowHandle = nullptr); 
     void setupTexturePasses(); 
 
     // Camera API. Use this object to access camera movement related data, zoom, pan, etc.
