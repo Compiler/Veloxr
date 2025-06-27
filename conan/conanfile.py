@@ -22,39 +22,24 @@ class conanRecipe(ConanFile):
     }
 
     def configure(self):
-        if self.options.build_photo:
-            self.options["opencv"].with_jpeg = False
-            self.options["opencv"].with_png = False
-            self.options["opencv"].with_tiff = False
-            self.options["opencv"].with_jpeg2000 = False
-            self.options["opencv"].with_openexr = False
-            self.options["opencv"].with_eigen = False
-            self.options["opencv"].with_webp = False
-            self.options["opencv"].with_quirc = False
+        # if self.options.build_photo:
+        self.options["opencv"].with_jpeg = False
+        self.options["opencv"].with_png = False
+        self.options["opencv"].with_tiff = False
+        self.options["opencv"].with_jpeg2000 = False
+        self.options["opencv"].with_openexr = False
+        self.options["opencv"].with_eigen = False
+        self.options["opencv"].with_webp = False
+        self.options["opencv"].with_quirc = False
 
         self.options["libtiff"].jpeg = "libjpeg-turbo"
         self.options["openimageio"].shared = True  # Build OIIO as a shared library
         self.options["openimageio"].with_libjpeg = "libjpeg-turbo"
-        if self.options.build_video:
-            self.options["opencv"].with_jpeg = "libjpeg-turbo"
-            self.options["libtiff"].jpeg = "libjpeg-turbo"
-            if self.settings.os == "Macos" or self.settings.os == "Linux":
-                self.options["libvpx"].shared = True
-            self.options["openimageio"].with_raw = False
-            self.options["openimageio"].build_tools = True
-            if self.settings.os == "Macos":
-                self.options["openimageio"].with_shared_tiff = True
-            if self.settings.os == "Linux":
-                self.options["opencv"].with_gtk = False
-                self.options["opencv"].with_png = False
 
     def requirements(self):
         self.requires("glfw/3.4")
-        if self.options.build_video:
-            self.requires("opencv/4.5.6-oiio3")
-        if self.options.build_photo:
-            self.requires("opencv/4.8.1")
-        self.requires("openimageio/3.0.4.0")
+        self.requires("opencv/4.8.1-topaz")
+        self.requires("openimageio/3.0.4.0-topaz")
         self.requires("glm/1.0.1")
         if self.settings.os == "Macos":
             self.requires("moltenvk/1.2.2")
@@ -121,6 +106,6 @@ class conanRecipe(ConanFile):
 
     def package_info(self):
         self.cpp_info.libs = ["veloxr_lib"]
-        self.cpp_info.set_property("cmake_target_name", "veloxr::veloxr_lib")
+        self.cpp_info.set_property("cmake_target_name", "veloxr::veloxr")
         # Add the executable to the package info
         self.cpp_info.bindirs = ["bin"]
