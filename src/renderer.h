@@ -145,22 +145,14 @@ inline const auto BOT = 0.9f;
 //              - Repeat smallest memory footprint
 //      - Return parsable coordinates of what is being viewed.
 //          - 
-inline std::vector<Veloxr::Vertex> vertices = {
-    {{RIGHT, BOT, 0, 0}, {1.0f, 1.0f, 1, 0}, 0},
-    {{LEFT, BOT, 0, 0}, {0.0f, 1.0f, 1, 0}, 0},
-    {{LEFT, TOP, 0, 0}, {0.0f, 0.0f, 1, 0}, 0},
 
-    {{LEFT, TOP, 0, 0}, {0.0f, 0.0f, 0, 0}, 0},
-    {{RIGHT, TOP, 0, 0}, {1.0f, 0.0f, 0, 0}, 0},
-    {{RIGHT, BOT, 0, 0}, {1.0f, 1.0f, 0, 0}, 0},
-};
 
 
 struct UniformBufferObject {
     alignas(16) glm::mat4 model;
     alignas(16) glm::mat4 view;
     alignas(16) glm::mat4 proj;
-    alignas(16) glm::vec4 time;
+    alignas(16) glm::vec4 roi;
 };
 
 inline bool mousePressed = false;
@@ -229,6 +221,13 @@ public:
     // For default clients, do not call as an Application with a window handle.
     void run(); 
     void spin(); 
+    glm::vec4 _roi {0, 0, 0, 0};
+    void resetCrop() {
+        _roi = {0, 0, 0, 0};
+    }
+    void setCrop(glm::vec4 roi) {
+        _roi = roi;
+    }
     
     // Make drawFrame accessible to external code
     void drawFrame();
@@ -258,6 +257,15 @@ private: // No client -- internal
     Veloxr::OrthoCam _cam;
 
 
+     std::vector<Veloxr::Vertex> vertices = {
+    {{RIGHT, BOT, 0, 0}, {1.0f, 1.0f, 1, 0}, 0},
+    {{LEFT, BOT, 0, 0}, {0.0f, 1.0f, 1, 0}, 0},
+    {{LEFT, TOP, 0, 0}, {0.0f, 0.0f, 1, 0}, 0},
+
+    {{LEFT, TOP, 0, 0}, {0.0f, 0.0f, 0, 0}, 0},
+    {{RIGHT, TOP, 0, 0}, {1.0f, 0.0f, 0, 0}, 0},
+    {{RIGHT, BOT, 0, 0}, {1.0f, 1.0f, 0, 0}, 0},
+};
     const std::vector<const char*> validationLayers = {
         "VK_LAYER_KHRONOS_validation"
     };
@@ -349,9 +357,9 @@ private: // No client -- internal
         createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
         createInfo.hwnd = static_cast<HWND>(windowHandle);
         createInfo.hinstance = GetModuleHandle(nullptr);
-
-        if (vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, &surface) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create window surface!");
+        auto res = vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, &surface);
+        if (res != VK_SUCCESS) {
+            throw std::runtime_error("failed to create window surface! Error code: " + std::to_string(res));
         }
         std::cout << "[Veloxr]" << "Windows surface created!\n";
 #elif defined(__APPLE__)
@@ -1027,6 +1035,12 @@ private:
         std::cout << "[Veloxr] Added core MoltenVK extensions" << std::endl;
 #endif
 
+#ifdef _WIN32
+        std::cout << "[VELOXR] Setting windows OS flags for surface.\n";
+        requiredExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+        requiredExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+#endif
+
         // Add GLFW extensions if we're creating our own window
         if(noClientWindow) {
             uint32_t glfwExtensionCount = 0;
@@ -1144,9 +1158,11 @@ inline void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
 
         lastX = xpos;
         lastY = ypos;
-        glm::vec2 diffs{-dx * 20.0f, -dy * 20.0f};
+        glm::vec2 diffs{-dx / 1000.0, -dy / 1000.0 };
         diffs *= app->getCam().getZoomLevel() * 400 * app->deltaMs;
         app->getCam().translate(diffs);
+        std::cout << "New camera x: " << app->getCam().getPosition().x << std::endl;
+        std::cout << "New camera y: " << app->getCam().getPosition().y << std::endl;
     }
 }
 
