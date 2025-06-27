@@ -27,8 +27,11 @@ int main(int argc, char* argv[]) {
         buf.numChannels = texture.getNumChannels();
         std::cout << "[DRIVER] Sending setTextureBuffer\n";
 	    //app.setTextureFilePath(texturePath);
-        app.init();
         app.setTextureBuffer(std::move(buf));
+
+
+        std::cout << "[DRIVER] Init\n";
+        app.init();
         app.spin();
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;

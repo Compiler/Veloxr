@@ -1,4 +1,5 @@
 #include "renderer.h"
+#include <stdexcept>
 
 using namespace Veloxr;
 
@@ -22,19 +23,20 @@ void RendererCore::setWindowDimensions(int width, int height) {
 }
 
 void RendererCore::setTextureFilePath(std::string filepath){
-    destroyTextureData();
+    //destroyTextureData();
     _currentFilepath = filepath;
-    setupTexturePasses();
+    //setupTexturePasses();
 }
 
 void RendererCore::setTextureBuffer(Veloxr::VeloxrBuffer&& buffer){
-    destroyTextureData();
+    //destroyTextureData();
     _currentDataBuffer = buffer;
-    setupTexturePasses();
+    //setupTexturePasses();
 }
 
 
 void RendererCore::init(void* windowHandle, std::string filepath) {
+    destroy();
     _currentFilepath = filepath;
     auto now = std::chrono::high_resolution_clock::now();
     auto nowTop = std::chrono::high_resolution_clock::now();
@@ -76,9 +78,7 @@ void RendererCore::setupTexturePasses() {
     } else if (_currentFilepath.empty() == false) {
         res = createTiledTexture(_currentFilepath);
     } else {
-        _currentFilepath = "C:/Users/ljuek/Downloads/test.png";
-        std::cout << "[Veloxr] Using default texture path: " << _currentFilepath << std::endl;
-        res = createTiledTexture(_currentFilepath);
+        throw std::runtime_error("[Veloxr] setupTexturePasses called with no valid filepath or data buffer.\n");
     }
     //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg");
     //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/56000.jpg");
@@ -270,7 +270,7 @@ void RendererCore::copyBufferToImage(VkBuffer buffer, VkImage image,
 
 std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::createTiledTexture(Veloxr::VeloxrBuffer&& buffer) {
     std::unordered_map<std::string, VkVirtualTexture>  result;
-    _cam.init(0, _windowWidth, 0, _windowHeight, -1, 1);
+    //_cam.init(0, _windowWidth, 0, _windowHeight, -1, 1);
     Veloxr::TextureTiling tiler{};
     auto maxResolution = _deviceUtils->getMaxTextureResolution();
     std::cout << "[Veloxr]" << "Not Tiling...\n";
@@ -341,6 +341,7 @@ std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::cr
     if(deltaX > deltaY) {
         offsetY = -deltaY / 2.0f;
     }
+    _cam.init(0, maxX - minX, 0, maxY - minY, -1, 1);
     _cam.setPosition({offsetX, offsetY});
     _cam.fitViewport(minX, maxX, minY, maxY);
 
@@ -349,7 +350,6 @@ std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::cr
 std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::createTiledTexture(std::string input_filepath) {
     std::unordered_map<std::string, VkVirtualTexture>  result;
     Veloxr::OIIOTexture myTexture{input_filepath};
-    _cam.init(0, _windowWidth, 0, _windowHeight, -1, 1);
     Veloxr::TextureTiling tiler{};
     auto maxResolution = _deviceUtils->getMaxTextureResolution();
     std::cout << "[Veloxr]" << "Tiling...\n";
@@ -427,6 +427,7 @@ std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::cr
     if(deltaX > deltaY) {
         offsetY = -deltaY / 2.0f;
     }
+    _cam.init(0, maxX - minX, 0, maxY - minY, -1, 1);
     _cam.setPosition({offsetX, offsetY});
     _cam.fitViewport(minX, maxX, minY, maxY);
 
@@ -713,15 +714,17 @@ void RendererCore::recreateSwapChain() {
 }
 
 void RendererCore::cleanupSwapChain() {
-    for (size_t i = 0; i < swapChainFramebuffers.size(); i++) {
-        vkDestroyFramebuffer(device, swapChainFramebuffers[i], nullptr);
-    }
+    if(device) {
+        for (size_t i = 0; i < swapChainFramebuffers.size(); i++) {
+            vkDestroyFramebuffer(device, swapChainFramebuffers[i], nullptr);
+        }
 
-    for (size_t i = 0; i < swapChainImageViews.size(); i++) {
-        vkDestroyImageView(device, swapChainImageViews[i], nullptr);
-    }
+        for (size_t i = 0; i < swapChainImageViews.size(); i++) {
+            vkDestroyImageView(device, swapChainImageViews[i], nullptr);
+        }
 
-    vkDestroySwapchainKHR(device, swapChain, nullptr);
+        vkDestroySwapchainKHR(device, swapChain, nullptr);
+    }
 }
 
 void RendererCore::createSyncObjects() {
@@ -759,22 +762,25 @@ void RendererCore::updateUniformBuffers(uint32_t currentImage) {
 void RendererCore::destroyTextureData() {
     cleanupSwapChain();
 
-    for (auto &[name, data] : _textureMap)
-        data.destroy(device);
+    if( device ) {
+        for (auto &[name, data] : _textureMap)
+            data.destroy(device);
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-    {
-        vkDestroyBuffer(device, uniformBuffers[i], nullptr);
-        vkFreeMemory(device, uniformBuffersMemory[i], nullptr);
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+        {
+            vkDestroyBuffer(device, uniformBuffers[i], nullptr);
+            vkFreeMemory(device, uniformBuffersMemory[i], nullptr);
+        }
+        vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+        vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
     }
-    vkDestroyDescriptorPool(device, descriptorPool, nullptr);
-    vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
     _currentFilepath = "";
     _currentDataBuffer.data.clear();
     _currentDataBuffer = {};
 }
 
 void RendererCore::destroy() {
+    if(!device) return;
     destroyTextureData();
     vkDestroyDescriptorPool(device, descriptorPool, nullptr);
     vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
