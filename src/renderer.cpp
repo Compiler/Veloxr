@@ -23,23 +23,27 @@ void RendererCore::setWindowDimensions(int width, int height) {
 }
 
 void RendererCore::setTextureFilePath(std::string filepath){
-    std::cout << "[Veloxr] Updating texture filepath\n";
-    _currentFilepath = filepath;
-    if(device) {
-        std::cout << "[Veloxr] Updating texture filepath and destroying\n";
-        destroyTextureData();
-        setupTexturePasses();
+    if(!device) {
+        std::cout << "[Veloxr] Updating texture filepath\n";
+        _currentFilepath = filepath;
+        return;
     }
+    std::cout << "[Veloxr] Updating texture filepath and destroying\n";
+    destroyTextureData();
+    _currentFilepath = filepath;
+    setupTexturePasses();
 }
 
 void RendererCore::setTextureBuffer(Veloxr::VeloxrBuffer&& buffer){
+    if (!device ) {
         std::cout << "[Veloxr] Updating texture buffer \n";
-    _currentDataBuffer = buffer;
-    if(device) {
-        std::cout << "[Veloxr] Updating texture buffer filepath and destroying\n";
-        destroyTextureData();
-        setupTexturePasses();
+        _currentDataBuffer = buffer;
+        return;
     }
+    std::cout << "[Veloxr] Updating texture buffer filepath and destroying\n";
+    destroyTextureData();
+    _currentDataBuffer = buffer;
+    setupTexturePasses();
 }
 
 
@@ -721,6 +725,7 @@ void RendererCore::recreateSwapChain() {
     vkDeviceWaitIdle(device);
     _cam.setProjection(0, _windowWidth, 0, _windowHeight, -1, 1);
 
+    std::cout << "[Veloxr] [Debug] Destroying swap chain for recreating swap chain\n";
     cleanupSwapChain();
 
     createSwapChain();
@@ -730,14 +735,17 @@ void RendererCore::recreateSwapChain() {
 
 void RendererCore::cleanupSwapChain() {
     if(device) {
+        std::cout << "[Veloxr] [Debug] Destroying frame buffers\n";
         for (size_t i = 0; i < swapChainFramebuffers.size(); i++) {
             vkDestroyFramebuffer(device, swapChainFramebuffers[i], nullptr);
         }
 
+        std::cout << "[Veloxr] [Debug] Destroying swapChainImages\n";
         for (size_t i = 0; i < swapChainImageViews.size(); i++) {
             vkDestroyImageView(device, swapChainImageViews[i], nullptr);
         }
 
+        std::cout << "[Veloxr] [Debug] Destroying swap chain\n";
         vkDestroySwapchainKHR(device, swapChain, nullptr);
     }
 }
@@ -775,22 +783,26 @@ void RendererCore::updateUniformBuffers(uint32_t currentImage) {
 }
 
 void RendererCore::destroyTextureData() {
+    std::cout << "[Veloxr] [Debug] Destroying swap chain for destroyTextureData\n";
     cleanupSwapChain();
 
-    if( device ) {
-        for (auto &[name, data] : _textureMap)
-            data.destroy(device);
 
+
+    if( device && !uniformBuffers.empty() && !uniformBuffersMemory.empty()) {
+        std::cout << "[Veloxr] [Debug] Destroying uniform data\n";
+        for (auto &[name, data] : _textureMap) data.destroy(device);
+
+        std::cout << "[Veloxr] [Debug] Destroying uniform buffers\n";
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
             vkDestroyBuffer(device, uniformBuffers[i], nullptr);
             vkFreeMemory(device, uniformBuffersMemory[i], nullptr);
         }
+        std::cout << "[Veloxr] [Debug] Destroying uniform pools\n";
         vkDestroyDescriptorPool(device, descriptorPool, nullptr);
         vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
     }
     _currentFilepath = "";
-    _currentDataBuffer.data.clear();
     _currentDataBuffer = {};
 }
 

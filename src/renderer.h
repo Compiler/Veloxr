@@ -311,9 +311,13 @@ private: // No client -- internal
         int samplerIndex;
 
         void destroy(VkDevice device) {
+            std::cout << "[Veloxr] [Debug] Destroying sampler\n";
             vkDestroySampler(device, textureSampler, nullptr);
+            std::cout << "[Veloxr] [Debug] Destroying image view\n";
             vkDestroyImageView(device, textureImageView, nullptr);
+            std::cout << "[Veloxr] [Debug] Destroying image \n";
             vkDestroyImage(device, textureImage, nullptr);
+            std::cout << "[Veloxr] [Debug] Freeing image memory\n";
             vkFreeMemory(device, textureImageMemory, nullptr);
         }
     };

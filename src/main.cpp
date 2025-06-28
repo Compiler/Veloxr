@@ -14,6 +14,7 @@ int main(int argc, char* argv[]) {
         const std::string texturePath = filepath;
         std::cout << "[DRIVER] Loading texture from: " << texturePath << std::endl;
         
+        /*
         Veloxr::OIIOTexture texture(texturePath);
         std::vector<unsigned char> data = texture.load();
         if (data.empty()) {
@@ -28,10 +29,13 @@ int main(int argc, char* argv[]) {
         std::cout << "[DRIVER] Sending setTextureBuffer\n";
 	    //app.setTextureFilePath(texturePath);
         app.setTextureBuffer(std::move(buf));
+        */
+
 
 
         std::cout << "[DRIVER] Init\n";
         app.init();
+        app.setTextureFilePath("C:/Users/ljuek/Downloads/test.png");
         app.spin();
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
