@@ -79,6 +79,7 @@ void RendererCore::setupTexturePasses() {
         std::cout << "[Veloxr] [Debug] [Warn] No device instantiated. Returning early. Do not call setupTexturePasses without setting a filepath or buffer.\n";
         return;
     }
+    std::cout << "[Veloxr] [Debug] setting up texture pass.\n";
     createCommandPool();
 
     auto now = std::chrono::high_resolution_clock::now();
@@ -795,6 +796,7 @@ void RendererCore::destroyTextureData() {
 
 void RendererCore::destroy() {
     if(!device) return;
+    std::cout << "[Veloxr] [Debug] Destroying!" << device << "\n";
     destroyTextureData();
     vkDestroyDescriptorPool(device, descriptorPool, nullptr);
     vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
