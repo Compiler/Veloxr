@@ -11,14 +11,12 @@ class conanRecipe(ConanFile):
     settings = "os", "arch", "compiler", "build_type"
 
     options = {
+        "shared": [True, False],
         "validation_layers": [True, False],
-        "build_video": [True, False],
-        "build_photo": [True, False],
     }
     default_options = {
         "validation_layers": False,
-        "build_video": False,
-        "build_photo": False,
+        "shared": True
     }
 
     def configure(self):
@@ -32,7 +30,7 @@ class conanRecipe(ConanFile):
         self.options["opencv"].with_webp = False
         self.options["opencv"].with_quirc = False
 
-        self.options["libtiff"].jpeg = "libjpeg-turbo"
+        # self.options["libtiff"].jpeg = "libjpeg-turbo"
         self.options["openimageio"].shared = True  # Build OIIO as a shared library
         self.options["openimageio"].with_libjpeg = "libjpeg-turbo"
 
@@ -41,16 +39,19 @@ class conanRecipe(ConanFile):
         self.requires("opencv/4.8.1-topaz")
         self.requires("openimageio/3.0.4.0-topaz")
         self.requires("glm/1.0.1")
+        self.requires("vulkan-loader/1.3.268.0")
         if self.settings.os == "Macos":
             self.requires("moltenvk/1.2.2")
 
     def build_requirements(self):
-        self.requires("vulkan-loader/1.3.268.0")
+        pass
 
     def generate(self):
         tc = CMakeToolchain(self, generator="Ninja")
         tc.variables["VERSION"] = self.version
+        tc.variables["BUILD_SHARED_LIBS"] = self.options.shared
         print(f"[Conan] Setting VALIDATION_LAYERS to: {self.options.validation_layers}")
+        print(f"[Conan] Setting BUILD_SHARED_LIBS to: {self.options.shared}")
         tc.variables["VALIDATION_LAYERS"] = self.options.validation_layers
         tc.generate()
 
@@ -107,5 +108,15 @@ class conanRecipe(ConanFile):
     def package_info(self):
         self.cpp_info.libs = ["veloxr_lib"]
         self.cpp_info.set_property("cmake_target_name", "veloxr::veloxr")
+        self.cpp_info.requires = [
+            "glfw::glfw",
+            "opencv::opencv",
+            "openimageio::openimageio",
+            "glm::glm",
+            "vulkan-loader::vulkan-loader"
+        ]
+        if self.settings.os == "Macos":
+            self.cpp_info.requires.append("moltenvk::moltenvk")
         # Add the executable to the package info
+        # self.cpp_info.includedirs = self.dependencies["vulkan-headers"].cpp_info.aggregated_components().includedirs
         self.cpp_info.bindirs = ["bin"]

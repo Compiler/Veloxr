@@ -17,8 +17,9 @@ endif()
 find_package(OpenCV REQUIRED)
 find_package(OpenImageIO REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
-find_package(Vulkan REQUIRED)
 find_package(glm REQUIRED)
+find_package(Vulkan REQUIRED)
+# Note: Vulkan is provided by Conan's vulkan-loader via CMakeDeps
 
 
 if (APPLE)
@@ -60,12 +61,8 @@ elseif (WIN32)
     )
 endif()
 
-# Create the library
-if (APPLE)
-    add_library(veloxr_lib SHARED ${LIB_SOURCES})
-elseif (WIN32)
-    add_library(veloxr_lib STATIC ${LIB_SOURCES})
-endif()
+# Create the library - respects BUILD_SHARED_LIBS from Conan
+add_library(veloxr_lib ${LIB_SOURCES})
 
 if (WIN32)
     target_compile_options(veloxr_lib PRIVATE /utf-8)
@@ -84,7 +81,6 @@ if (APPLE)
             $<BUILD_INTERFACE:${INCLUDE_DIR}>
             $<INSTALL_INTERFACE:include>
         PRIVATE 
-            ${Vulkan_INCLUDE_DIRS}
             ${OpenCV_INCLUDE_DIRS}
             ${MoltenVK_INCLUDE_DIRS}
     )
@@ -95,7 +91,6 @@ elseif (WIN32)
             $<BUILD_INTERFACE:${INCLUDE_DIR}>
             $<INSTALL_INTERFACE:include>
         PRIVATE 
-            ${Vulkan_INCLUDE_DIRS}
             ${OpenCV_INCLUDE_DIRS}
     )
 endif()
