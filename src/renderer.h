@@ -398,7 +398,6 @@ private: // No client -- internal
 
 private:
     // texture utilities ------------------------------------------------
-    void addTexture(std::string input_filepath);
     VkSampler  createTextureSampler(std::string input_filepath = "");
     VkImageView createTextureImageView(VkImage textureImage);
     VkImageView createImageView(VkImage image, VkFormat format);
