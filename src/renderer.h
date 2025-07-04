@@ -904,9 +904,9 @@ private:
             auto elapsedPerSec = std::chrono::duration_cast<std::chrono::milliseconds>(timerElapsed).count();
             if(elapsedPerSec > 1000) {
                 
-                std::cout << "[Veloxr]" << "Time elapsed single frame: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
+                console.log("[Veloxr]", "Time elapsed single frame: ", std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count(), "ms\t", std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count(), "microseconds.\n");
                 timer = std::chrono::high_resolution_clock::now();
-                std::cout << "[Veloxr]" << frames << " FPS, " << 1000.0f/frames << " ms.\n";
+                console.log("[Veloxr]", frames, " FPS, ", 1000.0f/frames, " ms.\n");
                 frames = 0;
             }
             frames++;
@@ -964,8 +964,8 @@ private:
     }
 
     void createVulkanInstance() {
-        std::cout << "[Veloxr] enableValidationLayers: " << enableValidationLayers << std::endl;
-        std::cout << "[Veloxr] checkValidationLayerSupport(): " << checkValidationLayerSupport() << std::endl;
+        console.log("[Veloxr] enableValidationLayers: ", enableValidationLayers);
+        console.log("[Veloxr] checkValidationLayerSupport(): ", checkValidationLayerSupport());
         
 #ifdef __APPLE__
         // Check Metal availability using our helper function
@@ -1052,10 +1052,10 @@ private:
         if(noClientWindow) {
             uint32_t glfwExtensionCount = 0;
             const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-            std::cout << "[Veloxr] GLFW required extensions count: " << glfwExtensionCount << std::endl;
+            console.log("[Veloxr] GLFW required extensions count: ", glfwExtensionCount );
             
             for(uint32_t i = 0; i < glfwExtensionCount; i++) {
-                std::cout << "[Veloxr] GLFW extension " << i << ": " << glfwExtensions[i] << std::endl;
+                console.log("[Veloxr] GLFW extension ", i, ": ", glfwExtensions[i]);
                 requiredExtensions.push_back(glfwExtensions[i]);
             }
         }
@@ -1069,9 +1069,9 @@ private:
         createInfo.enabledExtensionCount = static_cast<uint32_t>(requiredExtensions.size());
         createInfo.ppEnabledExtensionNames = requiredExtensions.data();
 
-        std::cout << "\n[Veloxr] Total required extensions: " << requiredExtensions.size() << std::endl;
+        console.log("\n[Veloxr] Total required extensions: ", requiredExtensions.size());
         for(const auto& ext : requiredExtensions) {
-            std::cout << "[Veloxr] Required extension: " << ext << std::endl;
+            console.log("[Veloxr] Required extension: ", ext);
         }
 
         // Set up validation layers if enabled
@@ -1089,19 +1089,19 @@ private:
         // Create the Vulkan instance
         VkResult result = vkCreateInstance(&createInfo, nullptr, &instance);
         if (result != VK_SUCCESS) {
-            std::cerr << "[Veloxr] Failed to create instance with error code: " << result << std::endl;
+            console.fatal("[Veloxr] Failed to create instance with error code: ", result) ;
             if (result == VK_ERROR_INCOMPATIBLE_DRIVER) {
-                std::cerr << "[Veloxr] ERROR: Incompatible driver - Metal might not be available or properly configured" << std::endl;
-                std::cerr << "[Veloxr] Please ensure MoltenVK is properly installed and configured" << std::endl;
-                std::cerr << "[Veloxr] Check that:" << std::endl;
-                std::cerr << "  1. MoltenVK is properly installed via Conan" << std::endl;
-                std::cerr << "  2. The MoltenVK library is in your library path" << std::endl;
-                std::cerr << "  3. The Metal framework is properly linked" << std::endl;
+                console.fatal("[Veloxr] ERROR: Incompatible driver - Metal might not be available or properly configured");
+                console.fatal("[Veloxr] Please ensure MoltenVK is properly installed and configured");
+                console.fatal("[Veloxr] Check that:");
+                console.fatal("  1. MoltenVK is properly installed via Conan");
+                console.fatal("  2. The MoltenVK library is in your library path");
+                console.fatal("  3. The Metal framework is properly linked");
             }
             throw std::runtime_error("failed to create instance!");
         }
 
-        std::cout << "[Veloxr] Created a valid instance!\n";
+        console.log("[Veloxr] Created a valid instance!\n");
     }
 
     // Helper function to get the executable path

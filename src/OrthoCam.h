@@ -2,6 +2,7 @@
 #define ORTHOGRAPHIC_CAMERA_H
 
 #include <glm/glm.hpp>
+#include "VLogger.h"
 namespace Veloxr {
 
     class OrthoCam {
@@ -43,6 +44,7 @@ namespace Veloxr {
 
 
         private:
+            Veloxr::LLogger console{"[Veloxr] [Camera] "};
             void recalcView();
             void recalcProjection();
             glm::mat4 projectionMatrix;

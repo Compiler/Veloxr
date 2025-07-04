@@ -7,6 +7,7 @@
 #include <vulkan/vulkan_core.h>
 #define GLFW_INCLUDE_VULKAN
 #include <vulkan/vulkan.h>
+#include "VLogger.h"
 
 namespace Veloxr {
 
@@ -28,6 +29,7 @@ struct SwapChainSupportDetails {
 
 class Device {
     private:
+        Veloxr::LLogger console{"[Veloxr] [Device] "};
 
         VkInstance _instance;
         VkSurfaceKHR _surface;

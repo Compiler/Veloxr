@@ -154,7 +154,7 @@ void OrthoCam::recalcView() {
         * glm::rotate(glm::mat4(1.0f), glm::radians(rotation), glm::vec3(0, 0, 1));
     viewMatrix = glm::inverse(transform);
     _dirty = true;
-    std::cout << "[CAMERA] Position: " << _position.x << ", " << _position.y << std::endl;
+    console.log("[CAMERA] Position: ", _position.x, ", ", _position.y);
 }
 
 void OrthoCam::recalcProjection() {

@@ -32,9 +32,10 @@ void Device::_createLogicalDevice() {
     VkPhysicalDeviceFeatures deviceFeatures{};
     VkPhysicalDeviceFeatures supported{};
     vkGetPhysicalDeviceFeatures(_physicalDevice, &supported);
-    if (!supported.shaderClipDistance)
+    if (!supported.shaderClipDistance) {
         throw std::runtime_error("shaderClipDistance not supported");
-    std::cout << "[VELOXR] CLip Distance enabled.\n";
+    }
+    console.log("[VELOXR] CLip Distance enabled.\n");
 
     deviceFeatures.shaderClipDistance = VK_TRUE;
 
@@ -66,7 +67,7 @@ void Device::_createLogicalDevice() {
     vkGetDeviceQueue(_logicalDevice, indices.graphicsFamily.value(), 0, &_graphicsQueue);
     vkGetDeviceQueue(_logicalDevice, indices.presentFamily.value(), 0, &_presentQueue);
 
-    std::cout << "[Veloxr]" << "Finished logical device creation! Queue / Present indices: " << indices.graphicsFamily.value() << " " << indices.presentFamily.value() << std::endl;
+    console.log("[Veloxr]", "Finished logical device creation! Queue / Present indices: ", indices.graphicsFamily.value(), " ", indices.presentFamily.value() );
 
 }
 
@@ -103,7 +104,7 @@ Veloxr::QueueFamilyIndices Device::findQueueFamilies(VkPhysicalDevice device) co
 }
 QueueFamilyIndices Device::_findQueueFamilies(VkPhysicalDevice device) {
     QueueFamilyIndices indices;
-    std::cout << "[Veloxr]" << "Finding device " << device << " queue families\n";
+    console.log("[Veloxr]", "Finding device ", device, " queue families\n");
 
     uint32_t queueFamilyCount = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
@@ -136,7 +137,7 @@ QueueFamilyIndices Device::_findQueueFamilies(VkPhysicalDevice device) {
 int Device::_calculateDeviceScore(VkPhysicalDevice device) {
     QueueFamilyIndices indices = _findQueueFamilies(device); 
     if(!indices.isComplete() || !_checkDeviceExtensionSupport(device)) {
-        std::cerr << "Device " << device << " failed to support our needs.\n";
+        console.fatal("Device ", device, " failed to support our needs.\n");
         return -1;
     }
 
@@ -146,9 +147,9 @@ int Device::_calculateDeviceScore(VkPhysicalDevice device) {
     _maxSamplers = deviceProperties.limits.maxPerStageDescriptorSamplers;
     uint32_t desiredSamplerCount = std::min(_maxSamplers, (uint32_t)64 );
     _maxSamplers = desiredSamplerCount;
-    std::cout << "[Veloxr]" << "[DEBUG] Physical Device Name: " << deviceProperties.deviceName << "\n";
-    std::cout << "[Veloxr]" << "[DEBUG] API Version: " << deviceProperties.apiVersion << "\n";
-    std::cout << "[Veloxr]" << "[DEBUG] Max Texture Resolution: " << _maxTextureResolution << "\n";
+    console.log("[Veloxr]", "[DEBUG] Physical Device Name: ", deviceProperties.deviceName);
+    console.log("[Veloxr]", "[DEBUG] API Version: ", deviceProperties.apiVersion );
+    console.log("[Veloxr]", "[DEBUG] Max Texture Resolution: ", _maxTextureResolution );
 
     VkPhysicalDeviceFeatures deviceFeatures;
     vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
@@ -157,10 +158,10 @@ int Device::_calculateDeviceScore(VkPhysicalDevice device) {
     SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
     swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
     if(!swapChainAdequate) {
-        std::cerr << "Device " << device << " does not contained swapChain needs.\n";
+        console.fatal("Device ", device, " does not contained swapChain needs.\n");
         return -1;
     }
-    std::cout << "[Veloxr]" << "Device " << device << " ready to score.\n";
+    console.log("[Veloxr]", "Device ", device, " ready to score.\n");
 
 
     int score = 0;
@@ -173,7 +174,7 @@ int Device::_calculateDeviceScore(VkPhysicalDevice device) {
     if(deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
         score *= 2;
     }
-    std::cout << "[Veloxr]" << "Score for device " << deviceProperties.deviceID << " (" << deviceProperties.deviceName << ") = " << score << std::endl;
+    console.log("[Veloxr]", "Score for device " , deviceProperties.deviceID , " (" , deviceProperties.deviceName , ") = " , score);
     return score;
 }
 
@@ -237,7 +238,7 @@ void Device::_pickPhysicalDevice() {
 
     auto curScore = scoreMap.rbegin()->first;
     if (curScore == -1) {
-        std::runtime_error("No suitable device found");
+        throw std::runtime_error("No suitable device found");
     }
     _physicalDevice = scoreMap.rbegin()->second;
     if (_physicalDevice == VK_NULL_HANDLE) {
