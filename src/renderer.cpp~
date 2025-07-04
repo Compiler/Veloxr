@@ -28,7 +28,7 @@ void RendererCore::setTextureFilePath(std::string filepath){
         _currentFilepath = filepath;
         return;
     }
-    std::cerr << "[Veloxr] Updating texture filepath and destroying\n";
+    std::cout << "[Veloxr] Updating texture filepath and destroying\n";
     destroyTextureData();
     _currentFilepath = filepath;
     setupTexturePasses();
@@ -40,7 +40,7 @@ void RendererCore::setTextureBuffer(Veloxr::VeloxrBuffer&& buffer){
         _currentDataBuffer = buffer;
         return;
     }
-    std::cerr << "[Veloxr] Updating texture buffer filepath and destroying\n";
+    std::cout << "[Veloxr] Updating texture buffer filepath and destroying\n";
     destroyTextureData();
     _currentDataBuffer = buffer;
     setupTexturePasses();
@@ -77,7 +77,6 @@ void RendererCore::init(void* windowHandle) {
     createDescriptorLayout();
     createGraphicsPipeline();
     createFramebuffers();
-    createUniformBuffers();
     if(!_currentFilepath.empty() || !_currentDataBuffer.data.empty()) {
         std::cout << "[Veloxr] [Debug] init called and completed. Setting up texture passes from state\n";
         setupTexturePasses();
@@ -115,6 +114,7 @@ void RendererCore::setupTexturePasses() {
 
 
     createVertexBuffer();
+    createUniformBuffers();
     createDescriptorPool();
     createDescriptorSets();
     createCommandBuffer();
@@ -528,7 +528,6 @@ void RendererCore::createImage(uint32_t width, uint32_t height, VkFormat format,
 
 void RendererCore::createDescriptorSets() {
 
-    std::cout << "[Veloxr] Creating descriptor sets for " << MAX_FRAMES_IN_FLIGHT  << " frames \n";
     std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -541,8 +540,6 @@ void RendererCore::createDescriptorSets() {
     if (vkAllocateDescriptorSets(device, &allocInfo, descriptorSets.data()) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate descriptor sets!");
     }
-    std::cout << "[Veloxr] Allocated new descriptor sets\n";
-
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         VkDescriptorBufferInfo bufferInfo{};
@@ -582,7 +579,6 @@ void RendererCore::createDescriptorSets() {
         descriptorWrites[1].descriptorCount = static_cast<uint32_t>(imageInfos.size());
         descriptorWrites[1].pImageInfo = imageInfos.data();
 
-        std::cout << "[Veloxr] Updating descriptor sets\n";
         vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
     }
 }
@@ -695,7 +691,6 @@ uint32_t RendererCore::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags
 }
 
 void RendererCore::createVertexBuffer() {
-    std::cout << "[Veloxr] Creating vertexBuffer\n";
     VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
     VkBuffer stagingBuffer;
@@ -788,11 +783,24 @@ void RendererCore::updateUniformBuffers(uint32_t currentImage) {
 }
 
 void RendererCore::destroyTextureData() {
+    std::cout << "[Veloxr] [Debug] Destroying swap chain for destroyTextureData\n";
+    cleanupSwapChain();
+
+
+
     if( device && !uniformBuffers.empty() && !uniformBuffersMemory.empty()) {
-        std::cerr << "[Veloxr] [Debug] Destroying uniform data\n";
+        std::cout << "[Veloxr] [Debug] Destroying uniform data\n";
         for (auto &[name, data] : _textureMap) data.destroy(device);
-        std::cerr << "[Veloxr] [Debug] Destroying uniform pools\n";
+
+        std::cout << "[Veloxr] [Debug] Destroying uniform buffers\n";
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+        {
+            vkDestroyBuffer(device, uniformBuffers[i], nullptr);
+            vkFreeMemory(device, uniformBuffersMemory[i], nullptr);
+        }
+        std::cout << "[Veloxr] [Debug] Destroying uniform pools\n";
         vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+        vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
     }
     _currentFilepath = "";
     _currentDataBuffer = {};
@@ -801,13 +809,8 @@ void RendererCore::destroyTextureData() {
 void RendererCore::destroy() {
     if(!device) return;
     std::cout << "[Veloxr] [Debug] Destroying!" << device << "\n";
-    cleanupSwapChain();
     destroyTextureData();
-
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        vkDestroyBuffer(device, uniformBuffers[i], nullptr);
-        vkFreeMemory(device, uniformBuffersMemory[i], nullptr);
-    }
+    vkDestroyDescriptorPool(device, descriptorPool, nullptr);
     vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 
     vkDestroyPipeline(device, graphicsPipeline, nullptr);

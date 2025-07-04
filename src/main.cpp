@@ -34,8 +34,8 @@ int main(int argc, char* argv[]) {
 
 
         std::cout << "[DRIVER] Init\n";
-        app.init();
         app.setTextureFilePath("C:/Users/ljuek/Downloads/test.png");
+        app.init();
         app.spin();
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
