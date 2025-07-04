@@ -1150,6 +1150,7 @@ inline void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) 
     float currentZoom = camera.getZoomLevel();
     float sensitivity = currentZoom * 0.1f;
     camera.zoomToCenter(yoffset*sensitivity);
+    std::cout << "[Veloxr] Zoom offset: " << currentZoom << '\n';
     //camera.addToZoom(yoffset * sensitivity);
 }
 
@@ -1199,6 +1200,11 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     if (key == GLFW_KEY_G && action == GLFW_PRESS) {
         auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
         app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/56000.jpg");
+    }
+
+    if (key == GLFW_KEY_E && action == GLFW_PRESS) {
+        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
+        app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/fox.jpg");
     }
 }
 
