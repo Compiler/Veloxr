@@ -39,6 +39,7 @@ message(STATUS "After force set VALIDATION_LAYERS value: ${VALIDATION_LAYERS}")
 if (APPLE)
     set(LIB_SOURCES
         src/Vertex.h 
+        src/VLogger.h 
         src/renderer.h src/renderer.cpp
         src/device.h src/device.cpp 
         src/OrthographicCamera.h src/OrthographicCamera.cpp
@@ -51,6 +52,7 @@ if (APPLE)
 elseif (WIN32)
     set(LIB_SOURCES
         src/Vertex.h 
+        src/VLogger.h 
         src/renderer.h src/renderer.cpp
         src/device.h src/device.cpp 
         src/OrthographicCamera.h src/OrthographicCamera.cpp

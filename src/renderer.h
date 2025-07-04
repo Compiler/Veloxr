@@ -19,6 +19,7 @@
 #include "OrthographicCamera.h"
 #include "OrthoCam.h"
 #include "DataUtils.h"
+#include "Vlogger.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -240,6 +241,7 @@ private: // No client -- internal
     int _windowWidth, _windowHeight;
     std::string _currentFilepath;
     Veloxr::VeloxrBuffer _currentDataBuffer;
+    Veloxr::LLogger console{"[Veloxr][Renderer] "};
     // For friend classes / drivers
 
 
@@ -311,9 +313,13 @@ private: // No client -- internal
         int samplerIndex;
 
         void destroy(VkDevice device) {
+            std::cout << "[Veloxr] [Debug] Destroying sampler\n";
             vkDestroySampler(device, textureSampler, nullptr);
+            std::cout << "[Veloxr] [Debug] Destroying image view\n";
             vkDestroyImageView(device, textureImageView, nullptr);
+            std::cout << "[Veloxr] [Debug] Destroying image \n";
             vkDestroyImage(device, textureImage, nullptr);
+            std::cout << "[Veloxr] [Debug] Freeing image memory\n";
             vkFreeMemory(device, textureImageMemory, nullptr);
         }
     };
@@ -489,6 +495,7 @@ private:
     }
 
     void createCommandBuffer() {
+        std::cout << "[Veloxr] Creating command buffers\n";
         commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
         VkCommandBufferAllocateInfo allocInfo{};
@@ -683,7 +690,7 @@ private:
         rasterizer.rasterizerDiscardEnable = VK_FALSE;
         rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
         rasterizer.lineWidth = 1.0f;
-        rasterizer.cullMode = VK_CULL_MODE_NONE;
+        rasterizer.cullMode = VK_CULL_MODE_NONE; // TODO: ??
         rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         rasterizer.depthBiasEnable = VK_FALSE;
         rasterizer.depthBiasConstantFactor = 0.0f; 
@@ -897,9 +904,9 @@ private:
             auto elapsedPerSec = std::chrono::duration_cast<std::chrono::milliseconds>(timerElapsed).count();
             if(elapsedPerSec > 1000) {
                 
-                std::cout << "[Veloxr]" << "Time elapsed single frame: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count() << "ms\t" << std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count() << "microseconds.\n";
+                console.log("[Veloxr]", "Time elapsed single frame: ", std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count(), "ms\t", std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count(), "microseconds.\n");
                 timer = std::chrono::high_resolution_clock::now();
-                std::cout << "[Veloxr]" << frames << " FPS, " << 1000.0f/frames << " ms.\n";
+                console.log("[Veloxr]", frames, " FPS, ", 1000.0f/frames, " ms.\n");
                 frames = 0;
             }
             frames++;
@@ -957,8 +964,8 @@ private:
     }
 
     void createVulkanInstance() {
-        std::cout << "[Veloxr] enableValidationLayers: " << enableValidationLayers << std::endl;
-        std::cout << "[Veloxr] checkValidationLayerSupport(): " << checkValidationLayerSupport() << std::endl;
+        console.log("[Veloxr] enableValidationLayers: ", enableValidationLayers);
+        console.log("[Veloxr] checkValidationLayerSupport(): ", checkValidationLayerSupport());
         
 #ifdef __APPLE__
         // Check Metal availability using our helper function
@@ -1045,10 +1052,10 @@ private:
         if(noClientWindow) {
             uint32_t glfwExtensionCount = 0;
             const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-            std::cout << "[Veloxr] GLFW required extensions count: " << glfwExtensionCount << std::endl;
+            console.log("[Veloxr] GLFW required extensions count: ", glfwExtensionCount );
             
             for(uint32_t i = 0; i < glfwExtensionCount; i++) {
-                std::cout << "[Veloxr] GLFW extension " << i << ": " << glfwExtensions[i] << std::endl;
+                console.log("[Veloxr] GLFW extension ", i, ": ", glfwExtensions[i]);
                 requiredExtensions.push_back(glfwExtensions[i]);
             }
         }
@@ -1062,9 +1069,9 @@ private:
         createInfo.enabledExtensionCount = static_cast<uint32_t>(requiredExtensions.size());
         createInfo.ppEnabledExtensionNames = requiredExtensions.data();
 
-        std::cout << "\n[Veloxr] Total required extensions: " << requiredExtensions.size() << std::endl;
+        console.log("\n[Veloxr] Total required extensions: ", requiredExtensions.size());
         for(const auto& ext : requiredExtensions) {
-            std::cout << "[Veloxr] Required extension: " << ext << std::endl;
+            console.log("[Veloxr] Required extension: ", ext);
         }
 
         // Set up validation layers if enabled
@@ -1082,19 +1089,19 @@ private:
         // Create the Vulkan instance
         VkResult result = vkCreateInstance(&createInfo, nullptr, &instance);
         if (result != VK_SUCCESS) {
-            std::cerr << "[Veloxr] Failed to create instance with error code: " << result << std::endl;
+            console.fatal("[Veloxr] Failed to create instance with error code: ", result) ;
             if (result == VK_ERROR_INCOMPATIBLE_DRIVER) {
-                std::cerr << "[Veloxr] ERROR: Incompatible driver - Metal might not be available or properly configured" << std::endl;
-                std::cerr << "[Veloxr] Please ensure MoltenVK is properly installed and configured" << std::endl;
-                std::cerr << "[Veloxr] Check that:" << std::endl;
-                std::cerr << "  1. MoltenVK is properly installed via Conan" << std::endl;
-                std::cerr << "  2. The MoltenVK library is in your library path" << std::endl;
-                std::cerr << "  3. The Metal framework is properly linked" << std::endl;
+                console.fatal("[Veloxr] ERROR: Incompatible driver - Metal might not be available or properly configured");
+                console.fatal("[Veloxr] Please ensure MoltenVK is properly installed and configured");
+                console.fatal("[Veloxr] Check that:");
+                console.fatal("  1. MoltenVK is properly installed via Conan");
+                console.fatal("  2. The MoltenVK library is in your library path");
+                console.fatal("  3. The Metal framework is properly linked");
             }
             throw std::runtime_error("failed to create instance!");
         }
 
-        std::cout << "[Veloxr] Created a valid instance!\n";
+        console.log("[Veloxr] Created a valid instance!\n");
     }
 
     // Helper function to get the executable path
@@ -1145,6 +1152,7 @@ inline void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) 
     float currentZoom = camera.getZoomLevel();
     float sensitivity = currentZoom * 0.1f;
     camera.zoomToCenter(yoffset*sensitivity);
+    std::cout << "[Veloxr] Zoom offset: " << currentZoom << '\n';
     //camera.addToZoom(yoffset * sensitivity);
 }
 
@@ -1158,8 +1166,8 @@ inline void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
 
         lastX = xpos;
         lastY = ypos;
-        glm::vec2 diffs{-dx / 1000.0, -dy / 1000.0 };
-        diffs *= app->getCam().getZoomLevel() * 400 * app->deltaMs;
+        glm::vec2 diffs{-dx, -dy};
+        diffs *= app->getCam().getZoomLevel() * 100.0 * app->deltaMs;
         app->getCam().translate(diffs);
         std::cout << "New camera x: " << app->getCam().getPosition().x << std::endl;
         std::cout << "New camera y: " << app->getCam().getPosition().y << std::endl;
@@ -1176,5 +1184,29 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg");
     }
 
+    if (key == GLFW_KEY_A && action == GLFW_PRESS) {
+        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
+        app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/test.png");
+    }
+
+    if (key == GLFW_KEY_S && action == GLFW_PRESS) {
+        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
+        app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/test2.png");
+    }
+
+    if (key == GLFW_KEY_D && action == GLFW_PRESS) {
+        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
+        app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/test3.png");
+    }
+
+    if (key == GLFW_KEY_G && action == GLFW_PRESS) {
+        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
+        app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/56000.jpg");
+    }
+
+    if (key == GLFW_KEY_E && action == GLFW_PRESS) {
+        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
+        app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/fox.jpg");
+    }
 }
 

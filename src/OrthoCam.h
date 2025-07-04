@@ -2,6 +2,7 @@
 #define ORTHOGRAPHIC_CAMERA_H
 
 #include <glm/glm.hpp>
+#include "VLogger.h"
 namespace Veloxr {
 
     class OrthoCam {
@@ -38,7 +39,12 @@ namespace Veloxr {
             // Fit to bounds.
             void fitViewport(float left, float right, float bottom, float top);
 
+            inline void resetDirty() { _dirty = false; }
+            inline bool const getDirty() const { return _dirty; }
+
+
         private:
+            Veloxr::LLogger console{"[Veloxr] [Camera] "};
             void recalcView();
             void recalcProjection();
             glm::mat4 projectionMatrix;
@@ -52,6 +58,7 @@ namespace Veloxr {
             float _top;
             float _nearPlane;
             float _farPlane;
+            bool _dirty {true};
     };
 }
 
