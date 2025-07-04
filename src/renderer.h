@@ -1165,9 +1165,10 @@ inline void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
 
         lastX = xpos;
         lastY = ypos;
-        glm::vec2 diffs{-dx, -dy};
-        diffs *= app->getCam().getZoomLevel() * 100.0 * app->deltaMs;
+        glm::vec2 diffs{-dx / app->getCam().getZoomLevel(), -dy / app->getCam().getZoomLevel()};
+        diffs *= 1000.0 * app->deltaMs;
         app->getCam().translate(diffs);
+        std::cout << "New camera zoom: " << app->getCam().getZoomLevel() << std::endl;
         std::cout << "New camera x: " << app->getCam().getPosition().x << std::endl;
         std::cout << "New camera y: " << app->getCam().getPosition().y << std::endl;
     }
