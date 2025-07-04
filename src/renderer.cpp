@@ -133,19 +133,6 @@ void RendererCore::setupTexturePasses() {
 }
 
 // ------------- texture utilities ------------------------------------
-void RendererCore::addTexture(std::string input_filepath) {
-    console.logc1(__func__);
-    _textureMap[input_filepath] = {};
-    //const auto& [textureImage, textureImageMemory, textureHelper] = createTextureImage(input_filepath);
-
-    //auto imageView = createTextureImageView(textureImage);
-    //auto sampler = createTextureSampler();
-    //_textureMap[input_filepath].textureImage = textureImage;
-    //_textureMap[input_filepath].textureImageMemory = textureImageMemory;
-    //_textureMap[input_filepath].textureImageView = imageView;
-    //_textureMap[input_filepath].textureSampler = sampler;
-    //_textureMap[input_filepath].textureData = textureHelper;
-}
 
 VkSampler RendererCore::createTextureSampler(std::string input_filepath) {
     console.logc1(__func__);
@@ -600,12 +587,13 @@ void RendererCore::createDescriptorSets() {
 }
 
 void RendererCore::createDescriptorPool() {
+    // ASSERT -> WE HAVE TILED OUR TEXTURE
     console.logc1(__func__);
     std::array<VkDescriptorPoolSize, 2> poolSizes{};
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
     poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    poolSizes[1].descriptorCount = static_cast<uint32_t>(_textureMap.size() * MAX_FRAMES_IN_FLIGHT);
 
     VkDescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -644,7 +632,8 @@ void RendererCore::createDescriptorLayout() {
     VkDescriptorSetLayoutBinding samplerLayoutBinding{};
     samplerLayoutBinding.binding = 1;
     samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    samplerLayoutBinding.descriptorCount = 1;
+    console.warn("Texture map size for descriptor layout: ", _textureMap.size());
+    samplerLayoutBinding.descriptorCount = 32;//std::min((decltype(_textureMap.size()))1, _textureMap.size());
     samplerLayoutBinding.pImmutableSamplers = nullptr;
     samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
