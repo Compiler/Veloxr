@@ -1163,8 +1163,8 @@ inline void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
 
         lastX = xpos;
         lastY = ypos;
-        glm::vec2 diffs{-dx / 1000.0, -dy / 1000.0 };
-        diffs *= app->getCam().getZoomLevel() * 400 * app->deltaMs;
+        glm::vec2 diffs{-dx, -dy};
+        diffs *= app->getCam().getZoomLevel() * 100.0 * app->deltaMs;
         app->getCam().translate(diffs);
         std::cout << "New camera x: " << app->getCam().getPosition().x << std::endl;
         std::cout << "New camera y: " << app->getCam().getPosition().y << std::endl;
@@ -1181,5 +1181,24 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg");
     }
 
+    if (key == GLFW_KEY_A && action == GLFW_PRESS) {
+        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
+        app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/test.png");
+    }
+
+    if (key == GLFW_KEY_S && action == GLFW_PRESS) {
+        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
+        app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/test2.png");
+    }
+
+    if (key == GLFW_KEY_D && action == GLFW_PRESS) {
+        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
+        app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/test3.png");
+    }
+
+    if (key == GLFW_KEY_G && action == GLFW_PRESS) {
+        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
+        app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/56000.jpg");
+    }
 }
 
