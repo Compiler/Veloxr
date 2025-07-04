@@ -6,23 +6,27 @@ using namespace Veloxr;
 
 
 void RendererCore::run() {
+    console.logc1(__func__);
     init();
     render();
     destroy();
 }
 
 void RendererCore::spin() {
+    console.logc1(__func__);
     render();
     destroy();
 }
 
 void RendererCore::setWindowDimensions(int width, int height) {
+    console.logc1(__func__);
     _windowWidth = width;
     _windowHeight = height;
     frameBufferResized = true;
 }
 
 void RendererCore::setTextureFilePath(std::string filepath){
+    console.logc1(__func__);
     if(!device) {
         std::cout << "[Veloxr] Updating texture filepath\n";
         _currentFilepath = filepath;
@@ -35,8 +39,9 @@ void RendererCore::setTextureFilePath(std::string filepath){
 }
 
 void RendererCore::setTextureBuffer(Veloxr::VeloxrBuffer&& buffer){
+    console.logc1(__func__);
     if (!device ) {
-        std::cout << "[Veloxr] Updating texture buffer \n";
+        console.log("[Veloxr] Updating texture buffer \n");
         _currentDataBuffer = buffer;
         return;
     }
@@ -48,12 +53,13 @@ void RendererCore::setTextureBuffer(Veloxr::VeloxrBuffer&& buffer){
 
 
 void RendererCore::init(void* windowHandle) {
+    console.logc1(__func__);
     destroy();
     auto now = std::chrono::high_resolution_clock::now();
     auto nowTop = std::chrono::high_resolution_clock::now();
 
     if(!windowHandle) {
-        std::cout << "Providing window, no client window specified\n";
+        console.log("Providing window, no client window specified\n");
         initGlfw();
         noClientWindow = true;
     }
@@ -79,18 +85,19 @@ void RendererCore::init(void* windowHandle) {
     createFramebuffers();
     createUniformBuffers();
     if(!_currentFilepath.empty() || !_currentDataBuffer.data.empty()) {
-        std::cout << "[Veloxr] [Debug] init called and completed. Setting up texture passes from state\n";
+        console.log("[Veloxr] [Debug] init called and completed. Setting up texture passes from state\n");
         setupTexturePasses();
     }
 }
 
 
 void RendererCore::setupTexturePasses() {
+    console.logc1(__func__);
     if(!device) {
-        std::cout << "[Veloxr] [Debug] [Warn] No device instantiated. Returning early. Do not call setupTexturePasses without setting a filepath or buffer.\n";
+        console.log("[Veloxr] [Debug] [Warn] No device instantiated. Returning early. Do not call setupTexturePasses without setting a filepath or buffer.\n");
         return;
     }
-    std::cout << "[Veloxr] [Debug] setting up texture pass.\n";
+    console.log("[Veloxr] [Debug] setting up texture pass.\n");
     createCommandPool();
 
     auto now = std::chrono::high_resolution_clock::now();
@@ -127,6 +134,7 @@ void RendererCore::setupTexturePasses() {
 
 // ------------- texture utilities ------------------------------------
 void RendererCore::addTexture(std::string input_filepath) {
+    console.logc1(__func__);
     _textureMap[input_filepath] = {};
     //const auto& [textureImage, textureImageMemory, textureHelper] = createTextureImage(input_filepath);
 
@@ -140,6 +148,7 @@ void RendererCore::addTexture(std::string input_filepath) {
 }
 
 VkSampler RendererCore::createTextureSampler(std::string input_filepath) {
+    console.logc1(__func__);
 
     VkSampler textureSampler;
     VkSamplerCreateInfo samplerInfo{};
@@ -178,10 +187,12 @@ VkSampler RendererCore::createTextureSampler(std::string input_filepath) {
 }
 
 VkImageView RendererCore::createTextureImageView(VkImage textureImage) {
+    console.logc1(__func__);
     return createImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB);
 }
 
 VkImageView RendererCore::createImageView(VkImage image, VkFormat format) {
+    console.logc1(__func__);
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewInfo.image = image;
@@ -204,6 +215,7 @@ VkImageView RendererCore::createImageView(VkImage image, VkFormat format) {
 // ------------- image-layout / copy helpers --------------------------
 void RendererCore::transitionImageLayout(VkImage image, VkFormat format,
                                      VkImageLayout oldLayout, VkImageLayout newLayout) {
+    console.logc1(__func__);
     VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
     VkImageMemoryBarrier barrier{};
@@ -255,6 +267,7 @@ void RendererCore::transitionImageLayout(VkImage image, VkFormat format,
 
 void RendererCore::copyBufferToImage(VkBuffer buffer, VkImage image,
                                  uint32_t width, uint32_t height) {
+    console.logc1(__func__);
     VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
     VkBufferImageCopy region{};
@@ -288,6 +301,7 @@ void RendererCore::copyBufferToImage(VkBuffer buffer, VkImage image,
 //
 
 std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::createTiledTexture(Veloxr::VeloxrBuffer&& buffer) {
+    console.logc1(__func__);
     std::unordered_map<std::string, VkVirtualTexture>  result;
     //_cam.init(0, _windowWidth, 0, _windowHeight, -1, 1);
     Veloxr::TextureTiling tiler{};
@@ -368,6 +382,7 @@ std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::cr
 }
 
 std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::createTiledTexture(std::string input_filepath) {
+    console.logc1(__func__);
     std::unordered_map<std::string, VkVirtualTexture>  result;
     Veloxr::OIIOTexture myTexture{input_filepath};
     Veloxr::TextureTiling tiler{};
@@ -456,6 +471,7 @@ std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::cr
 
 // ------------- one-shot command buffers -----------------------------
 VkCommandBuffer RendererCore::beginSingleTimeCommands() {
+    console.logc1(__func__);
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -475,6 +491,7 @@ VkCommandBuffer RendererCore::beginSingleTimeCommands() {
 }
 
 void RendererCore::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
+    console.logc1(__func__);
     vkEndCommandBuffer(commandBuffer);
 
     VkSubmitInfo submitInfo{};
@@ -493,6 +510,7 @@ void RendererCore::createImage(uint32_t width, uint32_t height, VkFormat format,
                            VkImageTiling tiling, VkImageUsageFlags usage,
                            VkMemoryPropertyFlags properties,
                            VkImage& image, VkDeviceMemory& imageMemory) {
+    console.logc1(__func__);
     VkImageCreateInfo imageInfo{};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -528,6 +546,7 @@ void RendererCore::createImage(uint32_t width, uint32_t height, VkFormat format,
 }
 
 void RendererCore::createDescriptorSets() {
+    console.logc1(__func__);
 
     std::cout << "[Veloxr] Creating descriptor sets for " << MAX_FRAMES_IN_FLIGHT  << " frames \n";
     std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
@@ -589,6 +608,7 @@ void RendererCore::createDescriptorSets() {
 }
 
 void RendererCore::createDescriptorPool() {
+    console.logc1(__func__);
     std::array<VkDescriptorPoolSize, 2> poolSizes{};
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
@@ -607,6 +627,7 @@ void RendererCore::createDescriptorPool() {
 }
 
 void RendererCore::createUniformBuffers() {
+    console.logc1(__func__);
     VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
     uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
@@ -621,6 +642,7 @@ void RendererCore::createUniformBuffers() {
 }
 
 void RendererCore::createDescriptorLayout() {
+    console.logc1(__func__);
     VkDescriptorSetLayoutBinding uboLayoutBinding{};
     uboLayoutBinding.binding = 0;
     uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -648,6 +670,7 @@ void RendererCore::createDescriptorLayout() {
 void RendererCore::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
                             VkMemoryPropertyFlags properties, VkBuffer& buffer,
                             VkDeviceMemory& bufferMemory) {
+    console.logc1(__func__);
     VkBufferCreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = size;
@@ -674,6 +697,7 @@ void RendererCore::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
 }
 
 void RendererCore::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
+    console.logc1(__func__);
       VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
       VkBufferCopy copyRegion{};
@@ -684,6 +708,7 @@ void RendererCore::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSi
 }
 
 uint32_t RendererCore::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
+    console.logc1(__func__);
     VkPhysicalDeviceMemoryProperties memProperties;
     vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
     for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
@@ -696,6 +721,7 @@ uint32_t RendererCore::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags
 }
 
 void RendererCore::createVertexBuffer() {
+    console.logc1(__func__);
     std::cout << "[Veloxr] Creating vertexBuffer\n";
     VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
@@ -717,6 +743,7 @@ void RendererCore::createVertexBuffer() {
 }
 
 void RendererCore::recreateSwapChain() {
+    console.logc1(__func__);
     // TODO: This is client only
     int width = 0, height = 0;
     if(noClientWindow) {
@@ -740,6 +767,7 @@ void RendererCore::recreateSwapChain() {
 }
 
 void RendererCore::cleanupSwapChain() {
+    console.logc1(__func__);
     if(device) {
         std::cout << "[Veloxr] [Debug] Destroying frame buffers\n";
         for (size_t i = 0; i < swapChainFramebuffers.size(); i++) {
@@ -757,6 +785,7 @@ void RendererCore::cleanupSwapChain() {
 }
 
 void RendererCore::createSyncObjects() {
+    console.logc1(__func__);
     imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
@@ -777,7 +806,13 @@ void RendererCore::createSyncObjects() {
     }
 }
 
+// TODO: Just using a dirty bit on camera works for a single image_view. Not all of them. So we need the dirty bit for all imageViews. (triple buffer)
 void RendererCore::updateUniformBuffers(uint32_t currentImage) {
+    static std::unordered_map<uint32_t, bool> _dirtyMap;
+    auto curDirtyStatus = _cam.getDirty();
+    
+    _cam.resetDirty();
+    console.logc1(__func__);
     UniformBufferObject ubo{};
     float time = 1;
     ubo.view = _cam.getViewMatrix();
@@ -789,6 +824,7 @@ void RendererCore::updateUniformBuffers(uint32_t currentImage) {
 }
 
 void RendererCore::destroyTextureData() {
+    console.logc1(__func__);
     if( device && !uniformBuffers.empty() && !uniformBuffersMemory.empty()) {
         std::cerr << "[Veloxr] [Debug] Destroying uniform data\n";
         for (auto &[name, data] : _textureMap) data.destroy(device);
@@ -800,6 +836,7 @@ void RendererCore::destroyTextureData() {
 }
 
 void RendererCore::destroy() {
+    console.logc1(__func__);
     if(!device) return;
     std::cout << "[Veloxr] [Debug] Destroying!" << device << "\n";
     cleanupSwapChain();

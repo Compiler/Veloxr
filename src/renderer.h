@@ -19,6 +19,7 @@
 #include "OrthographicCamera.h"
 #include "OrthoCam.h"
 #include "DataUtils.h"
+#include "Vlogger.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -240,6 +241,7 @@ private: // No client -- internal
     int _windowWidth, _windowHeight;
     std::string _currentFilepath;
     Veloxr::VeloxrBuffer _currentDataBuffer;
+    Veloxr::LLogger console{"[Veloxr][Renderer] "};
     // For friend classes / drivers
 
 

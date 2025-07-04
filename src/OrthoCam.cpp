@@ -78,6 +78,7 @@ void OrthoCam::setZoomLevel(float zoomLevel) {
         zoomLevel = 0.00001f;
     }
     _zoomLevel = zoomLevel;
+    _dirty = true;
     recalcProjection();
 }
 
@@ -152,6 +153,7 @@ void OrthoCam::recalcView() {
     glm::mat4 transform = glm::translate(glm::mat4(1.0f), _position)
         * glm::rotate(glm::mat4(1.0f), glm::radians(rotation), glm::vec3(0, 0, 1));
     viewMatrix = glm::inverse(transform);
+    _dirty = true;
     std::cout << "[CAMERA] Position: " << _position.x << ", " << _position.y << std::endl;
 }
 
@@ -161,5 +163,6 @@ void OrthoCam::recalcProjection() {
     float b = _bottom / _zoomLevel;
     float t = _top / _zoomLevel;
     projectionMatrix = glm::ortho(l, r, b, t, _nearPlane, _farPlane);
+    _dirty = true;
 }
 
