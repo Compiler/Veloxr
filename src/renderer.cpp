@@ -84,6 +84,7 @@ void RendererCore::init(void* windowHandle) {
     createGraphicsPipeline();
     createFramebuffers();
     createUniformBuffers();
+    createCommandPool();
     if(!_currentFilepath.empty() || !_currentDataBuffer.data.empty()) {
         console.log("[Veloxr] [Debug] init called and completed. Setting up texture passes from state\n");
         setupTexturePasses();
@@ -98,7 +99,6 @@ void RendererCore::setupTexturePasses() {
         return;
     }
     console.log("[Veloxr] [Debug] setting up texture pass.\n");
-    createCommandPool();
 
     auto now = std::chrono::high_resolution_clock::now();
     auto nowTop = std::chrono::high_resolution_clock::now();

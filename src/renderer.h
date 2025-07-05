@@ -135,10 +135,10 @@ inline VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugU
 }
 
 
-inline const auto LEFT = -0.9f;
-inline const auto RIGHT = 0.9f;
-inline const auto TOP = -0.9f;
-inline const auto BOT = 0.9f;
+inline const auto LEFT = -1.0f;
+inline const auto RIGHT = 1.0f;
+inline const auto TOP = -1.0f;
+inline const auto BOT = 1.0f;
 // TODO:
 //      - Alpha layer transparency
 //          - Where there are no colors, but there is an alpha layer, fill with alpha checkerboard
@@ -891,7 +891,7 @@ private:
         using clock = std::chrono::steady_clock;
         auto timer = clock::now();
         int frames = 0;
-        constexpr auto frameBudget = std::chrono::duration<float>(1.f / 60.f);
+        constexpr auto frameBudget = std::chrono::duration<float>(1.f / 144.0f);
         
         while (!glfwWindowShouldClose(window)) {
             auto now = clock::now();

@@ -54,6 +54,7 @@ elseif (WIN32)
         src/Vertex.h 
         src/VLogger.h 
         src/renderer.h src/renderer.cpp
+        src/RenderEntity.h src/RenderEntity.cpp
         src/device.h src/device.cpp 
         src/OrthographicCamera.h src/OrthographicCamera.cpp
         src/OrthoCam.h src/OrthoCam.cpp
