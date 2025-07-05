@@ -358,7 +358,11 @@ std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::cr
         offsetY = -deltaY / 2.0f;
     }
     _cam.init(0, maxX - minX, 0, maxY - minY, -1, 1);
-    _cam.setPosition({offsetX, offsetY});
+    //_cam.setPosition({offsetX, offsetY});
+    float firstZoom =  deltaX / _cam.getWidth(); 
+    float secondZoom = deltaY / _cam.getHeight(); 
+    console.fatal("Zoom changes: ", firstZoom, secondZoom);
+    //_cam.setZoomLevel(std::max(firstZoom, secondZoom));
     _cam.setProjection(0, _windowWidth, 0, _windowHeight, -1, 1);
 
     return {};
@@ -442,7 +446,10 @@ std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::cr
         offsetY = -deltaY / 2.0f;
     }
     _cam.init(0, maxX - minX, 0, maxY - minY, -1, 1);
-    _cam.setPosition({offsetX, offsetY});
+    //_cam.setPosition({offsetX, offsetY});
+    float factor = std::min(_windowWidth, _windowHeight);
+    console.fatal("Zoom changes: ", " - ",  " - ", _cam.getWidth(), " - ", _cam.getHeight());
+    _cam.setZoomLevel(factor / (float)(std::min(deltaX, deltaY)));
     _cam.setProjection(0, _windowWidth, 0, _windowHeight, -1, 1);
 
     return {};

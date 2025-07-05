@@ -232,6 +232,8 @@ public:
     // Make drawFrame accessible to external code
     void drawFrame();
 
+    //glm::vec2 getMainEntityPosition()  { }
+
 private: // No client -- internal
 
     GLFWwindow* window;
@@ -1215,6 +1217,11 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     if (key == GLFW_KEY_L && action == GLFW_PRESS) {
         auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
         app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/landscape.tif");
+    }
+    
+    if (key == GLFW_KEY_1 && action == GLFW_PRESS) {
+        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
+        //app->getCam().zoomCentered();
     }
 }
 
