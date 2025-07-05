@@ -737,6 +737,7 @@ void RendererCore::recreateSwapChain() {
         _windowHeight = height;
     }
     vkDeviceWaitIdle(device);
+    //TODO: Recalculate what our zoom / focus is
     _cam.setProjection(0, _windowWidth, 0, _windowHeight, -1, 1);
 
     console.log("[Veloxr] [Debug] Destroying swap chain for recreating swap chain\n");

@@ -888,26 +888,30 @@ private:
 
     void render() {
 
-        auto timer = std::chrono::high_resolution_clock::now();
+        using clock = std::chrono::steady_clock;
+        auto timer = clock::now();
         int frames = 0;
+        constexpr auto frameBudget = std::chrono::duration<float>(1.f / 60.f);
         
         while (!glfwWindowShouldClose(window)) {
-            auto now = std::chrono::high_resolution_clock::now();
-            glfwPollEvents();
+            auto now = clock::now();
+            if(noClientWindow) glfwPollEvents();
             drawFrame();
 
-            auto timeElapsed = std::chrono::high_resolution_clock::now() - now;
+            auto workTime = clock::now() - now;
+            deltaMs = std::chrono::duration<float>(workTime).count();
 
-            auto timerElapsed = std::chrono::high_resolution_clock::now() - timer;
-            deltaMs = std::chrono::duration<float>(timeElapsed).count();
+            auto timerElapsed = clock::now() - timer;
             auto elapsedPerSec = std::chrono::duration_cast<std::chrono::milliseconds>(timerElapsed).count();
             if(elapsedPerSec > 1000) {
-                
-                console.log("[Veloxr]", "Time elapsed single frame: ", std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count(), "ms\t", std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count(), "microseconds.\n");
-                timer = std::chrono::high_resolution_clock::now();
+                console.log("[Veloxr]", "Time elapsed single frame: ", std::chrono::duration_cast<std::chrono::milliseconds>(workTime).count(), "ms\t", std::chrono::duration_cast<std::chrono::microseconds>(workTime).count(), "microseconds.\n");
+                timer = clock::now();
                 console.log("[Veloxr]", frames, " FPS, ", 1000.0f/frames, " ms.\n");
                 frames = 0;
             }
+
+            if (workTime < frameBudget)
+                std::this_thread::sleep_for(frameBudget - workTime);
             frames++;
         }
 
