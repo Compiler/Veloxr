@@ -17,9 +17,8 @@
 
 // Use direct paths to headers instead of angle bracket includes
 #include "OrthographicCamera.h"
-#include "OrthoCam.h"
 #include "DataUtils.h"
-#include "Vlogger.h"
+#include "VLogger.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -209,7 +208,7 @@ public:
             void zoomCentered(const glm::vec2& anchorPoint, float zoomDelta);
             void fitViewport(float left, float right, float bottom, float top);
     */
-    Veloxr::OrthoCam& getCam() {
+    Veloxr::OrthographicCamera& getCam() {
         return _cam;
     }
 
@@ -256,7 +255,7 @@ private: // No client -- internal
     bool enableValidationLayers = false;
 #endif
 
-    Veloxr::OrthoCam _cam;
+    Veloxr::OrthographicCamera _cam;
 
 
      std::vector<Veloxr::Vertex> vertices = {
@@ -1211,6 +1210,11 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     if (key == GLFW_KEY_E && action == GLFW_PRESS) {
         auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
         app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/fox.jpg");
+    }
+
+    if (key == GLFW_KEY_L && action == GLFW_PRESS) {
+        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
+        app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/landscape.tif");
     }
 }
 
