@@ -59,6 +59,7 @@ TiledResult TextureTiling::tile8(OIIOTexture &texture, uint32_t deviceMaxDimensi
         float top    = 0.0f;
         float bottom = float(orientedH);
         int idx      = 0;
+        one.samplerIndex = idx;
 
         std::vector<Vertex> singleTileVerts = {
             { { left,  top,    0.0f, 0.0f }, { 0.0f, 0.0f, float(idx), 0.0f }, idx },
@@ -231,6 +232,7 @@ TiledResult TextureTiling::tile8(OIIOTexture &texture, uint32_t deviceMaxDimensi
                 data.height    = thisTileH;
                 data.channels  = forcedChannels;
                 data.pixelData = std::move(tileData);
+                data.samplerIndex = idx;
                 localTiles[idx] = std::move(data);
 
                 float tileLeft   = (float(x0));

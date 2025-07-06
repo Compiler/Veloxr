@@ -377,6 +377,7 @@ std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::cr
         int texWidth    = tileData.width;
         int texHeight   = tileData.height;
         int texChannels = 4;//myTexture.getNumChannels();
+        int samplerIndex = tileData.samplerIndex;
 
         console.log("[Veloxr]", "HELP MY CHANNELS ARE ", myTexture.getNumChannels());
         VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth) * 
@@ -416,7 +417,7 @@ std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::cr
         auto sampler = createTextureSampler();
         tileTexture.textureImageView = imageView;
         tileTexture.textureSampler = sampler;
-        tileTexture.samplerIndex = indx;
+        tileTexture.samplerIndex = samplerIndex;
 
         _textureMap[input_filepath + "_tile_" + std::to_string(indx)] = tileTexture;
     }

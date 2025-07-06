@@ -11,6 +11,7 @@ namespace Veloxr {
         uint32_t width, height, channels;
         std::vector<unsigned char> pixelData;
         uint32_t rotateIndex=0;
+        uint32_t samplerIndex{};
     };
 
     struct TiledResult {
