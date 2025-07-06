@@ -1170,7 +1170,7 @@ inline void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
         lastX = xpos;
         lastY = ypos;
         glm::vec2 diffs{-dx / app->getCamera().getZoomLevel(), -dy / app->getCamera().getZoomLevel()};
-        diffs *= 100.0 * app->deltaMs;
+        diffs *= 1000.0 * app->deltaMs;
         app->getCamera().translate(diffs);
         // These will force the FPS to be 7fps on a 3090, there was nothing wrong with my code~!
         /*
