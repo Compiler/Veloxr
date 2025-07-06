@@ -25,9 +25,18 @@ namespace Veloxr {
             const glm::mat4& getViewMatrix() const;
             glm::mat4 getViewProjectionMatrix() const;
             glm::vec3 getPosition() const;
-            glm::vec4 getROI() const { return {_left, _right, _top, _bottom}; }
-            float getWidth() const { return _right - _left; }
-            float getHeight() const { return _top - _bottom; }
+
+            inline glm::vec4 getROI() const {
+                return {
+                    _left   / _zoomLevel,
+                    _right  / _zoomLevel,
+                    _top    / _zoomLevel,
+                    _bottom / _zoomLevel
+                };
+            }
+
+            float getWidth() const { return (_right - _left) / _zoomLevel; }
+            float getHeight() const { return (_top - _bottom) / _zoomLevel; }
 
             // Set the zoom level, relative to world coordinates.
             void setZoomLevel(float zoomLevel);

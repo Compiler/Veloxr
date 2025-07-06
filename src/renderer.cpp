@@ -203,7 +203,7 @@ VkImageView RendererCore::createImageView(VkImage image, VkFormat format) {
 void RendererCore::transitionImageLayout(VkImage image, VkFormat format,
                                      VkImageLayout oldLayout, VkImageLayout newLayout) {
     console.logc1(__func__);
-    VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+    VkCommandBuffer commandBuffer = commandUtils.beginSingleTimeCommands(device, commandPool);
 
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -249,13 +249,13 @@ void RendererCore::transitionImageLayout(VkImage image, VkFormat format,
             1, &barrier
             );
 
-    endSingleTimeCommands(commandBuffer);
+    commandUtils.endSingleTimeCommands(device, commandBuffer, commandPool, graphicsQueue);
 }
 
 void RendererCore::copyBufferToImage(VkBuffer buffer, VkImage image,
                                  uint32_t width, uint32_t height) {
     console.logc1(__func__);
-    VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+    VkCommandBuffer commandBuffer = commandUtils.beginSingleTimeCommands(device, commandPool);
 
     VkBufferImageCopy region{};
     region.bufferOffset = 0;
@@ -281,7 +281,7 @@ void RendererCore::copyBufferToImage(VkBuffer buffer, VkImage image,
             1,
             &region
             );
-    endSingleTimeCommands(commandBuffer);
+    commandUtils.endSingleTimeCommands(device, commandBuffer, commandPool, graphicsQueue);
 }
 
 // ------------- tiling / upload path ---------------------------------
@@ -438,7 +438,6 @@ std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::cr
         maxY = std::max(maxY, v.pos.y);
     }
     console.log("[Veloxr]", "Final geometry bounding box: X in [", minX, ", ", maxX, "], Y in [", minY, ", ", maxY, "]");
-    //_cam.setPosition({(maxX - minX) / 2.0f, (maxY - minY) / 2.0f});
     auto deltaX = std::abs(maxX - minX);
     auto deltaY = std::abs(maxY - minY);
     float offsetX = 0.0f, offsetY = 0.0f;
@@ -446,49 +445,12 @@ std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::cr
         offsetY = -deltaY / 2.0f;
     }
     _cam.init(0, maxX - minX, 0, maxY - minY, -1, 1);
-    //_cam.setPosition({offsetX, offsetY});
     float factor = std::min(_windowWidth, _windowHeight);
     console.fatal("Zoom changes: ", " - ",  " - ", _cam.getWidth(), " - ", _cam.getHeight());
-    _cam.setZoomLevel(factor / (float)(std::min(deltaX, deltaY)));
+    //_cam.setZoomLevel(factor / (float)(std::min(deltaX, deltaY)));
     _cam.setProjection(0, _windowWidth, 0, _windowHeight, -1, 1);
 
     return {};
-}
-
-// ------------- one-shot command buffers -----------------------------
-VkCommandBuffer RendererCore::beginSingleTimeCommands() {
-    console.logc1(__func__);
-    VkCommandBufferAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool = commandPool;
-    allocInfo.commandBufferCount = 1;
-
-    VkCommandBuffer commandBuffer;
-    vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
-
-    VkCommandBufferBeginInfo beginInfo{};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-    vkBeginCommandBuffer(commandBuffer, &beginInfo);
-
-    return commandBuffer;
-}
-
-void RendererCore::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
-    console.logc1(__func__);
-    vkEndCommandBuffer(commandBuffer);
-
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffer;
-
-    vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(graphicsQueue);
-
-    vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
 }
 
 // ------------- resource creation helpers ---------------------------
@@ -686,13 +648,13 @@ void RendererCore::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
 
 void RendererCore::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
     console.logc1(__func__);
-      VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+      VkCommandBuffer commandBuffer = commandUtils.beginSingleTimeCommands(device, commandPool);
 
       VkBufferCopy copyRegion{};
       copyRegion.size = size;
       vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
-      endSingleTimeCommands(commandBuffer);
+      commandUtils.endSingleTimeCommands(device, commandBuffer, commandPool, graphicsQueue);
 }
 
 uint32_t RendererCore::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {

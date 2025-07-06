@@ -14,6 +14,7 @@
 #include <utility>
 #include <vulkan/vulkan_core.h>
 #include <filesystem>
+#include "CommandUtils.h"
 
 // Use direct paths to headers instead of angle bracket includes
 #include "OrthographicCamera.h"
@@ -208,7 +209,7 @@ public:
             void zoomCentered(const glm::vec2& anchorPoint, float zoomDelta);
             void fitViewport(float left, float right, float bottom, float top);
     */
-    Veloxr::OrthographicCamera& getCam() {
+    Veloxr::OrthographicCamera& getCamera() {
         return _cam;
     }
 
@@ -243,6 +244,7 @@ private: // No client -- internal
     std::string _currentFilepath;
     Veloxr::VeloxrBuffer _currentDataBuffer;
     Veloxr::LLogger console{"[Veloxr][Renderer] "};
+    Veloxr::CommandUtils commandUtils{};
     // For friend classes / drivers
 
 
@@ -410,10 +412,6 @@ private:
                            uint32_t width, uint32_t height);
     std::unordered_map<std::string, VkVirtualTexture> createTiledTexture(std::string input_filepath = "");
     std::unordered_map<std::string, VkVirtualTexture> createTiledTexture(Veloxr::VeloxrBuffer&& buffer);
-
-    // one-shot command buffers ----------------------------------------
-    VkCommandBuffer beginSingleTimeCommands();
-    void            endSingleTimeCommands(VkCommandBuffer commandBuffer);
 
     // resource creation helpers ---------------------------------------
     void createImage(uint32_t width, uint32_t height, VkFormat format,
@@ -1152,7 +1150,7 @@ private:
 inline void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
     //printf("Scrolled: x = %.2f, y = %.2f\n", xoffset, yoffset);
     auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
-    auto& camera = app->getCam();
+    auto& camera = app->getCamera();
     float currentZoom = camera.getZoomLevel();
     float sensitivity = currentZoom * 0.1f;
     camera.zoomToCenter(yoffset*sensitivity);
@@ -1170,12 +1168,15 @@ inline void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
 
         lastX = xpos;
         lastY = ypos;
-        glm::vec2 diffs{-dx / app->getCam().getZoomLevel(), -dy / app->getCam().getZoomLevel()};
+        glm::vec2 diffs{-dx / app->getCamera().getZoomLevel(), -dy / app->getCamera().getZoomLevel()};
         diffs *= 1000.0 * app->deltaMs;
-        app->getCam().translate(diffs);
-        std::cout << "New camera zoom: " << app->getCam().getZoomLevel() << std::endl;
-        std::cout << "New camera x: " << app->getCam().getPosition().x << std::endl;
-        std::cout << "New camera y: " << app->getCam().getPosition().y << std::endl;
+        app->getCamera().translate(diffs);
+        std::cout << "New camera diff to be applied: " << diffs.x << " - " << diffs.y << std::endl;
+        std::cout << "New camera roi: " << app->getCamera().getROI().x << ", " << app->getCamera().getROI().y << ", " << app->getCamera().getROI().z << ", " << app->getCamera().getROI().w << std::endl;
+        std::cout << "New camera dims: " << app->getCamera().getWidth() << ", " << app->getCamera().getHeight() << std::endl;
+        std::cout << "New camera zoom: " << app->getCamera().getZoomLevel() << std::endl;
+        std::cout << "New camera x: " << app->getCamera().getPosition().x << std::endl;
+        std::cout << "New camera y: " << app->getCamera().getPosition().y << std::endl;
     }
 }
 
@@ -1221,7 +1222,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     
     if (key == GLFW_KEY_1 && action == GLFW_PRESS) {
         auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
-        //app->getCam().zoomCentered();
+        //app->getCamera().zoomCentered();
     }
 }
 
