@@ -42,8 +42,9 @@ if (APPLE)
         src/VLogger.h 
         src/renderer.h src/renderer.cpp
         src/device.h src/device.cpp 
+        src/CommandUtils.h src/CommandUtils.cpp 
+        src/RenderEntity.h src/RenderEntity.cpp
         src/OrthographicCamera.h src/OrthographicCamera.cpp
-        src/OrthoCam.h src/OrthoCam.cpp
         src/texture.h src/texture.cpp 
         src/TextureTiling.h src/TextureTiling.cpp
         src/MetalSurfaceHelper.h src/MetalSurfaceHelper.mm
@@ -54,9 +55,10 @@ elseif (WIN32)
         src/Vertex.h 
         src/VLogger.h 
         src/renderer.h src/renderer.cpp
+        src/CommandUtils.h src/CommandUtils.cpp 
+        src/RenderEntity.h src/RenderEntity.cpp
         src/device.h src/device.cpp 
         src/OrthographicCamera.h src/OrthographicCamera.cpp
-        src/OrthoCam.h src/OrthoCam.cpp
         src/texture.h src/texture.cpp 
         src/TextureTiling.h src/TextureTiling.cpp
     )

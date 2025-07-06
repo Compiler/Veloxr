@@ -15,8 +15,8 @@ void main() {
     //outColor = 0.5 * texture(texSamplers[0], fragTexCoord.xy) + 0.5 * texture(texSamplers[1], fragTexCoord.xy);
 
     return ;
-     //Debug code
-     float edgeThreshold = 0.0005;
+    //Debug code
+    float edgeThreshold = 0.005;
 
     bool nearLeft   = (fragTexCoord.x <= edgeThreshold);
     bool nearRight  = (fragTexCoord.x >= 1.0 - edgeThreshold);

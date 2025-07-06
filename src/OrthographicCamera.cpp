@@ -1,68 +1,76 @@
+
 #include "OrthographicCamera.h"
 #include <glm/gtc/matrix_transform.hpp>
-#include <algorithm>
 #include <iostream>
 
-namespace Veloxr  {
+using namespace Veloxr;
 
-    OrthographicCamera::OrthographicCamera()
-  : _texWidth(1.0f), _texHeight(1.0f),
-    _windowWidth(1.0f), _windowHeight(1.0f),
-    _near(-1.0f), _far(1.0f),
-    _zoomLevel(1.0f),
-    _position(0.0f),
-    _projectionMatrix(1.0f),
-    _viewMatrix(1.0f),
-    _viewProjectionMatrix(1.0f) {
-    recalculateProjection();
-    recalculateView();
+OrthographicCamera::OrthographicCamera(float left, float right, float bottom, float top, float nearPlane, float farPlane)
+    : _position(0.0f, 0.0f, 0.0f), rotation(0.0f), _zoomLevel(1.0f),
+      _left(left), _right(right), _bottom(bottom), _top(top), _nearPlane(nearPlane), _farPlane(farPlane) {
+    recalcProjection();
+    recalcView();
 }
 
-OrthographicCamera::OrthographicCamera(float texWidth, float texHeight,
-                                       float windowWidth, float windowHeight,
-                                       float nearPlane, float farPlane,
-                                       float zoomLevel)
-  : _texWidth(texWidth), _texHeight(texHeight),
-    _windowWidth(windowWidth), _windowHeight(windowHeight),
-    _near(nearPlane), _far(farPlane),
-    _zoomLevel(zoomLevel),
-    _position(0.0f),
-    _projectionMatrix(1.0f),
-    _viewMatrix(1.0f),
-    _viewProjectionMatrix(1.0f) {
-    recalculateProjection();
-    recalculateView();
+void OrthographicCamera::init(float left, float right, float bottom, float top, float nearPlane, float farPlane) {
+    _left = left;
+    _right = right;
+    _bottom = bottom;
+    _top = top;
+    _nearPlane = nearPlane;
+    _farPlane = farPlane;
+    _position = glm::vec3(0.0f);
+    rotation = 0.0f;
+    _zoomLevel = 1.0f;
+    recalcProjection();
+    recalcView();
 }
 
-void OrthographicCamera::init(float texWidth, float texHeight,
-                              float windowWidth, float windowHeight,
-                              float nearPlane, float farPlane,
-                              float zoomLevel) {
-    _texWidth = texWidth;
-    _texHeight = texHeight;
-    _windowWidth = windowWidth;
-    _windowHeight = windowHeight;
-    _near = nearPlane;
-    _far = farPlane;
-    _zoomLevel = zoomLevel;
-    _position = glm::vec2(0.0f);
-    _projectionMatrix = glm::mat4(1.0f);
-    _viewMatrix = glm::mat4(1.0f);
-    _viewProjectionMatrix = glm::mat4(1.0f);
-    recalculateProjection();
-    recalculateView();
+void OrthographicCamera::setPosition(const glm::vec3& pos) {
+    _position = pos;
+    recalcView();
 }
 
-void OrthographicCamera::setTextureSize(float texWidth, float texHeight) {
-    _texWidth = texWidth;
-    _texHeight = texHeight;
-    recalculateProjection();
+void OrthographicCamera::setPosition(const glm::vec2& pos) {
+    _position = glm::vec3(pos.x, pos.y, _position.z);
+    recalcView();
 }
 
-void OrthographicCamera::setWindowSize(float windowWidth, float windowHeight) {
-    _windowWidth = windowWidth;
-    _windowHeight = windowHeight;
-    recalculateProjection();
+void OrthographicCamera::translate(const glm::vec2& delta) {
+    _position.x += delta.x;
+    _position.y += delta.y;
+    recalcView();
+}
+
+void OrthographicCamera::setRotation(float rot) {
+    rotation = rot;
+    recalcView();
+}
+
+void OrthographicCamera::setProjection(float left, float right, float bottom, float top, float nearPlane, float farPlane) {
+    _left = left;
+    _right = right;
+    _bottom = bottom;
+    _top = top;
+    _nearPlane = nearPlane;
+    _farPlane = farPlane;
+    recalcProjection();
+}
+
+const glm::mat4& OrthographicCamera::getProjectionMatrix() const {
+    return projectionMatrix;
+}
+
+glm::vec3 OrthographicCamera::getPosition() const {
+    return _position;
+}
+
+const glm::mat4& OrthographicCamera::getViewMatrix() const {
+    return viewMatrix;
+}
+
+glm::mat4 OrthographicCamera::getViewProjectionMatrix() const {
+    return projectionMatrix * viewMatrix;
 }
 
 void OrthographicCamera::setZoomLevel(float zoomLevel) {
@@ -70,82 +78,91 @@ void OrthographicCamera::setZoomLevel(float zoomLevel) {
         zoomLevel = 0.00001f;
     }
     _zoomLevel = zoomLevel;
-    recalculateProjection();
+    _dirty = true;
+    recalcProjection();
 }
 
 void OrthographicCamera::addToZoom(float delta) {
     setZoomLevel(_zoomLevel + delta);
 }
 
-void OrthographicCamera::setPosition(const glm::vec2& pos) {
-    _position = pos;
-    recalculateView();
+void OrthographicCamera::zoomToCenter(float zoomDelta) {
+    // NDC center
+    glm::vec4 centerClip = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+    // clip -> world
+    glm::mat4 invVP = glm::inverse(getViewProjectionMatrix());
+    glm::vec4 centerWorld = invVP * centerClip;
+
+    // perspective divide 
+    centerWorld /= centerWorld.w;
+
+    zoomCentered(glm::vec2(centerWorld.x, centerWorld.y), zoomDelta);
 }
 
-void OrthographicCamera::translate(const glm::vec2& delta) {
-    _position += delta;
-    recalculateView();
-}
-
-void OrthographicCamera::recalculateProjection() {
-    if (_windowWidth <= 0.0f) _windowWidth = 1.0f;
-    if (_windowHeight <= 0.0f) _windowHeight = 1.0f;
-    float texAspect = _texWidth / _texHeight;
-    float windowAspect = _windowWidth / _windowHeight;
-    float left, right, bottom, top;
-    if (texAspect > windowAspect) {
-        float halfW = (_texWidth * 0.5f) / _zoomLevel;
-        float halfH = halfW / texAspect;
-        left = -halfW;
-        right = halfW;
-        bottom = -halfH;
-        top = halfH;
-    } else {
-        float halfH = (_texHeight * 0.5f) / _zoomLevel;
-        float halfW = halfH * texAspect;
-        left = -halfW;
-        right = halfW;
-        bottom = -halfH;
-        top = halfH;
+void OrthographicCamera::zoomCentered(const glm::vec2& anchorPoint, float zoomDelta) {
+    float oldZoom = _zoomLevel;
+    float newZoom = oldZoom + zoomDelta;
+    if (newZoom < 0.00001f) {
+        newZoom = 0.00001f;  
     }
-    _projectionMatrix = glm::ortho(left, right, bottom, top, _near, _far);
-    _viewProjectionMatrix = _projectionMatrix * _viewMatrix;
-    std::cout << "[OrthographicCamera] texW=" << _texWidth
-              << " texH=" << _texHeight
-              << " windowW=" << _windowWidth
-              << " windowH=" << _windowHeight
-              << " zoom=" << _zoomLevel
-              << " => left=" << left
-              << " right=" << right
-              << " bottom=" << bottom
-              << " top=" << top << "\n";
+
+    glm::mat4 oldVP = getViewProjectionMatrix();
+
+    glm::vec4 oldClipPos = oldVP * glm::vec4(anchorPoint, 0.0f, 1.0f);
+
+    setZoomLevel(newZoom);
+
+    glm::mat4 newVP = getViewProjectionMatrix();
+    glm::mat4 invNewVP = glm::inverse(newVP);
+
+    glm::vec4 newWorldPos = invNewVP * oldClipPos;
+    newWorldPos /= newWorldPos.w;
+
+    glm::vec3 diff = glm::vec3(anchorPoint, 0.0f) - glm::vec3(newWorldPos);
+
+    setPosition(_position + diff);
 }
 
-void OrthographicCamera::recalculateView() {
-    glm::mat4 transform = glm::translate(glm::mat4(1.0f), glm::vec3(-_position, 0.0f));
-    _viewMatrix = transform;
-    _viewProjectionMatrix = _projectionMatrix * _viewMatrix;
+// Fit a viewport, ie a texture. Only do the math on zoom to maintain AR of camera.
+void OrthographicCamera::fitViewport(float left, float right, float bottom, float top) {
+    //if(left > right || top > bottom) return;
+    float boxWidth  = right - left;
+    float boxHeight = top - bottom;
+    float camWidth  = _right - _left;
+    float camHeight = _top - _bottom;
+
+    float neededZoomW = camWidth  / boxWidth;
+    float neededZoomH = camHeight / boxHeight;
+    // Will maintain portrai / landscape
+    float newZoom = glm::min(neededZoomW, neededZoomH);
+
+    if (boxWidth <= 0.0f || boxHeight <= 0.0f) {
+        return;
+    }
+    if (newZoom < 0.00001f) {
+        newZoom = 0.00001f; 
+    }
+
+    setZoomLevel(newZoom);
 }
 
-const glm::mat4& OrthographicCamera::getProjectionMatrix() const {
-    return _projectionMatrix;
+
+
+void OrthographicCamera::recalcView() {
+    glm::mat4 transform = glm::translate(glm::mat4(1.0f), _position)
+        * glm::rotate(glm::mat4(1.0f), glm::radians(rotation), glm::vec3(0, 0, 1));
+    viewMatrix = glm::inverse(transform);
+    _dirty = true;
+    console.log("[CAMERA] Position: ", _position.x, ", ", _position.y);
 }
 
-const glm::mat4& OrthographicCamera::getViewMatrix() const {
-    return _viewMatrix;
-}
-
-const glm::mat4& OrthographicCamera::getViewProjectionMatrix() const {
-    return _viewProjectionMatrix;
-}
-
-float OrthographicCamera::getZoomLevel() const {
-    return _zoomLevel;
-}
-
-glm::vec2 OrthographicCamera::getPosition() const {
-    return _position;
-}
-
+void OrthographicCamera::recalcProjection() {
+    float l = _left / _zoomLevel;
+    float r = _right / _zoomLevel;
+    float b = _bottom / _zoomLevel;
+    float t = _top / _zoomLevel;
+    projectionMatrix = glm::ortho(l, r, b, t, _nearPlane, _farPlane);
+    _dirty = true;
 }
 

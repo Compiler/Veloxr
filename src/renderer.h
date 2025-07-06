@@ -14,12 +14,12 @@
 #include <utility>
 #include <vulkan/vulkan_core.h>
 #include <filesystem>
+#include "CommandUtils.h"
 
 // Use direct paths to headers instead of angle bracket includes
 #include "OrthographicCamera.h"
-#include "OrthoCam.h"
 #include "DataUtils.h"
-#include "Vlogger.h"
+#include "VLogger.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -135,10 +135,10 @@ inline VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugU
 }
 
 
-inline const auto LEFT = -0.9f;
-inline const auto RIGHT = 0.9f;
-inline const auto TOP = -0.9f;
-inline const auto BOT = 0.9f;
+inline const auto LEFT = -1.0f;
+inline const auto RIGHT = 1.0f;
+inline const auto TOP = -1.0f;
+inline const auto BOT = 1.0f;
 // TODO:
 //      - Alpha layer transparency
 //          - Where there are no colors, but there is an alpha layer, fill with alpha checkerboard
@@ -209,7 +209,7 @@ public:
             void zoomCentered(const glm::vec2& anchorPoint, float zoomDelta);
             void fitViewport(float left, float right, float bottom, float top);
     */
-    Veloxr::OrthoCam& getCam() {
+    Veloxr::OrthographicCamera& getCamera() {
         return _cam;
     }
 
@@ -233,6 +233,8 @@ public:
     // Make drawFrame accessible to external code
     void drawFrame();
 
+    //glm::vec2 getMainEntityPosition()  { }
+
 private: // No client -- internal
 
     GLFWwindow* window;
@@ -242,6 +244,7 @@ private: // No client -- internal
     std::string _currentFilepath;
     Veloxr::VeloxrBuffer _currentDataBuffer;
     Veloxr::LLogger console{"[Veloxr][Renderer] "};
+    Veloxr::CommandUtils commandUtils{};
     // For friend classes / drivers
 
 
@@ -256,7 +259,7 @@ private: // No client -- internal
     bool enableValidationLayers = false;
 #endif
 
-    Veloxr::OrthoCam _cam;
+    Veloxr::OrthographicCamera _cam;
 
 
      std::vector<Veloxr::Vertex> vertices = {
@@ -409,10 +412,6 @@ private:
                            uint32_t width, uint32_t height);
     std::unordered_map<std::string, VkVirtualTexture> createTiledTexture(std::string input_filepath = "");
     std::unordered_map<std::string, VkVirtualTexture> createTiledTexture(Veloxr::VeloxrBuffer&& buffer);
-
-    // one-shot command buffers ----------------------------------------
-    VkCommandBuffer beginSingleTimeCommands();
-    void            endSingleTimeCommands(VkCommandBuffer commandBuffer);
 
     // resource creation helpers ---------------------------------------
     void createImage(uint32_t width, uint32_t height, VkFormat format,
@@ -888,29 +887,34 @@ private:
 
     void render() {
 
-        auto timer = std::chrono::high_resolution_clock::now();
+        using clock = std::chrono::steady_clock;
+        auto fpsTimer = clock::now();
         int frames = 0;
-        
+        constexpr auto frameBudget = std::chrono::duration<float>(1.f / 144.0f);
+        auto last = clock::now();
         while (!glfwWindowShouldClose(window)) {
-            auto now = std::chrono::high_resolution_clock::now();
+            auto now = clock::now();
+            auto delta = now - last;
+            last = now;
+
+            float dt = std::chrono::duration<float>(delta).count();
+            deltaMs = dt;
+
             glfwPollEvents();
             drawFrame();
 
-            auto timeElapsed = std::chrono::high_resolution_clock::now() - now;
+            ++frames;
 
-            auto timerElapsed = std::chrono::high_resolution_clock::now() - timer;
-            deltaMs = std::chrono::duration<float>(timeElapsed).count();
-            auto elapsedPerSec = std::chrono::duration_cast<std::chrono::milliseconds>(timerElapsed).count();
-            if(elapsedPerSec > 1000) {
-                
-                console.log("[Veloxr]", "Time elapsed single frame: ", std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count(), "ms\t", std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count(), "microseconds.\n");
-                timer = std::chrono::high_resolution_clock::now();
-                console.log("[Veloxr]", frames, " FPS, ", 1000.0f/frames, " ms.\n");
+            if (delta < frameBudget) std::this_thread::sleep_for(frameBudget - delta);
+
+            if (clock::now() - fpsTimer > std::chrono::seconds(1)) {
+                float fps = frames;
+                console.fatal("[Veloxr] ", fps, " FPS  (", 1000.0f / fps, " ms)");
                 frames = 0;
+                fpsTimer = clock::now();
             }
-            frames++;
         }
-
+        
         vkDeviceWaitIdle(device);
 
     }
@@ -1147,7 +1151,7 @@ private:
 inline void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
     //printf("Scrolled: x = %.2f, y = %.2f\n", xoffset, yoffset);
     auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
-    auto& camera = app->getCam();
+    auto& camera = app->getCamera();
     float currentZoom = camera.getZoomLevel();
     float sensitivity = currentZoom * 0.1f;
     camera.zoomToCenter(yoffset*sensitivity);
@@ -1165,11 +1169,20 @@ inline void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
 
         lastX = xpos;
         lastY = ypos;
-        glm::vec2 diffs{-dx, -dy};
-        diffs *= app->getCam().getZoomLevel() * 100.0 * app->deltaMs;
-        app->getCam().translate(diffs);
-        std::cout << "New camera x: " << app->getCam().getPosition().x << std::endl;
-        std::cout << "New camera y: " << app->getCam().getPosition().y << std::endl;
+        glm::vec2 diffs{-dx / app->getCamera().getZoomLevel(), -dy / app->getCamera().getZoomLevel()};
+        diffs *= 100.0 * app->deltaMs;
+        app->getCamera().translate(diffs);
+        // These will force the FPS to be 7fps on a 3090, there was nothing wrong with my code~!
+        /*
+        std::cout << "New camera lastx, lasty: " << lastX << ", " << lastY << '\n';
+        std::cout << "New camera delta: " << app->deltaMs << '\n';
+        std::cout << "New camera diff to be applied: " << diffs.x << " - " << diffs.y <<  '\n';
+        std::cout << "New camera roi: " << app->getCamera().getROI().x << ", " << app->getCamera().getROI().y << ", " << app->getCamera().getROI().z << ", " << app->getCamera().getROI().w <<  '\n';
+        std::cout << "New camera dims: " << app->getCamera().getWidth() << ", " << app->getCamera().getHeight() <<  '\n';
+        std::cout << "New camera zoom: " << app->getCamera().getZoomLevel() <<  '\n';
+        std::cout << "New camera x: " << app->getCamera().getPosition().x <<  '\n';
+        std::cout << "New camera y: " << app->getCamera().getPosition().y <<  '\n';
+        */
     }
 }
 
@@ -1206,6 +1219,16 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     if (key == GLFW_KEY_E && action == GLFW_PRESS) {
         auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
         app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/fox.jpg");
+    }
+
+    if (key == GLFW_KEY_L && action == GLFW_PRESS) {
+        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
+        app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/landscape.tif");
+    }
+    
+    if (key == GLFW_KEY_1 && action == GLFW_PRESS) {
+        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
+        //app->getCamera().zoomCentered();
     }
 }
 
