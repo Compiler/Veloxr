@@ -888,32 +888,33 @@ private:
     void render() {
 
         using clock = std::chrono::steady_clock;
-        auto timer = clock::now();
+        auto fpsTimer = clock::now();
         int frames = 0;
         constexpr auto frameBudget = std::chrono::duration<float>(1.f / 144.0f);
-        
+        auto last = clock::now();
         while (!glfwWindowShouldClose(window)) {
             auto now = clock::now();
-            if(noClientWindow) glfwPollEvents();
+            auto delta = now - last;
+            last = now;
+
+            float dt = std::chrono::duration<float>(delta).count();
+            deltaMs = dt;
+
+            glfwPollEvents();
             drawFrame();
 
-            auto workTime = clock::now() - now;
-            deltaMs = std::chrono::duration<float>(workTime).count();
+            ++frames;
 
-            auto timerElapsed = clock::now() - timer;
-            auto elapsedPerSec = std::chrono::duration_cast<std::chrono::milliseconds>(timerElapsed).count();
-            if(elapsedPerSec > 1000) {
-                console.log("[Veloxr]", "Time elapsed single frame: ", std::chrono::duration_cast<std::chrono::milliseconds>(workTime).count(), "ms\t", std::chrono::duration_cast<std::chrono::microseconds>(workTime).count(), "microseconds.\n");
-                timer = clock::now();
-                console.log("[Veloxr]", frames, " FPS, ", 1000.0f/frames, " ms.\n");
+            if (delta < frameBudget) std::this_thread::sleep_for(frameBudget - delta);
+
+            if (clock::now() - fpsTimer > std::chrono::seconds(1)) {
+                float fps = frames;
+                console.fatal("[Veloxr] ", fps, " FPS  (", 1000.0f / fps, " ms)");
                 frames = 0;
+                fpsTimer = clock::now();
             }
-
-            if (workTime < frameBudget)
-                std::this_thread::sleep_for(frameBudget - workTime);
-            frames++;
         }
-
+        
         vkDeviceWaitIdle(device);
 
     }
@@ -1169,14 +1170,19 @@ inline void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
         lastX = xpos;
         lastY = ypos;
         glm::vec2 diffs{-dx / app->getCamera().getZoomLevel(), -dy / app->getCamera().getZoomLevel()};
-        diffs *= 1000.0 * app->deltaMs;
+        diffs *= 100.0 * app->deltaMs;
         app->getCamera().translate(diffs);
-        std::cout << "New camera diff to be applied: " << diffs.x << " - " << diffs.y << std::endl;
-        std::cout << "New camera roi: " << app->getCamera().getROI().x << ", " << app->getCamera().getROI().y << ", " << app->getCamera().getROI().z << ", " << app->getCamera().getROI().w << std::endl;
-        std::cout << "New camera dims: " << app->getCamera().getWidth() << ", " << app->getCamera().getHeight() << std::endl;
-        std::cout << "New camera zoom: " << app->getCamera().getZoomLevel() << std::endl;
-        std::cout << "New camera x: " << app->getCamera().getPosition().x << std::endl;
-        std::cout << "New camera y: " << app->getCamera().getPosition().y << std::endl;
+        // These will force the FPS to be 7fps on a 3090, there was nothing wrong with my code~!
+        /*
+        std::cout << "New camera lastx, lasty: " << lastX << ", " << lastY << '\n';
+        std::cout << "New camera delta: " << app->deltaMs << '\n';
+        std::cout << "New camera diff to be applied: " << diffs.x << " - " << diffs.y <<  '\n';
+        std::cout << "New camera roi: " << app->getCamera().getROI().x << ", " << app->getCamera().getROI().y << ", " << app->getCamera().getROI().z << ", " << app->getCamera().getROI().w <<  '\n';
+        std::cout << "New camera dims: " << app->getCamera().getWidth() << ", " << app->getCamera().getHeight() <<  '\n';
+        std::cout << "New camera zoom: " << app->getCamera().getZoomLevel() <<  '\n';
+        std::cout << "New camera x: " << app->getCamera().getPosition().x <<  '\n';
+        std::cout << "New camera y: " << app->getCamera().getPosition().y <<  '\n';
+        */
     }
 }
 

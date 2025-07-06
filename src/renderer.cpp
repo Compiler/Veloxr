@@ -447,7 +447,7 @@ std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::cr
     _cam.init(0, maxX - minX, 0, maxY - minY, -1, 1);
     float factor = std::min(_windowWidth, _windowHeight);
     console.fatal("Zoom changes: ", " - ",  " - ", _cam.getWidth(), " - ", _cam.getHeight());
-    //_cam.setZoomLevel(factor / (float)(std::min(deltaX, deltaY)));
+    _cam.setZoomLevel(factor / (float)(std::min(deltaX, deltaY)));
     _cam.setProjection(0, _windowWidth, 0, _windowHeight, -1, 1);
 
     return {};
