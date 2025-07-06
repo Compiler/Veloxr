@@ -104,19 +104,13 @@ void RendererCore::setupTexturePasses() {
     auto nowTop = std::chrono::high_resolution_clock::now();
     now = std::chrono::high_resolution_clock::now();
 
-    //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/very_wide.webp");
-    std::unordered_map<std::string, RendererCore::VkVirtualTexture> res; 
     if (_currentDataBuffer.data.empty() == false) {
-        res = createTiledTexture(std::move(_currentDataBuffer));
+        createTiledTexture(std::move(_currentDataBuffer));
     } else if (_currentFilepath.empty() == false) {
-        res = createTiledTexture(_currentFilepath);
+        createTiledTexture(_currentFilepath);
     } else {
         throw std::runtime_error("[Veloxr] setupTexturePasses called with no valid filepath or data buffer.\n");
     }
-    //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg");
-    //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/56000.jpg");
-    //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/landscape1.jpeg");
-    //auto res = createTiledTexture(PREFIX+"/Users/ljuek/Downloads/landscape2.jpeg");
     auto timeElapsed = std::chrono::high_resolution_clock::now() - now;
     console.log("Texture creation: ", std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count(), "ms\t", std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count(), "microseconds.\n");
 
