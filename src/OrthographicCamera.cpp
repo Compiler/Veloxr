@@ -22,6 +22,7 @@ void OrthographicCamera::init(float left, float right, float bottom, float top, 
     _position = glm::vec3(0.0f);
     rotation = 0.0f;
     _zoomLevel = 1.0f;
+    console.logc2("init Updating camera bounds (l, r, t, b) => (", left, ", ", right, ", ", top, ", ", bottom, ")");
     recalcProjection();
     recalcView();
 }
@@ -48,6 +49,7 @@ void OrthographicCamera::setRotation(float rot) {
 }
 
 void OrthographicCamera::setProjection(float left, float right, float bottom, float top, float nearPlane, float farPlane) {
+    console.logc2("setProjection Updating camera bounds (l, r, t, b) => (", left, ", ", right, ", ", top, ", ", bottom, ")");
     _left = left;
     _right = right;
     _bottom = bottom;
