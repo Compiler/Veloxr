@@ -85,10 +85,10 @@ void RendererCore::init(void* windowHandle) {
     createFramebuffers();
     createUniformBuffers();
     createCommandPool();
-    if(!_currentFilepath.empty() || !_currentDataBuffer.data.empty()) {
+    //if(!_currentFilepath.empty() || !_currentDataBuffer.data.empty()) {
         console.log("[Veloxr] [Debug] init called and completed. Setting up texture passes from state\n");
         setupTexturePasses();
-    }
+    //}
 }
 
 
@@ -109,7 +109,14 @@ void RendererCore::setupTexturePasses() {
     } else if (_currentFilepath.empty() == false) {
         createTiledTexture(_currentFilepath);
     } else {
-        throw std::runtime_error("[Veloxr] setupTexturePasses called with no valid filepath or data buffer.\n");
+        _currentDataBuffer.width       = 1;
+        _currentDataBuffer.height      = 1;
+        _currentDataBuffer.numChannels = 4;
+        _currentDataBuffer.data        = { 255, 255, 255, 255 };
+        console.warn("Veloxr did not find a suitable image or buffer to render. Rendering a single pixel.");
+        return setupTexturePasses();
+
+        //throw std::runtime_error("[Veloxr] setupTexturePasses called with no valid filepath or data buffer.\n");
     }
     auto timeElapsed = std::chrono::high_resolution_clock::now() - now;
     console.log("Texture creation: ", std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count(), "ms\t", std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count(), "microseconds.\n");
@@ -344,7 +351,6 @@ std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::cr
         maxY = std::max(maxY, v.pos.y);
     }
     console.log("[Veloxr]", "Final geometry bounding box: X in [", minX, ", ", maxX, "], Y in [", minY, ", ", maxY, "]");
-    //_cam.setPosition({(maxX - minX) / 2.0f, (maxY - minY) / 2.0f});
     auto deltaX = std::abs(maxX - minX);
     auto deltaY = std::abs(maxY - minY);
     float offsetX = 0.0f, offsetY = 0.0f;
@@ -352,12 +358,10 @@ std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::cr
         offsetY = -deltaY / 2.0f;
     }
     _cam.init(0, maxX - minX, 0, maxY - minY, -1, 1);
-    //_cam.setPosition({offsetX, offsetY});
-    float firstZoom =  deltaX / _cam.getWidth(); 
-    float secondZoom = deltaY / _cam.getHeight(); 
-    console.fatal("Zoom changes: ", firstZoom, secondZoom);
-    //_cam.setZoomLevel(std::max(firstZoom, secondZoom));
+    float factor = std::min(_windowWidth, _windowHeight);
+    _cam.setZoomLevel(factor / (float)(std::min(deltaX, deltaY)));
     _cam.setProjection(0, _windowWidth, 0, _windowHeight, -1, 1);
+    console.warn("Updating camera: Zoom: ", _cam.getZoomLevel(), ", projection on window dim: ", _windowWidth, "x", _windowHeight, " @ (", _cam.getPosition().x, ", ", _cam.getPosition().y,")"); 
 
     return {};
 }
@@ -443,9 +447,9 @@ std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::cr
     }
     _cam.init(0, maxX - minX, 0, maxY - minY, -1, 1);
     float factor = std::min(_windowWidth, _windowHeight);
-    console.fatal("Zoom changes: ", " - ",  " - ", _cam.getWidth(), " - ", _cam.getHeight());
     _cam.setZoomLevel(factor / (float)(std::min(deltaX, deltaY)));
     _cam.setProjection(0, _windowWidth, 0, _windowHeight, -1, 1);
+    console.warn("Updating camera: Zoom: ", _cam.getZoomLevel(), ", projection on window dim: ", _windowWidth, "x", _windowHeight, " @ (", _cam.getPosition().x, ", ", _cam.getPosition().y,")"); 
 
     return {};
 }
