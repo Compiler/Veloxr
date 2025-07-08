@@ -7,6 +7,7 @@
 #include <queue>
 #include <string>
 #include <unordered_map>
+#include <iomanip>
 
 namespace Veloxr {
     static std::vector<std::chrono::high_resolution_clock::time_point> timers;
