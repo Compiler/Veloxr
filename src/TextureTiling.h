@@ -1,4 +1,5 @@
 #pragma once
+#include "DataUtils.h"
 #include <cstring>
 #include <iostream>
 #include <map>
@@ -103,6 +104,7 @@ namespace Veloxr {
             TiledResult tile6(OIIOTexture &texture, uint32_t maxResolution=4096*2);
             TiledResult tile7(OIIOTexture &texture, uint32_t maxResolution=4096*2);
             TiledResult tile8(OIIOTexture &texture, uint32_t maxResolution=4096*2);
+            TiledResult tile8(Veloxr::VeloxrBuffer& buffer, uint32_t maxResolution=4096*2);
 
 
     };
