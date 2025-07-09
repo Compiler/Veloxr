@@ -2,6 +2,7 @@
 #include <renderer.h>
 #include <stdexcept>
 #include <texture.h>
+#include <thread>
 int main(int argc, char* argv[]) {
     RendererCore app{};
 
@@ -15,13 +16,12 @@ int main(int argc, char* argv[]) {
         std::cout << "[DRIVER] Loading texture from: " << texturePath << std::endl;
         
         Veloxr::OIIOTexture texture(texturePath);
-        std::vector<unsigned char> data = texture.load();
-        if (data.empty()) {
-            throw std::runtime_error("Failed to load texture data from: " + texturePath);
-        }
+        std::cout << "Loading data...";
         
         Veloxr::VeloxrBuffer buf;
-        buf.data = std::move(data);
+        std::cout << "Moving data...";
+        buf.data = texture.load(texturePath);
+        std::cout << "... done!\n";
         buf.width = texture.getResolution().x;
         buf.height = texture.getResolution().y;
         buf.numChannels = texture.getNumChannels();

@@ -3,10 +3,12 @@
 #include <string>
 #include <vector>
 
+#include "VLogger.h"
+
 namespace Veloxr {
 
     struct Point {
-        uint32_t x, y;
+        uint64_t x, y;
     };
 
     class OIIOTexture {
@@ -23,9 +25,11 @@ namespace Veloxr {
             inline const bool isInitialized() const { return _loaded; }
 
         private:
+
+            Veloxr::LLogger console{"[Veloxr][OIIOTexture]"};
             Point _resolution;
             std::string _filename;
-            int _numChannels;
+            uint64_t _numChannels;
             int _orientation;
             bool _loaded{false};
 
