@@ -105,6 +105,7 @@ namespace Veloxr {
             TiledResult tile7(OIIOTexture &texture, uint32_t maxResolution=4096*2);
             TiledResult tile8(OIIOTexture &texture, uint32_t maxResolution=4096*2);
             TiledResult tile8(Veloxr::VeloxrBuffer& buffer, uint32_t maxResolution=4096*2);
+            TiledResult tile8(Veloxr::TextureBuffer& buffer, uint32_t maxResolution=4096*2);
 
 
     };

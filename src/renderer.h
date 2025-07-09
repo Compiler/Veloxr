@@ -187,6 +187,7 @@ public:
     // Set the texture to load, will reinitialize the pipeline.
     void setTextureFilePath(std::string filepath); 
     void setTextureBuffer(Veloxr::VeloxrBuffer&& buffer); 
+    void setTextureBuffer(Veloxr::TextureBuffer&& buffer); 
 
     // Initialize the renderer, given a window pointer to render into.
     void init(void* windowHandle = nullptr); 
@@ -243,6 +244,7 @@ private: // No client -- internal
     int _windowWidth, _windowHeight;
     std::string _currentFilepath;
     Veloxr::VeloxrBuffer _currentDataBuffer;
+    Veloxr::TextureBuffer _textureBuffer;
     Veloxr::LLogger console{"[Veloxr][Renderer] "};
     Veloxr::CommandUtils commandUtils{};
     // For friend classes / drivers
@@ -412,6 +414,7 @@ private:
                            uint32_t width, uint32_t height);
     std::unordered_map<std::string, VkVirtualTexture> createTiledTexture(std::string input_filepath = "");
     std::unordered_map<std::string, VkVirtualTexture> createTiledTexture(Veloxr::VeloxrBuffer&& buffer);
+    std::unordered_map<std::string, VkVirtualTexture> createTiledTexture(Veloxr::TextureBuffer&& buffer);
 
     // resource creation helpers ---------------------------------------
     void createImage(uint32_t width, uint32_t height, VkFormat format,
