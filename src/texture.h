@@ -20,7 +20,7 @@ namespace Veloxr {
             inline const std::string& getFilename() const { return _filename; }
             inline const int& getNumChannels() const { return _numChannels; }
             inline const int& getOrientation() const { return _orientation; }
-            std::vector<unsigned char> load(std::string filename="");
+            std::vector<unsigned char> load(std::string filename="", bool force4Channels = false);
             inline const bool isInitialized() const { return _loaded; }
 
         private:

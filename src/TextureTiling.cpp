@@ -21,7 +21,6 @@ TiledResult TextureTiling::tile8(Veloxr::VeloxrBuffer& buffer, uint32_t deviceMa
 
     uint32_t w = buffer.width;
     uint32_t h = buffer.height;
-    buffer.orientation = 1;
     console.logc2("Data size: ", buffer.data.size(), " - expected: ", (size_t)w * h * buffer.numChannels );
 
     uint64_t maxPixels   = (uint64_t)deviceMaxDimension * (uint64_t)deviceMaxDimension;

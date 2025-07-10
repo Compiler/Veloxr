@@ -30,7 +30,7 @@ void OIIOTexture::init(std::string filename) {
     _loaded = true;
 }
 
-std::vector<unsigned char> OIIOTexture::load(std::string filename) {
+std::vector<unsigned char> OIIOTexture::load(std::string filename, bool force4Channels ) {
     if (filename.empty() && !_loaded) {
         std::cerr << "OIIOTexture not initialized properly\n";
         static std::vector<unsigned char> err;
@@ -49,6 +49,7 @@ std::vector<unsigned char> OIIOTexture::load(std::string filename) {
     in.reset();
 
     std::cout << "[Veloxr]" << "Raw data read size=" << rawData.size() << " channels=" << _numChannels << "\n";
+    if(!force4Channels) return rawData;
 
     std::vector<unsigned char> pixelData(_resolution.x * _resolution.y * vsize(4), 255);
     for (uint32_t i = 0; i < _resolution.x * _resolution.y; ++i) {
