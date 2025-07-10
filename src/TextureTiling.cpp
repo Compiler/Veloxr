@@ -118,6 +118,25 @@ TiledResult TextureTiling::tile8(Veloxr::VeloxrBuffer& buffer, uint32_t deviceMa
 
     std::cout << "[Veloxr]" << "Texture too big for single tile. Doing multi-tiling.\n";
 
+    if (buffer.numChannels == 3) {
+        std::vector<unsigned char> rgba;
+        rgba.resize(size_t(w) * h * 4);
+
+        const unsigned char *src = buffer.data.data();
+        unsigned char       *dst = rgba.data();
+
+        for (size_t i = 0, pixels = size_t(w) * h; i < pixels; ++i) {
+            dst[0] = src[0];
+            dst[1] = src[1];
+            dst[2] = src[2];
+            dst[3] = 255;
+            src += 3;
+            dst += 4;
+        }
+
+        buffer.data        = std::move(rgba);
+        buffer.numChannels = 4;
+    }
 
     uint32_t rawW = w; 
     uint32_t rawH = h;
@@ -143,6 +162,7 @@ TiledResult TextureTiling::tile8(Veloxr::VeloxrBuffer& buffer, uint32_t deviceMa
     int totalTiles = Nx * Ny;
     int numThreads = std::min(totalTiles, 16);
     int tilesPerThread = (totalTiles + numThreads - 1) / numThreads;
+
 
     // OIIO::ImageCache *ic = OIIO::ImageCache::create(true);
     std::shared_ptr<OIIO::ImageCache> ic = OIIO::ImageCache::create(true);
