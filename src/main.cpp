@@ -15,13 +15,12 @@ int main(int argc, char* argv[]) {
         std::cout << "[DRIVER] Loading texture from: " << texturePath << std::endl;
         
         Veloxr::OIIOTexture texture(texturePath);
-        std::vector<unsigned char> data = texture.load();
-        if (data.empty()) {
-            throw std::runtime_error("Failed to load texture data from: " + texturePath);
-        }
         
         Veloxr::VeloxrBuffer buf;
-        buf.data = std::move(data);
+        buf.data = texture.load(texturePath);
+        if (buf.data.empty()) {
+            throw std::runtime_error("Failed to load texture data from: " + texturePath);
+        }
         buf.width = texture.getResolution().x;
         buf.height = texture.getResolution().y;
         buf.numChannels = texture.getNumChannels();

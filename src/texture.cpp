@@ -19,7 +19,7 @@ void OIIOTexture::init(std::string filename) {
         std::cerr << "Could not open input: " << _filename << "\n";
     }
     const ImageSpec &in_spec = in->spec();
-    _resolution = {(uint32_t)in_spec.width, (uint32_t)in_spec.height};
+    _resolution = {(vsize)in_spec.width, (vsize)in_spec.height};
     _numChannels = in_spec.nchannels;
     OIIO::ImageSpec spec = in->spec();
     auto orientation = spec.get_int_attribute("Orientation", 1);
@@ -50,7 +50,7 @@ std::vector<unsigned char> OIIOTexture::load(std::string filename) {
 
     std::cout << "[Veloxr]" << "Raw data read size=" << rawData.size() << " channels=" << _numChannels << "\n";
 
-    std::vector<unsigned char> pixelData(_resolution.x * _resolution.y * 4, 255);
+    std::vector<unsigned char> pixelData(_resolution.x * _resolution.y * vsize(4), 255);
     for (uint32_t i = 0; i < _resolution.x * _resolution.y; ++i) {
         for (int c = 0; c < _numChannels && c < 4; ++c) {
             pixelData[i * 4 + c] = rawData[i * _numChannels + c];

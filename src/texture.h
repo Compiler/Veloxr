@@ -5,8 +5,9 @@
 
 namespace Veloxr {
 
+    typedef uint64_t vsize ;
     struct Point {
-        uint32_t x, y;
+        vsize x, y;
     };
 
     class OIIOTexture {

@@ -9,6 +9,7 @@ OIIO_NAMESPACE_USING
 
 #include <OpenImageIO/imagecache.h>
 #include <OpenImageIO/ustring.h>
+#include <OpenImageIO/imagebuf.h>
 #include <thread>
 
 TiledResult TextureTiling::tile8(Veloxr::VeloxrBuffer& buffer, uint32_t deviceMaxDimension) {
@@ -21,6 +22,7 @@ TiledResult TextureTiling::tile8(Veloxr::VeloxrBuffer& buffer, uint32_t deviceMa
     uint32_t w = buffer.width;
     uint32_t h = buffer.height;
     buffer.orientation = 1;
+    console.logc2("Data size: ", buffer.data.size(), " - expected: ", (size_t)w * h * buffer.numChannels );
 
     uint64_t maxPixels   = (uint64_t)deviceMaxDimension * (uint64_t)deviceMaxDimension;
     uint64_t totalPixels = (uint64_t)w * (uint64_t)h;
@@ -117,9 +119,13 @@ TiledResult TextureTiling::tile8(Veloxr::VeloxrBuffer& buffer, uint32_t deviceMa
 
     std::cout << "[Veloxr]" << "Texture too big for single tile. Doing multi-tiling.\n";
 
+
     uint32_t rawW = w; 
     uint32_t rawH = h;
+    ImageSpec spec(buffer.width, buffer.height, buffer.numChannels, TypeDesc::UINT8);
 
+    // – zero copies.
+    OIIO::ImageBuf img(spec, buffer.data.data());
     int orientation = buffer.orientation;
     std::cout << "[Veloxr]" << "[INFO] Orientation = " << orientation << "\n";
 
@@ -145,6 +151,7 @@ TiledResult TextureTiling::tile8(Veloxr::VeloxrBuffer& buffer, uint32_t deviceMa
 
     uint32_t originalChannels = buffer.numChannels;
     uint32_t forcedChannels   = 4;
+    console.debug("TextureData information: Channels: ", originalChannels, ", forced channels: 4, ", "Tile dimensions: ", tileW,"x", tileH, ", resolution: ", w,"x",h);
 
     struct ThreadResult {
         std::map<int, TextureData>         localTiles;
@@ -160,6 +167,7 @@ TiledResult TextureTiling::tile8(Veloxr::VeloxrBuffer& buffer, uint32_t deviceMa
         int endIdx   = std::min(totalTiles, startIdx + tilesPerThread);
 
         threads.emplace_back([=, &partialResults, &buffer]() {
+            OIIO::ImageBuf myImg(spec, buffer.data.data());
             auto &localTiles = partialResults[t].localTiles;
             auto &localVerts = partialResults[t].localVerts;
 
@@ -180,18 +188,12 @@ TiledResult TextureTiling::tile8(Veloxr::VeloxrBuffer& buffer, uint32_t deviceMa
                     continue;
                 }
 
-                for (uint32_t yy = 0; yy < thisTileH; ++yy) {
-                    const size_t srcOff = (size_t(y0 + yy) * rawW + x0) * originalChannels;
-                    const size_t dstOff = size_t(yy) * thisTileW * originalChannels;
-                    std::memcpy(readBuffer.data() + dstOff,
-                            buffer.data.data() + srcOff,
-                            size_t(thisTileW) * originalChannels);
-                }
-                bool ok = true;
+                ROI roi (x0, x1, y0, y1, 0, 1, 0, originalChannels);
+                bool ok = myImg.get_pixels (roi, TypeDesc::UINT8, readBuffer.data());
                 if (!ok) {
                     std::cerr << "[TILER] Error reading tile " << idx
                               << " in thread " << t << ": "
-                              << ic->geterror() << "\n";
+                              << ic->geterror() << "\t" << img.geterror() <<"\n";
                     continue;
                 }
 
