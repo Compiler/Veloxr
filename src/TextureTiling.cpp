@@ -1,5 +1,4 @@
 #include "TextureTiling.h"
-#include <OpenImageIO/imageio.h>
 #include <cmath>
 #include <iostream>
 #include <set>
@@ -7,9 +6,6 @@
 using namespace Veloxr;
 OIIO_NAMESPACE_USING  
 
-#include <OpenImageIO/imagecache.h>
-#include <OpenImageIO/ustring.h>
-#include <OpenImageIO/imagebuf.h>
 #include <thread>
 
 TiledResult TextureTiling::tile8(Veloxr::VeloxrBuffer& buffer, uint32_t deviceMaxDimension) {
@@ -305,6 +301,7 @@ TiledResult TextureTiling::tile8(Veloxr::VeloxrBuffer& buffer, uint32_t deviceMa
 
     return result;
 }
+
 TiledResult TextureTiling::tile8(OIIOTexture &texture, uint32_t deviceMaxDimension) {
     TiledResult result;
     if (!texture.isInitialized()) {

@@ -7,6 +7,11 @@
 #include <vector>
 #include <Vertex.h>
 #include "VLogger.h"
+
+#include <OpenImageIO/imageio.h>
+#include <OpenImageIO/imagecache.h>
+#include <OpenImageIO/ustring.h>
+#include <OpenImageIO/imagebuf.h>
 namespace Veloxr {
 
     struct TextureData {
@@ -20,6 +25,33 @@ namespace Veloxr {
         std::map<int, TextureData> tiles;
         std::vector<Vertex>      vertices;
         glm::vec4 boundingBox;
+    };
+    class MemoryRawInput : public OIIO::ImageInput {
+        public:
+            MemoryRawInput(const void* pixel_data, const OIIO::ImageSpec& spec)
+                : m_pixel_data(pixel_data), m_spec(spec) {}
+
+            const char* format_name(void) const override { return "memory_raw"; }
+
+            bool open(const std::string& name, OIIO::ImageSpec& newspec) override {
+                newspec = m_spec;
+                return true;
+            }
+
+            bool close(void) override { return true; }
+
+            bool read_native_scanline(int subimage, int miplevel, int y, int z, void* data) override {
+                if (subimage != current_subimage() || miplevel != current_miplevel() || z != 0)
+                    return false;
+                size_t scanline_size = m_spec.scanline_bytes();
+                const char* src = static_cast<const char*>(m_pixel_data) + static_cast<size_t>(y) * scanline_size;
+                memcpy(data, src, scanline_size);
+                return true;
+            }
+
+        private:
+            const void* m_pixel_data;
+            OIIO::ImageSpec m_spec;
     };
 
 
