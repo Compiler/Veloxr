@@ -8,6 +8,56 @@ OIIO_NAMESPACE_USING
 
 #include <thread>
 
+
+#include <limits>
+
+
+#include <limits>
+
+namespace Veloxr {
+
+    class MemoryRawInput : public OIIO::ImageInput {
+        public:
+            MemoryRawInput(const void* pixel_data, const OIIO::ImageSpec& spec)
+                : m_pixel_data(pixel_data), m_spec(spec) {}
+
+            const char* format_name(void) const override { return "memory_raw"; }
+
+            bool open(const std::string& name, OIIO::ImageSpec& newspec) override {
+                m_current_subimage = 0;
+                m_current_miplevel = 0;
+                newspec = m_spec;
+                return true;
+            }
+
+            bool close(void) override { return true; }
+
+            bool read_native_scanline(int subimage, int miplevel, int y, int z, void* data) override {
+                if (subimage != m_current_subimage || miplevel != m_current_miplevel || z != 0)
+                    return false;
+                size_t scanline_size = m_spec.scanline_bytes();
+                const char* src = static_cast<const char*>(m_pixel_data) + static_cast<size_t>(y) * scanline_size;
+                memcpy(data, src, scanline_size);
+                return true;
+            }
+
+        private:
+            const void* m_pixel_data;
+            OIIO::ImageSpec m_spec;
+            int m_current_subimage{};
+            int m_current_miplevel{};
+    };
+
+    namespace {
+        const void* g_pixel_data = nullptr;
+        OIIO::ImageSpec g_cache_spec;
+        OIIO::ImageInput* create_memory_input() {
+            return new MemoryRawInput(g_pixel_data, g_cache_spec);
+        }
+    }
+
+} // namespace Veloxr
+
 TiledResult TextureTiling::tile8(Veloxr::VeloxrBuffer& buffer, uint32_t deviceMaxDimension) {
     TiledResult result;
     if (buffer.data.empty()) {
@@ -35,13 +85,28 @@ TiledResult TextureTiling::tile8(Veloxr::VeloxrBuffer& buffer, uint32_t deviceMa
               << " tooWide=" << tooWide
               << " tooTall=" << tooTall << "\n";
 
+    result.boundingBox.x = std::numeric_limits<float>::max();
+    result.boundingBox.y = std::numeric_limits<float>::max();
+    result.boundingBox.z = std::numeric_limits<float>::lowest();
+    result.boundingBox.w = std::numeric_limits<float>::lowest();
+
     if (!tooManyPixels && !tooWide && !tooTall) {
         TextureData one;
         one.width    = w;
         one.height   = h;
         one.channels = 4; // forcing RGBA
-        one.pixelData = buffer.data;
-        result.tiles[0] = one;
+
+        if (buffer.numChannels != 4) {
+            std::vector<unsigned char> pixelData((size_t)w * h * 4, 255);
+            for (uint32_t i = 0; i < w * h; ++i) {
+                for (int c = 0; c < buffer.numChannels && c < 4; ++c) {
+                    pixelData[i * 4 + c] = buffer.data[i * buffer.numChannels + c];
+                }
+            }
+            one.pixelData = std::move(pixelData);
+        } else {
+            one.pixelData = buffer.data;
+        }
 
         std::cout << "[Veloxr]" << "Loaded pixelData.size()=" << one.pixelData.size() << "\n";
 
@@ -71,7 +136,6 @@ TiledResult TextureTiling::tile8(Veloxr::VeloxrBuffer& buffer, uint32_t deviceMa
         for (auto &v : singleTileVerts) {
             glm::vec2 uv(v.texCoord.x, v.texCoord.y);
 
-            glm::vec2 oldPos(v.pos.x, v.pos.y);
             glm::vec2 res;
 
             switch (orientation) {
@@ -97,10 +161,9 @@ TiledResult TextureTiling::tile8(Veloxr::VeloxrBuffer& buffer, uint32_t deviceMa
             }
             v.texCoord.x = res.x;
             v.texCoord.y = res.y;
-            //v.pos.x = newPos.x;
-            //v.pos.y = newPos.y;
         }
 
+        result.tiles[0] = one;
         result.vertices.insert(result.vertices.end(),
                                singleTileVerts.begin(),
                                singleTileVerts.end());
@@ -108,38 +171,22 @@ TiledResult TextureTiling::tile8(Veloxr::VeloxrBuffer& buffer, uint32_t deviceMa
         std::cout << "[Veloxr]" << "Single-tile approach used. \n";
         std::cout << "[Veloxr]" << "Tile " << idx
                   << " (" << one.width << " x " << one.height << ") completed\n";
-        result.boundingBox = {0, 0, right, top};
+
+        for(const auto& v : result.vertices) {
+            result.boundingBox.x = std::min(v.pos.x, result.boundingBox.x);
+            result.boundingBox.y = std::min(v.pos.y, result.boundingBox.y);
+            result.boundingBox.z = std::max(v.pos.x, result.boundingBox.z);
+            result.boundingBox.w = std::max(v.pos.y, result.boundingBox.w);
+        }
+
         return result;
     }
 
     std::cout << "[Veloxr]" << "Texture too big for single tile. Doing multi-tiling.\n";
 
-    if (buffer.numChannels == 3) {
-        std::vector<unsigned char> rgba;
-        rgba.resize(size_t(w) * h * 4);
-
-        const unsigned char *src = buffer.data.data();
-        unsigned char       *dst = rgba.data();
-
-        for (size_t i = 0, pixels = size_t(w) * h; i < pixels; ++i) {
-            dst[0] = src[0];
-            dst[1] = src[1];
-            dst[2] = src[2];
-            dst[3] = 255;
-            src += 3;
-            dst += 4;
-        }
-
-        buffer.data        = std::move(rgba);
-        buffer.numChannels = 4;
-    }
-
     uint32_t rawW = w; 
     uint32_t rawH = h;
-    ImageSpec spec(buffer.width, buffer.height, buffer.numChannels, TypeDesc::UINT8);
 
-    // – zero copies.
-    OIIO::ImageBuf img(spec, buffer.data.data());
     int orientation = buffer.orientation;
     std::cout << "[Veloxr]" << "[INFO] Orientation = " << orientation << "\n";
 
@@ -156,17 +203,30 @@ TiledResult TextureTiling::tile8(Veloxr::VeloxrBuffer& buffer, uint32_t deviceMa
     uint32_t tileH = (rawH + Ny - 1) / Ny;
 
     int totalTiles = Nx * Ny;
-    int numThreads = std::min(totalTiles, 16);
+    int numThreads = std::min(totalTiles, 4);  // Reduced to 4 to lower concurrent memory usage
+
     int tilesPerThread = (totalTiles + numThreads - 1) / numThreads;
 
-
-    // OIIO::ImageCache *ic = OIIO::ImageCache::create(true);
     std::shared_ptr<OIIO::ImageCache> ic = OIIO::ImageCache::create(true);
     ic->attribute("max_memory_MB", 1024.0f);
 
-    uint32_t originalChannels = buffer.numChannels;
+    g_pixel_data = buffer.data.data();
+    g_cache_spec = OIIO::ImageSpec(rawW, rawH, buffer.numChannels, OIIO::TypeDesc::UINT8);
+
+    OIIO::ImageInput::Creator creator = create_memory_input;
+
+    std::string fake_filename = "memory_buffer";
+    ic->add_file(OIIO::ustring(fake_filename), creator);
+
+    OIIO::ImageSpec const *mainSpec = ic->imagespec(OIIO::ustring(fake_filename), 0, 0);
+    if (!mainSpec) {
+        std::cerr << "[TILER] Could not get ImageSpec from ImageCache for memory buffer\n";
+        OIIO::ImageCache::destroy(ic);
+        return result;
+    }
+
+    uint32_t originalChannels = mainSpec->nchannels;
     uint32_t forcedChannels   = 4;
-    console.debug("TextureData information: Channels: ", originalChannels, ", forced channels: 4, ", "Tile dimensions: ", tileW,"x", tileH, ", resolution: ", w,"x",h);
 
     struct ThreadResult {
         std::map<int, TextureData>         localTiles;
@@ -181,12 +241,9 @@ TiledResult TextureTiling::tile8(Veloxr::VeloxrBuffer& buffer, uint32_t deviceMa
         int startIdx = t * tilesPerThread;
         int endIdx   = std::min(totalTiles, startIdx + tilesPerThread);
 
-        threads.emplace_back([=, &partialResults, &buffer]() {
-            OIIO::ImageBuf myImg(spec, buffer.data.data());
+        threads.emplace_back([=, &partialResults, &ic]() {
             auto &localTiles = partialResults[t].localTiles;
             auto &localVerts = partialResults[t].localVerts;
-
-            std::vector<unsigned char> readBuffer(size_t(tileW) * size_t(tileH) * size_t(originalChannels), 0);
 
             for (int idx = startIdx; idx < endIdx; idx++) {
                 int row = idx / Nx;
@@ -203,12 +260,23 @@ TiledResult TextureTiling::tile8(Veloxr::VeloxrBuffer& buffer, uint32_t deviceMa
                     continue;
                 }
 
-                ROI roi (x0, x1, y0, y1, 0, 1, 0, originalChannels);
-                bool ok = myImg.get_pixels (roi, TypeDesc::UINT8, readBuffer.data());
+                std::vector<unsigned char> readBuffer(size_t(thisTileW) * size_t(thisTileH) * size_t(originalChannels), 0);
+
+                bool ok = ic->get_pixels(
+                    OIIO::ustring(fake_filename),   
+                    0 /*subimage*/, 
+                    0 /*miplevel*/,
+                    (int)x0, (int)x1,
+                    (int)y0, (int)y1,
+                    0, 1,  // z range
+                    0, (int)originalChannels,  // channel range
+                    OIIO::TypeDesc::UINT8,
+                    readBuffer.data()          // destination
+                );
                 if (!ok) {
                     std::cerr << "[TILER] Error reading tile " << idx
                               << " in thread " << t << ": "
-                              << ic->geterror() << "\t" << img.geterror() <<"\n";
+                              << ic->geterror() << "\n";
                     continue;
                 }
 
@@ -293,7 +361,7 @@ TiledResult TextureTiling::tile8(Veloxr::VeloxrBuffer& buffer, uint32_t deviceMa
     for(const auto& v : result.vertices) {
         result.boundingBox.x = std::min(v.pos.x, result.boundingBox.x);
         result.boundingBox.y = std::min(v.pos.y, result.boundingBox.y);
-        result.boundingBox.z = std::max(v.pos.y, result.boundingBox.z);
+        result.boundingBox.z = std::max(v.pos.x, result.boundingBox.z);
         result.boundingBox.w = std::max(v.pos.y, result.boundingBox.w);
     }
 

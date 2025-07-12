@@ -18,4 +18,4 @@ build:
 endif
 
 run: 
-	./build/vulkanrenderer.exe "C:/Users/luker/Downloads/fox.jpg"
+	./build/vulkanrenderer.exe "C:/Users/ljuek/Downloads/fox.jpg"
