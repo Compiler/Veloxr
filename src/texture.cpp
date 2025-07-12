@@ -59,7 +59,8 @@ std::vector<unsigned char> OIIOTexture::load(std::string filename) {
     console.logc1("Done reading image.", filename);
     std::cout << "[Veloxr]" << "Raw data read size=" << rawData.size() << " channels=" << _numChannels << "\n";
 
-    std::vector<unsigned char> pixelData(_resolution.x * _resolution.y * (uint64_t)4, 255);
+    uint64_t totalBytes = (uint64_t)_resolution.x * (uint64_t)_resolution.y * (int64_t)4;
+    std::vector<unsigned char> pixelData(totalBytes, 255);
     for (uint32_t i = 0; i < _resolution.x * _resolution.y; ++i) {
         for (int c = 0; c < _numChannels && c < 4; ++c) {
             pixelData[i * 4 + c] = rawData[i * _numChannels + c];

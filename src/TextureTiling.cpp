@@ -569,8 +569,7 @@ TiledResult TextureTiling::tile8(OIIOTexture &texture, uint32_t deviceMaxDimensi
 }
 
 
-TiledResult TextureTiling::tile7(OIIOTexture &texture, uint32_t deviceMaxDimension)
-{
+TiledResult TextureTiling::tile7(OIIOTexture &texture, uint32_t deviceMaxDimension) {
     TiledResult result;
     if (!texture.isInitialized()) {
         std::cerr << "Cannot tile a texture that is not initialized\n";
