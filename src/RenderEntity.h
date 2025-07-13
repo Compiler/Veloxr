@@ -14,22 +14,23 @@ namespace Veloxr {
             RenderEntity(glm::vec2 position);
             RenderEntity(float x, float y);
 
-            void setTextureFilepath(std::string& filepath);
+
+            void setIsHidden(bool isHidden) { _isHidden = isHidden; }
             void setName(const std::string& name);
-
-            // We handle our side of the memory
-            void setTextureBuffer(std::unique_ptr<Veloxr::VeloxrBuffer> buffer);
-            void setTextureBuffer(std::shared_ptr<Veloxr::VeloxrBuffer> buffer);
-
             void setPosition(float x, float y){ _position.x = x; _position.y = y;};
             void setPosition(glm::vec3& pos) { _position = pos; };
+            void setTextureBuffer(std::unique_ptr<Veloxr::VeloxrBuffer> buffer);
+            void setTextureBuffer(std::shared_ptr<Veloxr::VeloxrBuffer> buffer);
+            void setTextureFilepath(std::string& filepath);
+
 
             void destroy();
 
 
-            inline const glm::vec3& getPosition() const { return _position; }
-            inline const std::string& getName() const { return _name; }
-            inline const std::shared_ptr<Veloxr::VeloxrBuffer> getBuffer() const { return _textureBuffer; }
+            [[nodiscard]] inline const glm::vec3& getPosition() const { return _position; }
+            [[nodiscard]] inline const std::string& getName() const { return _name; }
+            [[nodiscard]] inline const std::shared_ptr<Veloxr::VeloxrBuffer> getBuffer() const { return _textureBuffer; }
+            [[nodiscard]] inline const bool isHidden () const { return _isHidden; }
 
 
 
@@ -40,6 +41,7 @@ namespace Veloxr {
             std::string _name{""};
             std::string _filepath{""};
             std::shared_ptr<Veloxr::VeloxrBuffer> _textureBuffer;
+            bool _isHidden{false};
 
     };
 }
