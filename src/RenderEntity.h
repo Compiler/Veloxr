@@ -1,5 +1,6 @@
 #pragma once
 #include "DataUtils.h"
+#include "Vertex.h"
 #include <glm/ext/vector_float2.hpp>
 #include <glm/ext/vector_float3.hpp>
 #include <memory>
@@ -14,6 +15,10 @@ namespace Veloxr {
             RenderEntity(glm::vec2 position);
             RenderEntity(float x, float y);
 
+            
+            void appendVertex(Veloxr::Vertex&& vertex) {
+                _vertices.push_back(std::move(vertex));
+            }
 
             void setIsHidden(bool isHidden) { _isHidden = isHidden; }
             void setName(const std::string& name);
@@ -27,12 +32,12 @@ namespace Veloxr {
             void destroy();
 
 
-            [[nodiscard]] inline const glm::vec3& getPosition() const { return _position; }
-            [[nodiscard]] inline const std::string& getName() const { return _name; }
+            inline const glm::vec3& getPosition() const { return _position; }
+            inline const std::string& getName() const { return _name; }
+            inline const bool isHidden () const { return _isHidden; }
+
             [[nodiscard]] inline const std::shared_ptr<Veloxr::VeloxrBuffer> getBuffer() const { return _textureBuffer; }
-            [[nodiscard]] inline const bool isHidden () const { return _isHidden; }
-
-
+            [[nodiscard]] inline const std::vector<Veloxr::Vertex>& getVertices () const { return _vertices; }
 
 
         private:
@@ -42,6 +47,7 @@ namespace Veloxr {
             std::string _filepath{""};
             std::shared_ptr<Veloxr::VeloxrBuffer> _textureBuffer;
             bool _isHidden{false};
+            std::vector<Veloxr::Vertex> _vertices;
 
     };
 }

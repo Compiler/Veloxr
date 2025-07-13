@@ -296,7 +296,7 @@ std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::cr
     auto maxResolution = _deviceUtils->getMaxTextureResolution();
     console.log("Tiling...");
     //Veloxr::TiledResult tileData = tiler.tile4(myTexture, maxResolution);
-    Veloxr::TiledResult tileData = tiler.tile8(buffer, maxResolution);
+    Veloxr::TiledResult tileData = tiler.tile(buffer, maxResolution);
     console.log("Done! Bounding box: (", tileData.boundingBox.x, ", ", tileData.boundingBox.y, ", ", tileData.boundingBox.z, ", ", tileData.boundingBox.w, ") ");
     for(const auto& [indx, tileData] : tileData.tiles){
         VkVirtualTexture tileTexture;
@@ -345,7 +345,7 @@ std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::cr
 
         _textureMap["_tile_" + std::to_string(indx)] = tileTexture;
     }
-    vertices = std::vector<Veloxr::Vertex>(tileData.vertices.begin(), tileData.vertices.end());
+    vertices.insert(vertices.begin(), std::make_move_iterator(tileData.vertices.begin()), std::make_move_iterator(tileData.vertices.end()));
     for(Veloxr::Vertex& vertice : vertices) {
         const auto& [position, texCoords, texUnit] = vertice;
         console.log("[", position.x, ", ", position.y, "]\t\t|\t\t[", texCoords.x, ", ", texCoords.y, "]\t|\t", texUnit);
@@ -383,7 +383,7 @@ std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::cr
     auto maxResolution = _deviceUtils->getMaxTextureResolution();
     console.log("Tiling...");
     //Veloxr::TiledResult tileData = tiler.tile4(myTexture, maxResolution);
-    Veloxr::TiledResult tileData = tiler.tile8(myTexture, maxResolution);
+    Veloxr::TiledResult tileData = tiler.tile(myTexture, maxResolution);
     console.log("Done! Bounding box: (", tileData.boundingBox.x, ", ", tileData.boundingBox.y, ", ", tileData.boundingBox.z, ", ", tileData.boundingBox.w, ") ");
     for(const auto& [indx, tileData] : tileData.tiles){
         VkVirtualTexture tileTexture;
@@ -794,6 +794,7 @@ void RendererCore::destroyTextureData() {
     }
     _currentFilepath = "";
     _currentDataBuffer = {};
+    vertices = {};
 }
 
 void RendererCore::destroy() {

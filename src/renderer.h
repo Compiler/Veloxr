@@ -262,15 +262,7 @@ private: // No client -- internal
     Veloxr::OrthographicCamera _cam;
 
 
-     std::vector<Veloxr::Vertex> vertices = {
-         {{RIGHT, BOT, 0, 0}, {1.0f, 1.0f, 1, 0}, 0},
-         {{LEFT, BOT, 0, 0}, {0.0f, 1.0f, 1, 0}, 0},
-         {{LEFT, TOP, 0, 0}, {0.0f, 0.0f, 1, 0}, 0},
-
-         {{LEFT, TOP, 0, 0}, {0.0f, 0.0f, 0, 0}, 0},
-         {{RIGHT, TOP, 0, 0}, {1.0f, 0.0f, 0, 0}, 0},
-         {{RIGHT, BOT, 0, 0}, {1.0f, 1.0f, 0, 0}, 0},
-     };
+    std::vector<Veloxr::Vertex> vertices = {};
     const std::vector<const char*> validationLayers = {
         "VK_LAYER_KHRONOS_validation"
     };
