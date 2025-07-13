@@ -50,24 +50,29 @@ std::vector<unsigned char> OIIOTexture::load(std::string filename) {
     console.logc1("Allocating buffer..", filename);
 
     std::vector<unsigned char> rawData(_resolution.x * _resolution.y * _numChannels);
-    console.fatal("HELP ME: ", rawData.size() * sizeof(unsigned char));
-    console.logc1("Ready to read...", filename);
-    in->read_image(0, 0, 0, _numChannels, OIIO::TypeDesc::UINT8, &rawData[0]);
-    console.logc1("Done reading image.", filename);
+
+    in->read_image(0, 0, 0, _numChannels, OIIO::TypeDesc::UINT8, rawData.data());
     in->close();
     in.reset();
-    console.logc1("Done reading image.", filename);
-    std::cout << "[Veloxr]" << "Raw data read size=" << rawData.size() << " channels=" << _numChannels << "\n";
 
-    uint64_t totalBytes = (uint64_t)_resolution.x * (uint64_t)_resolution.y * (int64_t)4;
-    std::vector<unsigned char> pixelData(totalBytes, 255);
-    for (uint32_t i = 0; i < _resolution.x * _resolution.y; ++i) {
-        for (int c = 0; c < _numChannels && c < 4; ++c) {
-            pixelData[i * 4 + c] = rawData[i * _numChannels + c];
-        }
+    // rgba expansion
+    const uint64_t w = _resolution.x;
+    const uint64_t h = _resolution.y;
+    const uint64_t pixels = w * h;
+
+    std::vector<unsigned char> pixelData(static_cast<size_t>(pixels * 4), 255);
+
+    for (uint64_t i = 0; i < pixels; ++i) {
+        uint64_t dst = i * 4;
+        uint64_t src = i * _numChannels;
+
+        pixelData[dst + 0] = rawData[src + 0];
+        pixelData[dst + 1] = rawData[src + 1];
+        pixelData[dst + 2] = rawData[src + 2];
+        // alpha already set to opaque
     }
+
     _numChannels = 4;
-    std::cout << "[Veloxr]" << "pixelData size=" << pixelData.size() << "\n";
     return pixelData;
 }
 

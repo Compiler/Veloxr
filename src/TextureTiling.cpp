@@ -169,7 +169,7 @@ TiledResult TextureTiling::tile8(Veloxr::VeloxrBuffer& buffer, uint32_t deviceMa
             auto &localTiles = partialResults[t].localTiles;
             auto &localVerts = partialResults[t].localVerts;
 
-            std::vector<unsigned char> readBuffer(v_int(tileW) * v_int(tileH) * v_int(originalChannels), 0);
+            std::vector<unsigned char> readBuffer;
 
             for (int idx = startIdx; idx < endIdx; idx++) {
                 int row = idx / Nx;
@@ -186,12 +186,20 @@ TiledResult TextureTiling::tile8(Veloxr::VeloxrBuffer& buffer, uint32_t deviceMa
                     continue;
                 }
 
+                //row copies
                 for (v_int yy = 0; yy < thisTileH; ++yy) {
                     const v_int srcOff = (v_int(y0 + yy) * rawW + x0) * originalChannels;
                     const v_int dstOff = v_int(yy) * thisTileW * originalChannels;
+                    readBuffer.resize(thisTileW * thisTileH * originalChannels);
                     std::memcpy(readBuffer.data() + dstOff,
                             buffer.data.data() + srcOff,
                             v_int(thisTileW) * originalChannels);
+                }
+                // probe 1
+                {
+                    bool anyData = std::any_of(readBuffer.begin(), readBuffer.end(),
+                            [](unsigned char b){ return b != 255; });
+                    console.debug("[Tile ", idx, "] rows-copied ok = ", anyData);
                 }
                 bool ok = true;
                 if (!ok) {
@@ -219,6 +227,12 @@ TiledResult TextureTiling::tile8(Veloxr::VeloxrBuffer& buffer, uint32_t deviceMa
                             } else {
                                 tileData[dstPix + c] = 255;
                             }
+                            // // probe 2
+                            // {
+                            //     bool anyPix = std::any_of(tileData.begin(), tileData.end(),
+                            //             [](unsigned char b){ return b != 255; });
+                            //     probe_2_message += "[Tile " + std::to_string(idx) + "] swizzle ok = " + std::to_string(anyPix) + '\n';
+                            // }
                         }
                     }
                 }
@@ -278,11 +292,12 @@ TiledResult TextureTiling::tile8(Veloxr::VeloxrBuffer& buffer, uint32_t deviceMa
     }
 
     applyExifOrientation(result.vertices, orientation, w, h );
-
+    using F = std::numeric_limits<float>;
+    result.boundingBox = {  F::max(),  F::max(), -F::max(), -F::max() };
     for(const auto& v : result.vertices) {
         result.boundingBox.x = std::min(v.pos.x, result.boundingBox.x);
         result.boundingBox.y = std::min(v.pos.y, result.boundingBox.y);
-        result.boundingBox.z = std::max(v.pos.y, result.boundingBox.z);
+        result.boundingBox.z = std::max(v.pos.x, result.boundingBox.z);
         result.boundingBox.w = std::max(v.pos.y, result.boundingBox.w);
     }
 

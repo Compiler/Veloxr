@@ -294,10 +294,10 @@ std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::cr
     //_cam.init(0, _windowWidth, 0, _windowHeight, -1, 1);
     Veloxr::TextureTiling tiler{};
     auto maxResolution = _deviceUtils->getMaxTextureResolution();
-    console.log("[Veloxr]", "Tiling...");
+    console.log("Tiling...");
     //Veloxr::TiledResult tileData = tiler.tile4(myTexture, maxResolution);
     Veloxr::TiledResult tileData = tiler.tile8(buffer, maxResolution);
-    console.log("[Veloxr]", "Done! Bounding box: (", tileData.boundingBox.x, ", ", tileData.boundingBox.y, ", ", tileData.boundingBox.z, ", ", tileData.boundingBox.w, ") ");
+    console.log("Done! Bounding box: (", tileData.boundingBox.x, ", ", tileData.boundingBox.y, ", ", tileData.boundingBox.z, ", ", tileData.boundingBox.w, ") ");
     for(const auto& [indx, tileData] : tileData.tiles){
         VkVirtualTexture tileTexture;
         int texWidth    = tileData.width;
@@ -308,7 +308,7 @@ std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::cr
             static_cast<VkDeviceSize>(texHeight) *
             static_cast<VkDeviceSize>(texChannels);
 
-        console.log("[Veloxr]", "Loading texture of size ", texWidth, " x ", texHeight, ": ", (imageSize / 1024.0 / 1024.0), " MB");
+        console.log("Loading texture of size ", texWidth, " x ", texHeight, ": ", (imageSize / 1024.0 / 1024.0), " MB");
 
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
@@ -348,7 +348,7 @@ std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::cr
     vertices = std::vector<Veloxr::Vertex>(tileData.vertices.begin(), tileData.vertices.end());
     for(Veloxr::Vertex& vertice : vertices) {
         const auto& [position, texCoords, texUnit] = vertice;
-        console.log("[Veloxr]", "[", position.x, ", ", position.y, "]\t\t|\t\t[", texCoords.x, ", ", texCoords.y, "]\t|\t", texUnit);
+        console.log("[", position.x, ", ", position.y, "]\t\t|\t\t[", texCoords.x, ", ", texCoords.y, "]\t|\t", texUnit);
     }
     float minX = +9999.0f, maxX = -9999.0f;
     float minY = +9999.0f, maxY = -9999.0f;
@@ -358,7 +358,7 @@ std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::cr
         minY = std::min(minY, v.pos.y);
         maxY = std::max(maxY, v.pos.y);
     }
-    console.log("[Veloxr]", "Final geometry bounding box: X in [", minX, ", ", maxX, "], Y in [", minY, ", ", maxY, "]");
+    console.log("Final geometry bounding box: X in [", minX, ", ", maxX, "], Y in [", minY, ", ", maxY, "]");
     auto deltaX = std::abs(maxX - minX);
     auto deltaY = std::abs(maxY - minY);
     float offsetX = 0.0f, offsetY = 0.0f;
@@ -381,10 +381,10 @@ std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::cr
     Veloxr::OIIOTexture myTexture{input_filepath};
     Veloxr::TextureTiling tiler{};
     auto maxResolution = _deviceUtils->getMaxTextureResolution();
-    console.log("[Veloxr]", "Tiling...");
+    console.log("Tiling...");
     //Veloxr::TiledResult tileData = tiler.tile4(myTexture, maxResolution);
     Veloxr::TiledResult tileData = tiler.tile8(myTexture, maxResolution);
-    console.log("[Veloxr]", "Done! Bounding box: (", tileData.boundingBox.x, ", ", tileData.boundingBox.y, ", ", tileData.boundingBox.z, ", ", tileData.boundingBox.w, ") ");
+    console.log("Done! Bounding box: (", tileData.boundingBox.x, ", ", tileData.boundingBox.y, ", ", tileData.boundingBox.z, ", ", tileData.boundingBox.w, ") ");
     for(const auto& [indx, tileData] : tileData.tiles){
         VkVirtualTexture tileTexture;
         int texWidth    = tileData.width;
@@ -392,12 +392,12 @@ std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::cr
         int texChannels = 4;//myTexture.getNumChannels();
         int samplerIndex = tileData.samplerIndex;
 
-        console.log("[Veloxr]", "HELP MY CHANNELS ARE ", myTexture.getNumChannels());
+        console.log("HELP MY CHANNELS ARE ", myTexture.getNumChannels());
         VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth) * 
             static_cast<VkDeviceSize>(texHeight) *
             static_cast<VkDeviceSize>(texChannels);
 
-        console.log("[Veloxr]", "Loading texture of size ", texWidth, " x ", texHeight, ": ", (imageSize / 1024.0 / 1024.0), " MB");
+        console.log( "Loading texture of size ", texWidth, " x ", texHeight, ": ", (imageSize / 1024.0 / 1024.0), " MB");
 
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
@@ -437,7 +437,7 @@ std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::cr
     vertices = std::vector<Veloxr::Vertex>(tileData.vertices.begin(), tileData.vertices.end());
     for(Veloxr::Vertex& vertice : vertices) {
         const auto& [position, texCoords, texUnit] = vertice;
-        console.log("[Veloxr]", "[", position.x, ", ", position.y, "]\t\t|\t\t[", texCoords.x, ", ", texCoords.y, "]\t|\t", texUnit);
+        console.log( "[", position.x, ", ", position.y, "]\t\t|\t\t[", texCoords.x, ", ", texCoords.y, "]\t|\t", texUnit);
     }
     float minX = +9999.0f, maxX = -9999.0f;
     float minY = +9999.0f, maxY = -9999.0f;
@@ -447,7 +447,7 @@ std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::cr
         minY = std::min(minY, v.pos.y);
         maxY = std::max(maxY, v.pos.y);
     }
-    console.log("[Veloxr]", "Final geometry bounding box: X in [", minX, ", ", maxX, "], Y in [", minY, ", ", maxY, "]");
+    console.log("Final geometry bounding box: X in [", minX, ", ", maxX, "], Y in [", minY, ", ", maxY, "]");
     auto deltaX = std::abs(maxX - minX);
     auto deltaY = std::abs(maxY - minY);
     float offsetX = 0.0f, offsetY = 0.0f;
@@ -846,7 +846,7 @@ void RendererCore::drawFrame() {
     VkResult result = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || frameBufferResized) {
-        console.log("[Veloxr]", "Resizing swapchain\n");
+        console.log("Resizing swapchain\n");
         frameBufferResized = false;
         recreateSwapChain();
         return;
