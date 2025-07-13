@@ -26,7 +26,6 @@ namespace Veloxr {
             void setPosition(glm::vec3& pos) { _position = pos; };
             void setTextureBuffer(std::unique_ptr<Veloxr::VeloxrBuffer> buffer);
             void setTextureBuffer(std::shared_ptr<Veloxr::VeloxrBuffer> buffer);
-            void setTextureFilepath(std::string& filepath);
 
 
             void destroy();
@@ -44,7 +43,6 @@ namespace Veloxr {
             static int ENTITY_COUNT;
             glm::vec3 _position;
             std::string _name{""};
-            std::string _filepath{""};
             std::shared_ptr<Veloxr::VeloxrBuffer> _textureBuffer;
             bool _isHidden{false};
             std::vector<Veloxr::Vertex> _vertices;

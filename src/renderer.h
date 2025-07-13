@@ -185,7 +185,6 @@ public:
     void setWindowDimensions(int width, int height); 
 
     // Set the texture to load, will reinitialize the pipeline.
-    void setTextureFilePath(std::string filepath); 
     void setTextureBuffer(Veloxr::VeloxrBuffer&& buffer); 
 
     // Initialize the renderer, given a window pointer to render into.
@@ -241,7 +240,6 @@ private: // No client -- internal
     const int WIDTH = 1920;
     const int HEIGHT = 1080;
     int _windowWidth, _windowHeight;
-    std::string _currentFilepath;
     Veloxr::VeloxrBuffer _currentDataBuffer;
     Veloxr::LLogger console{"[Veloxr][Renderer] "};
     Veloxr::CommandUtils commandUtils{};
@@ -304,7 +302,6 @@ private: // No client -- internal
         VkDeviceMemory textureImageMemory;
         VkImageView textureImageView;
         VkSampler textureSampler;
-        Veloxr::OIIOTexture textureData;
         int samplerIndex;
 
         void destroy(VkDevice device) {
@@ -1198,41 +1195,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         glfwSetWindowShouldClose(window, true);  
     }
 
-    if (key == GLFW_KEY_W && action == GLFW_PRESS) {
-        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
-        app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg");
-    }
-
-    if (key == GLFW_KEY_A && action == GLFW_PRESS) {
-        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
-        app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/test.png");
-    }
-
-    if (key == GLFW_KEY_S && action == GLFW_PRESS) {
-        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
-        app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/test2.png");
-    }
-
-    if (key == GLFW_KEY_D && action == GLFW_PRESS) {
-        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
-        app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/test3.png");
-    }
-
-    if (key == GLFW_KEY_G && action == GLFW_PRESS) {
-        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
-        app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/56000.jpg");
-    }
-
-    if (key == GLFW_KEY_E && action == GLFW_PRESS) {
-        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
-        app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/fox.jpg");
-    }
-
-    if (key == GLFW_KEY_L && action == GLFW_PRESS) {
-        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
-        app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/landscape.tif");
-    }
-    
     if (key == GLFW_KEY_1 && action == GLFW_PRESS) {
         setupBuffer(PREFIX + "/Users/ljuek/Downloads/fox.jpg");
     }

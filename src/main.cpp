@@ -26,15 +26,12 @@ int main(int argc, char* argv[]) {
         buf.height = texture.getResolution().y;
         buf.numChannels = texture.getNumChannels();
         std::cout << "[DRIVER] Sending setTextureBuffer\n";
-	    //app.setTextureFilePath(texturePath);
         app.setTextureBuffer(std::move(buf));
 
 
 
         std::cout << "[DRIVER] Init\n";
-        //app.setTextureFilePath("C:/Users/ljuek/Downloads/test.png");
         app.init();
-        //app.setTextureFilePath(texturePath);
         app.spin();
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;

@@ -36,9 +36,7 @@ namespace Veloxr {
         public:
             TextureTiling() = default;
             void init();
-            TiledResult tile(OIIOTexture &texture, uint32_t maxResolution=4096*2);
             TiledResult tile(Veloxr::VeloxrBuffer& buffer, uint32_t maxResolution=4096*2);
-
 
     };
 
