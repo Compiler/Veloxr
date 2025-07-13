@@ -1,5 +1,6 @@
 #include "renderer.h"
 #include <stdexcept>
+#include <vulkan/vulkan_core.h>
 
 using namespace Veloxr;
 
@@ -277,7 +278,7 @@ std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::cr
     Veloxr::TextureTiling tiler{};
     auto maxResolution = _deviceUtils->getMaxTextureResolution();
     console.log("Tiling...");
-    Veloxr::TiledResult tileData = tiler.tile(buffer, maxResolution);
+    Veloxr::TiledResult tileData = tiler.tile(buffer, 4096/*maxResolution*/);
     console.log("Done! Bounding box: (", tileData.boundingBox.x, ", ", tileData.boundingBox.y, ", ", tileData.boundingBox.z, ", ", tileData.boundingBox.w, ") ");
     for(const auto& [indx, tileData] : tileData.tiles){
         VkVirtualTexture tileTexture;
@@ -503,7 +504,7 @@ void RendererCore::createDescriptorLayout() {
     samplerLayoutBinding.binding = 1;
     samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     console.warn("Texture map size for descriptor layout: ", _textureMap.size());
-    samplerLayoutBinding.descriptorCount = 32;//std::min((decltype(_textureMap.size()))1, _textureMap.size());
+    samplerLayoutBinding.descriptorCount = std::min((uint32_t)2048, _deviceUtils->getMaxSamplersPerStage());//std::min((decltype(_textureMap.size()))1, _textureMap.size());
     samplerLayoutBinding.pImmutableSamplers = nullptr;
     samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
