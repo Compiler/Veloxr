@@ -10,4 +10,11 @@ namespace Veloxr {
         uint64_t x, y;
     };
 
+    enum EXIFCases {
+        CW_0  =1,
+        CW_180=3,
+        CW_90 =6,
+        CW_270=8
+    };
+
 }

@@ -1,4 +1,5 @@
 #include "TextureTiling.h"
+#include "Common.h"
 #include <OpenImageIO/imageio.h>
 #include <cmath>
 #include <iostream>
@@ -23,6 +24,7 @@ TiledResult TextureTiling::tile(Veloxr::VeloxrBuffer& buffer, uint32_t deviceMax
 
     console.debug("Total size of buffer: ", totalSizeBytes, " bytes.");
     console.debug("Total expected size:  ", expectedTotalSizeBytes, " bytes.");
+    console.debug("Buffer orientation: ", buffer.orientation);
     
 
     auto w = buffer.width;
@@ -88,15 +90,15 @@ TiledResult TextureTiling::tile(Veloxr::VeloxrBuffer& buffer, uint32_t deviceMax
                     std::cout << "[Veloxr]" << "Tile has no orientation change.\n";
                     res = uv; 
                     break;
-                case 3:
+                case Veloxr::EXIFCases::CW_180:
                     std::cout << "[Veloxr]" << "Tile has 180 rotation.\n";
                     res = glm::vec2(1.0f - uv.x, 1.0f - uv.y);
                     break;
-                case 6:
+                case Veloxr::EXIFCases::CW_90:
                     std::cout << "[Veloxr]" << "Tile has 90 rotation.\n";
                     res = glm::vec2(uv.y, 1.0f - uv.x);
                     break;
-                case 8:
+                case Veloxr::EXIFCases::CW_270:
                     std::cout << "[Veloxr]" << "Tile has 270 rotation.\n";
                     res = glm::vec2(1.0f - uv.y, uv.x);
                     break;
@@ -313,6 +315,7 @@ TiledResult TextureTiling::tile(OIIOTexture &texture, uint32_t deviceMaxDimensio
         return result;
     }
 
+    console.debug("Texture orientation: ", texture.getOrientation());
     uint32_t w = texture.getResolution().x;
     uint32_t h = texture.getResolution().y;
 
@@ -376,15 +379,15 @@ TiledResult TextureTiling::tile(OIIOTexture &texture, uint32_t deviceMaxDimensio
                     std::cout << "[Veloxr]" << "Tile has no orientation change.\n";
                     res = uv; 
                     break;
-                case 3:
+                case Veloxr::EXIFCases::CW_180:
                     std::cout << "[Veloxr]" << "Tile has 180 rotation.\n";
                     res = glm::vec2(1.0f - uv.x, 1.0f - uv.y);
                     break;
-                case 6:
+                case Veloxr::EXIFCases::CW_90:
                     std::cout << "[Veloxr]" << "Tile has 90 rotation.\n";
                     res = glm::vec2(uv.y, 1.0f - uv.x);
                     break;
-                case 8:
+                case Veloxr::EXIFCases::CW_270:
                     std::cout << "[Veloxr]" << "Tile has 270 rotation.\n";
                     res = glm::vec2(1.0f - uv.y, uv.x);
                     break;
@@ -600,18 +603,18 @@ void TextureTiling::applyExifOrientation( std::vector<Vertex>& vertices, int ori
         float newY = oldY;
 
         switch (orientation) {
-            case 1: break;
-            case 3: // 180 degrees
+            case Veloxr::EXIFCases::CW_0: break;
+            case Veloxr::EXIFCases::CW_180:
                     newX = float(rawW)  - oldX;
                     newY = float(rawH)  - oldY;
                     break;
 
-            case 6: // 90 CW
+            case Veloxr::EXIFCases::CW_90:
                     newX = oldY;
                     newY = float(rawW) - oldX;
                     break;
 
-            case 8: // 270 CW
+            case Veloxr::EXIFCases::CW_270:
                     newX = float(rawH) - oldY;
                     newY = oldX;
                     break;
@@ -628,23 +631,19 @@ void TextureTiling::applyExifOrientation( std::vector<Vertex>& vertices, int ori
 
         glm::vec2 uvRes(u, w);
         switch (orientation) {
-            case 1:
-                break;
-            case 3:
+            case Veloxr::EXIFCases::CW_0: break;
+            case Veloxr::EXIFCases::CW_180:
                 uvRes = glm::vec2(1.0f - w, u);
                 break;
-            case 6:
+            case Veloxr::EXIFCases::CW_90:
                 uvRes = glm::vec2(w, 1.0f - u);
                 break;
-            case 8:
+            case Veloxr::EXIFCases::CW_270:
                 uvRes = glm::vec2(1.0f - u, 1.0f - w);
                 break;
             default:
                 break;
         }
-
-        //v.texCoord.x = uvRes.x;
-        //v.texCoord.y = uvRes.y;
     }
 }
 
@@ -652,8 +651,8 @@ glm::vec2 TextureTiling::rotatePositionForOrientation(const glm::vec2 &p, int or
     switch (orientation) {
         case 1: 
         default:return p;
-        case 3: return {width - p.x, height - p.y};
-        case 6: return {p.y, width - p.x};
-        case 8: return {height - p.y, p.x};
+        case Veloxr::EXIFCases::CW_180: return {width - p.x, height - p.y};
+        case Veloxr::EXIFCases::CW_90: return {p.y, width - p.x};
+        case Veloxr::EXIFCases::CW_270: return {height - p.y, p.x};
     }
 }

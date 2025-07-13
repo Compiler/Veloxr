@@ -1190,6 +1190,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         buf.width = texture.getResolution().x;
         buf.height = texture.getResolution().y;
         buf.numChannels = texture.getNumChannels();
+        buf.orientation = texture.getOrientation();
         std::cout << "[DRIVER] Sending setTextureBuffer\n";
         app->setTextureBuffer(std::move(buf));
     };
