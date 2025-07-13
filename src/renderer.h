@@ -194,7 +194,6 @@ public:
     // Initialize the renderer, given a window pointer to render into.
     void init(void* windowHandle = nullptr); 
     void setupTexturePasses(); 
-    std::shared_ptr<Veloxr::RenderEntity> registerEntity(); 
 
     // Camera API. Use this object to access camera movement related data, zoom, pan, etc.
     /*
@@ -237,7 +236,7 @@ public:
     // Make drawFrame accessible to external code
     void drawFrame();
 
-    Veloxr::EntityManager& getEntityManager() { return _entityManager; }
+    std::shared_ptr<Veloxr::EntityManager> getEntityManager() { return _entityManager; }
 
     //glm::vec2 getMainEntityPosition()  { }
 
@@ -249,7 +248,7 @@ private: // No client -- internal
     int _windowWidth, _windowHeight;
     Veloxr::VeloxrBuffer _currentDataBuffer;
     Veloxr::LLogger console{"[Veloxr][Renderer] "};
-    Veloxr::EntityManager _entityManager{};
+    std::shared_ptr<Veloxr::EntityManager> _entityManager;
     // For friend classes / drivers
 
 

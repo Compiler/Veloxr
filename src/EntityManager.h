@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Common.h"
 #include "RenderEntity.h"
 #include <memory>
 #include <unordered_map>
@@ -9,7 +10,7 @@ namespace Veloxr {
     class EntityManager {
     
         public:
-            EntityManager() = default;
+            EntityManager(std::shared_ptr<Veloxr::VVDataPacket> dataPacket);
 
 
             // Single entity endpoints
@@ -24,6 +25,8 @@ namespace Veloxr {
 
         private:
             Veloxr::LLogger console {"[Veloxr][EntityManager] "};
+
+            std::shared_ptr<VVDataPacket> _data;
 
             // TODO: EntityComponentSystem
             // We can afford disjoint memory because the big hitters are a pointer right now. If we inline

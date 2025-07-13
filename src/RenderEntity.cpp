@@ -13,6 +13,10 @@ void RenderEntity::setTextureBuffer(std::unique_ptr<Veloxr::VeloxrBuffer> buffer
     _textureBuffer = std::shared_ptr<Veloxr::VeloxrBuffer>(std::move(buffer));
 }
 
+void RenderEntity::setTextureBuffer(VeloxrBuffer& buffer) {
+    _textureBuffer = std::make_shared<Veloxr::VeloxrBuffer>(std::move(buffer));
+}
+
 void RenderEntity::setTextureBuffer(std::shared_ptr<Veloxr::VeloxrBuffer> buffer) {
     _textureBuffer = buffer;
 }

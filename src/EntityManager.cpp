@@ -5,11 +5,14 @@
 
 using Veloxr::EntityManager;
 
+EntityManager::EntityManager(std::shared_ptr<Veloxr::VVDataPacket> dataPacket): _data(dataPacket) {
+
+}
 
 void EntityManager::initialize() {
     for(auto& [name, entity] : _entityMap) {
         entity->getVVTexture().tileTexture(entity->getBuffer());
-
+        _vertices.insert(_vertices.begin(), std::make_move_iterator(entity->getVertices().begin()), std::make_move_iterator(entity->getVertices().end()));
     }
 }
 
@@ -18,7 +21,7 @@ void EntityManager::registerEntity(std::shared_ptr<Veloxr::RenderEntity> entity)
     console.log(__func__, " for ", name);
     auto findIt = _entityMap.find(name);
 
-    if (findIt == _entityMap.end()) {
+    if (findIt != _entityMap.end()) {
         console.warn("Entity with name '", name, "' already exists. Aborting.");
         return;
     }
@@ -44,13 +47,14 @@ std::shared_ptr<Veloxr::RenderEntity> EntityManager::createEntity(const std::str
     console.log(__func__, " for ", name);
     auto findIt = _entityMap.find(name);
 
-    if (findIt == _entityMap.end()) {
+    if (findIt != _entityMap.end()) {
         console.warn("Entity with name '", name, "' already exists. Aborting.");
         return findIt->second;
     }
 
     std::shared_ptr<Veloxr::RenderEntity> entity = std::make_shared<Veloxr::RenderEntity>();
     entity->setName(name);
+    entity->setDataPacket(_data);
     _entityMap[name] = entity;
     return entity;
 
@@ -60,7 +64,7 @@ std::shared_ptr<Veloxr::RenderEntity> EntityManager::getEntity(const std::string
     console.log(__func__, " for ", name);
     auto findIt = _entityMap.find(name);
 
-    if (findIt == _entityMap.end()) {
+    if (findIt != _entityMap.end()) {
         console.warn("Could not find entity '", name, "'");
         return nullptr;
     }

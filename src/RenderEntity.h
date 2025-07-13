@@ -1,4 +1,5 @@
 #pragma once
+#include "Common.h"
 #include "DataUtils.h"
 #include "VVTexture.h"
 #include "Vertex.h"
@@ -27,6 +28,8 @@ namespace Veloxr {
             void setPosition(glm::vec3& pos) { _position = pos; };
             void setTextureBuffer(std::unique_ptr<Veloxr::VeloxrBuffer> buffer);
             void setTextureBuffer(std::shared_ptr<Veloxr::VeloxrBuffer> buffer);
+            void setTextureBuffer(Veloxr::VeloxrBuffer& buffer);
+            void setDataPacket(std::shared_ptr<VVDataPacket> dataPacket) { _texture.setDataPacket(dataPacket); }
 
 
             void destroy();

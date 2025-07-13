@@ -1,8 +1,10 @@
 #include "renderer.h"
 #include "CommandUtils.h"
 #include "Common.h"
+#include "DataUtils.h"
 #include "VVTexture.h"
 #include <chrono>
+#include <memory>
 #include <stdexcept>
 #include <vulkan/vulkan_core.h>
 
@@ -83,6 +85,7 @@ void RendererCore::init(void* windowHandle) {
     _dataPacket->commandPool = commandPool;
     _dataPacket->graphicsQueue = graphicsQueue;
     _dataPacket->presentQueue = presentQueue;
+    _entityManager = std::make_shared<Veloxr::EntityManager>(_dataPacket);
     console.log("[Veloxr] [Debug] init called and completed. Setting up texture passes from state\n");
     setupTexturePasses();
 }

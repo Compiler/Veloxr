@@ -26,12 +26,16 @@ int main(int argc, char* argv[]) {
         buf.height = texture.getResolution().y;
         buf.numChannels = texture.getNumChannels();
         std::cout << "[DRIVER] Sending setTextureBuffer\n";
-        app.setTextureBuffer(std::move(buf));
+
 
 
 
         std::cout << "[DRIVER] Init\n";
         app.init();
+        auto em = app.getEntityManager();
+        auto entityHandle = em->createEntity("main");
+        entityHandle->setTextureBuffer(buf);
+        em->initialize();
         app.spin();
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
