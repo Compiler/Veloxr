@@ -263,14 +263,14 @@ private: // No client -- internal
 
 
      std::vector<Veloxr::Vertex> vertices = {
-    {{RIGHT, BOT, 0, 0}, {1.0f, 1.0f, 1, 0}, 0},
-    {{LEFT, BOT, 0, 0}, {0.0f, 1.0f, 1, 0}, 0},
-    {{LEFT, TOP, 0, 0}, {0.0f, 0.0f, 1, 0}, 0},
+         {{RIGHT, BOT, 0, 0}, {1.0f, 1.0f, 1, 0}, 0},
+         {{LEFT, BOT, 0, 0}, {0.0f, 1.0f, 1, 0}, 0},
+         {{LEFT, TOP, 0, 0}, {0.0f, 0.0f, 1, 0}, 0},
 
-    {{LEFT, TOP, 0, 0}, {0.0f, 0.0f, 0, 0}, 0},
-    {{RIGHT, TOP, 0, 0}, {1.0f, 0.0f, 0, 0}, 0},
-    {{RIGHT, BOT, 0, 0}, {1.0f, 1.0f, 0, 0}, 0},
-};
+         {{LEFT, TOP, 0, 0}, {0.0f, 0.0f, 0, 0}, 0},
+         {{RIGHT, TOP, 0, 0}, {1.0f, 0.0f, 0, 0}, 0},
+         {{RIGHT, BOT, 0, 0}, {1.0f, 1.0f, 0, 0}, 0},
+     };
     const std::vector<const char*> validationLayers = {
         "VK_LAYER_KHRONOS_validation"
     };
@@ -1170,7 +1170,7 @@ inline void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
         lastX = xpos;
         lastY = ypos;
         glm::vec2 diffs{-dx / app->getCamera().getZoomLevel(), -dy / app->getCamera().getZoomLevel()};
-        diffs *= 100.0 * app->deltaMs;
+        diffs *= 1000.0 * app->deltaMs;
         app->getCamera().translate(diffs);
         // These will force the FPS to be 7fps on a 3090, there was nothing wrong with my code~!
         /*
@@ -1187,6 +1187,20 @@ inline void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+
+    auto setupBuffer = [&](std::string filepath) {
+        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
+        Veloxr::OIIOTexture texture(filepath);
+        Veloxr::VeloxrBuffer buf;
+        std::cout << "Moving data...";
+        buf.data = texture.load(filepath);
+        std::cout << "... done!\n";
+        buf.width = texture.getResolution().x;
+        buf.height = texture.getResolution().y;
+        buf.numChannels = texture.getNumChannels();
+        std::cout << "[DRIVER] Sending setTextureBuffer\n";
+        app->setTextureBuffer(std::move(buf));
+    };
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);  
     }
@@ -1227,8 +1241,22 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     }
     
     if (key == GLFW_KEY_1 && action == GLFW_PRESS) {
-        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
-        //app->getCamera().zoomCentered();
+        setupBuffer(PREFIX + "/Users/ljuek/Downloads/fox.jpg");
+    }
+    if (key == GLFW_KEY_2 && action == GLFW_PRESS) {
+        setupBuffer(PREFIX + "/Users/ljuek/Downloads/test.png");
+    }
+    if (key == GLFW_KEY_3 && action == GLFW_PRESS) {
+        setupBuffer(PREFIX + "/Users/ljuek/Downloads/test2.png");
+    }
+    if (key == GLFW_KEY_4 && action == GLFW_PRESS) {
+        setupBuffer(PREFIX + "/Users/ljuek/Downloads/Colonial.jpg");
+    }
+    if (key == GLFW_KEY_5 && action == GLFW_PRESS) {
+        setupBuffer(PREFIX + "/Users/ljuek/Downloads/landscape.tif");
+    }
+    if (key == GLFW_KEY_6 && action == GLFW_PRESS) {
+        setupBuffer(PREFIX + "/Users/ljuek/Downloads/56000.jpg");
     }
 }
 

@@ -1,16 +1,21 @@
 #pragma once
+#include "DataUtils.h"
 #include <cstring>
 #include <iostream>
 #include <map>
 #include <texture.h>
 #include <vector>
 #include <Vertex.h>
+#include "VLogger.h"
 namespace Veloxr {
+
+    typedef uint64_t v_int;
 
     struct TextureData {
         uint32_t width, height, channels;
         std::vector<unsigned char> pixelData;
         uint32_t rotateIndex=0;
+        uint32_t samplerIndex{};
     };
 
     struct TiledResult {
@@ -22,6 +27,7 @@ namespace Veloxr {
 
     class TextureTiling {
         private:
+            Veloxr::LLogger console {"[Veloxr][TextureTiling] "};
             inline glm::vec2 rotatePositionForOrientation(const glm::vec2 &p, int orientation, float width, float height) {
                 switch (orientation) {
                     case 1: 
@@ -102,6 +108,7 @@ namespace Veloxr {
             TiledResult tile6(OIIOTexture &texture, uint32_t maxResolution=4096*2);
             TiledResult tile7(OIIOTexture &texture, uint32_t maxResolution=4096*2);
             TiledResult tile8(OIIOTexture &texture, uint32_t maxResolution=4096*2);
+            TiledResult tile8(Veloxr::VeloxrBuffer& buffer, uint32_t maxResolution=4096*2);
 
 
     };

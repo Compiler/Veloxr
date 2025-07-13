@@ -44,6 +44,7 @@ if (APPLE)
         src/device.h src/device.cpp 
         src/CommandUtils.h src/CommandUtils.cpp 
         src/RenderEntity.h src/RenderEntity.cpp
+        src/EntityManager.h src/EntityManager.cpp
         src/OrthographicCamera.h src/OrthographicCamera.cpp
         src/texture.h src/texture.cpp 
         src/TextureTiling.h src/TextureTiling.cpp
@@ -57,6 +58,7 @@ elseif (WIN32)
         src/renderer.h src/renderer.cpp
         src/CommandUtils.h src/CommandUtils.cpp 
         src/RenderEntity.h src/RenderEntity.cpp
+        src/EntityManager.h src/EntityManager.cpp
         src/device.h src/device.cpp 
         src/OrthographicCamera.h src/OrthographicCamera.cpp
         src/texture.h src/texture.cpp 

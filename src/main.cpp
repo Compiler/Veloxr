@@ -2,6 +2,7 @@
 #include <renderer.h>
 #include <stdexcept>
 #include <texture.h>
+#include <thread>
 int main(int argc, char* argv[]) {
     RendererCore app{};
 
@@ -14,28 +15,26 @@ int main(int argc, char* argv[]) {
         const std::string texturePath = filepath;
         std::cout << "[DRIVER] Loading texture from: " << texturePath << std::endl;
         
-        /*
         Veloxr::OIIOTexture texture(texturePath);
-        std::vector<unsigned char> data = texture.load();
-        if (data.empty()) {
-            throw std::runtime_error("Failed to load texture data from: " + texturePath);
-        }
+        std::cout << "Loading data...";
         
         Veloxr::VeloxrBuffer buf;
-        buf.data = std::move(data);
+        std::cout << "Moving data...";
+        buf.data = texture.load(texturePath);
+        std::cout << "... done!\n";
         buf.width = texture.getResolution().x;
         buf.height = texture.getResolution().y;
         buf.numChannels = texture.getNumChannels();
         std::cout << "[DRIVER] Sending setTextureBuffer\n";
 	    //app.setTextureFilePath(texturePath);
         app.setTextureBuffer(std::move(buf));
-        */
 
 
 
         std::cout << "[DRIVER] Init\n";
-        app.setTextureFilePath("C:/Users/ljuek/Downloads/test.png");
+        //app.setTextureFilePath("C:/Users/ljuek/Downloads/test.png");
         app.init();
+        //app.setTextureFilePath(texturePath);
         app.spin();
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
