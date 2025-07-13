@@ -18,16 +18,22 @@ TiledResult TextureTiling::tile8(Veloxr::VeloxrBuffer& buffer, uint32_t deviceMa
         return result;
     }
 
-    uint32_t w = buffer.width;
-    uint32_t h = buffer.height;
-    buffer.orientation = 1;
+    const v_int totalSizeBytes = buffer.data.size() * sizeof(unsigned char);
+    const v_int expectedTotalSizeBytes = buffer.width * buffer.height * buffer.numChannels;
 
-    uint64_t maxPixels   = (uint64_t)deviceMaxDimension * (uint64_t)deviceMaxDimension;
-    uint64_t totalPixels = (uint64_t)w * (uint64_t)h;
+    console.debug("Total size of buffer: ", totalSizeBytes, " bytes.");
+    console.debug("Total expected size:  ", expectedTotalSizeBytes, " bytes.");
+    
+
+    auto w = buffer.width;
+    auto h = buffer.height;
+
+    auto maxPixels = (v_int)deviceMaxDimension * (v_int)deviceMaxDimension;
+    auto totalPixels = (v_int)w * (v_int)h;
 
     bool tooManyPixels = (totalPixels > maxPixels);
-    bool tooWide       = (w > deviceMaxDimension);
-    bool tooTall       = (h > deviceMaxDimension);
+    bool tooWide = (w > deviceMaxDimension);
+    bool tooTall = (h > deviceMaxDimension);
 
     std::cout << "[Veloxr]" << "MaxPixels=" << maxPixels
               << " totalPixels=" << totalPixels
@@ -48,9 +54,9 @@ TiledResult TextureTiling::tile8(Veloxr::VeloxrBuffer& buffer, uint32_t deviceMa
 
         std::cout << "[Veloxr]" << "Loaded pixelData.size()=" << one.pixelData.size() << "\n";
 
-        int orientation = buffer.orientation;
-        uint32_t orientedW = w;
-        uint32_t orientedH = h;
+        auto orientation = buffer.orientation;
+        auto orientedW = w;
+        auto orientedH = h;
         if (orientation == 6 || orientation == 8) {
             std::swap(orientedW, orientedH);
         }
@@ -117,34 +123,34 @@ TiledResult TextureTiling::tile8(Veloxr::VeloxrBuffer& buffer, uint32_t deviceMa
 
     std::cout << "[Veloxr]" << "Texture too big for single tile. Doing multi-tiling.\n";
 
-    uint32_t rawW = w; 
-    uint32_t rawH = h;
+    v_int rawW = w; 
+    v_int rawH = h;
 
-    int orientation = buffer.orientation;
+    v_int orientation = buffer.orientation;
     std::cout << "[Veloxr]" << "[INFO] Orientation = " << orientation << "\n";
 
-    uint32_t orientedW = rawW;
-    uint32_t orientedH = rawH;
+    v_int orientedW = rawW;
+    v_int orientedH = rawH;
     if (orientation == 6 || orientation == 8) {
         std::swap(orientedW, orientedH);
     }
 
-    uint32_t Nx = (rawW + deviceMaxDimension - 1) / deviceMaxDimension;
-    uint32_t Ny = (rawH + deviceMaxDimension - 1) / deviceMaxDimension;
+    v_int Nx = (rawW + deviceMaxDimension - 1) / deviceMaxDimension;
+    v_int Ny = (rawH + deviceMaxDimension - 1) / deviceMaxDimension;
 
-    uint32_t tileW = (rawW + Nx - 1) / Nx;
-    uint32_t tileH = (rawH + Ny - 1) / Ny;
+    v_int tileW = (rawW + Nx - 1) / Nx;
+    v_int tileH = (rawH + Ny - 1) / Ny;
 
-    int totalTiles = Nx * Ny;
-    int numThreads = std::min(totalTiles, 16);
-    int tilesPerThread = (totalTiles + numThreads - 1) / numThreads;
+    v_int totalTiles = Nx * Ny;
+    v_int numThreads = std::min(totalTiles, (v_int)16);
+    v_int tilesPerThread = (totalTiles + numThreads - 1) / numThreads;
 
     // OIIO::ImageCache *ic = OIIO::ImageCache::create(true);
     std::shared_ptr<OIIO::ImageCache> ic = OIIO::ImageCache::create(true);
     ic->attribute("max_memory_MB", 1024.0f);
 
-    uint32_t originalChannels = buffer.numChannels;
-    uint32_t forcedChannels   = 4;
+    v_int originalChannels = buffer.numChannels;
+    v_int forcedChannels   = 4;
 
     struct ThreadResult {
         std::map<int, TextureData>         localTiles;
@@ -163,29 +169,29 @@ TiledResult TextureTiling::tile8(Veloxr::VeloxrBuffer& buffer, uint32_t deviceMa
             auto &localTiles = partialResults[t].localTiles;
             auto &localVerts = partialResults[t].localVerts;
 
-            std::vector<unsigned char> readBuffer(size_t(tileW) * size_t(tileH) * size_t(originalChannels), 0);
+            std::vector<unsigned char> readBuffer(v_int(tileW) * v_int(tileH) * v_int(originalChannels), 0);
 
             for (int idx = startIdx; idx < endIdx; idx++) {
                 int row = idx / Nx;
                 int col = idx % Nx;
 
-                uint32_t x0 = col * tileW;
-                uint32_t x1 = std::min(x0 + tileW, rawW);
-                uint32_t y0 = row * tileH;
-                uint32_t y1 = std::min(y0 + tileH, rawH);
+                v_int x0 = col * tileW;
+                v_int x1 = std::min(x0 + tileW, rawW);
+                v_int y0 = row * tileH;
+                v_int y1 = std::min(y0 + tileH, rawH);
 
-                uint32_t thisTileW = (x1 > x0) ? (x1 - x0) : 0;
-                uint32_t thisTileH = (y1 > y0) ? (y1 - y0) : 0;
+                v_int thisTileW = (x1 > x0) ? (x1 - x0) : 0;
+                v_int thisTileH = (y1 > y0) ? (y1 - y0) : 0;
                 if (!thisTileW || !thisTileH) {
                     continue;
                 }
 
-                for (uint32_t yy = 0; yy < thisTileH; ++yy) {
-                    const size_t srcOff = (size_t(y0 + yy) * rawW + x0) * originalChannels;
-                    const size_t dstOff = size_t(yy) * thisTileW * originalChannels;
+                for (v_int yy = 0; yy < thisTileH; ++yy) {
+                    const v_int srcOff = (v_int(y0 + yy) * rawW + x0) * originalChannels;
+                    const v_int dstOff = v_int(yy) * thisTileW * originalChannels;
                     std::memcpy(readBuffer.data() + dstOff,
                             buffer.data.data() + srcOff,
-                            size_t(thisTileW) * originalChannels);
+                            v_int(thisTileW) * originalChannels);
                 }
                 bool ok = true;
                 if (!ok) {
@@ -196,18 +202,18 @@ TiledResult TextureTiling::tile8(Veloxr::VeloxrBuffer& buffer, uint32_t deviceMa
                 }
 
                 std::vector<unsigned char> tileData(
-                    size_t(thisTileW) * size_t(thisTileH) * size_t(forcedChannels),
+                    v_int(thisTileW) * v_int(thisTileH) * v_int(forcedChannels),
                     255
                 );
 
-                for (uint32_t yy = 0; yy < thisTileH; yy++) {
-                    size_t srcRowOffset = size_t(yy) * size_t(thisTileW) * size_t(originalChannels);
-                    size_t dstRowOffset = size_t(yy) * size_t(thisTileW) * size_t(forcedChannels);
-                    for (uint32_t xx = 0; xx < thisTileW; xx++) {
-                        size_t srcPix = srcRowOffset + size_t(xx) * size_t(originalChannels);
-                        size_t dstPix = dstRowOffset + size_t(xx) * size_t(forcedChannels);
+                for (v_int yy = 0; yy < thisTileH; yy++) {
+                    v_int srcRowOffset = v_int(yy) * v_int(thisTileW) * v_int(originalChannels);
+                    v_int dstRowOffset = v_int(yy) * v_int(thisTileW) * v_int(forcedChannels);
+                    for (v_int xx = 0; xx < thisTileW; xx++) {
+                        v_int srcPix = srcRowOffset + v_int(xx) * v_int(originalChannels);
+                        v_int dstPix = dstRowOffset + v_int(xx) * v_int(forcedChannels);
 
-                        for (uint32_t c = 0; c < forcedChannels; c++) {
+                        for (v_int c = 0; c < forcedChannels; c++) {
                             if (c < originalChannels) {
                                 tileData[dstPix + c] = readBuffer[srcPix + c];
                             } else {
@@ -443,7 +449,7 @@ TiledResult TextureTiling::tile8(OIIOTexture &texture, uint32_t deviceMaxDimensi
             auto &localTiles = partialResults[t].localTiles;
             auto &localVerts = partialResults[t].localVerts;
 
-            std::vector<unsigned char> readBuffer(size_t(tileW) * size_t(tileH) * size_t(originalChannels), 0);
+            std::vector<unsigned char> readBuffer(v_int(tileW) * v_int(tileH) * v_int(originalChannels), 0);
 
             for (int idx = startIdx; idx < endIdx; idx++) {
                 int row = idx / Nx;
@@ -479,16 +485,16 @@ TiledResult TextureTiling::tile8(OIIOTexture &texture, uint32_t deviceMaxDimensi
                 }
 
                 std::vector<unsigned char> tileData(
-                    size_t(thisTileW) * size_t(thisTileH) * size_t(forcedChannels),
+                    v_int(thisTileW) * v_int(thisTileH) * v_int(forcedChannels),
                     255
                 );
 
                 for (uint32_t yy = 0; yy < thisTileH; yy++) {
-                    size_t srcRowOffset = size_t(yy) * size_t(thisTileW) * size_t(originalChannels);
-                    size_t dstRowOffset = size_t(yy) * size_t(thisTileW) * size_t(forcedChannels);
+                    v_int srcRowOffset = v_int(yy) * v_int(thisTileW) * v_int(originalChannels);
+                    v_int dstRowOffset = v_int(yy) * v_int(thisTileW) * v_int(forcedChannels);
                     for (uint32_t xx = 0; xx < thisTileW; xx++) {
-                        size_t srcPix = srcRowOffset + size_t(xx) * size_t(originalChannels);
-                        size_t dstPix = dstRowOffset + size_t(xx) * size_t(forcedChannels);
+                        v_int srcPix = srcRowOffset + v_int(xx) * v_int(originalChannels);
+                        v_int dstPix = dstRowOffset + v_int(xx) * v_int(forcedChannels);
 
                         for (uint32_t c = 0; c < forcedChannels; c++) {
                             if (c < originalChannels) {
@@ -737,13 +743,13 @@ TiledResult TextureTiling::tile7(OIIOTexture &texture, uint32_t deviceMaxDimensi
                     }
 
                     std::vector<unsigned char> tileData(
-                            size_t(thisTileW)*size_t(thisTileH)*size_t(forcedChannels),
+                            v_int(thisTileW)*v_int(thisTileH)*v_int(forcedChannels),
                             255
                             );
 
                     if (!fileIsTiled) {
-                        std::vector<unsigned char> rowBuffer(size_t(rawW)*size_t(originalChannels));
-                        std::vector<unsigned char> rgbaRow  (size_t(rawW)*size_t(forcedChannels), 255);
+                        std::vector<unsigned char> rowBuffer(v_int(rawW)*v_int(originalChannels));
+                        std::vector<unsigned char> rgbaRow  (v_int(rawW)*v_int(forcedChannels), 255);
 
                         for (uint32_t scanY = y0; scanY < y1; scanY++) {
                             bool ok = in->read_scanline(scanY, 0, OIIO::TypeDesc::UINT8, rowBuffer.data());
@@ -754,19 +760,19 @@ TiledResult TextureTiling::tile7(OIIOTexture &texture, uint32_t deviceMaxDimensi
                             }
                             for (uint32_t x = 0; x < rawW; x++) {
                                 for (uint32_t c = 0; c < originalChannels && c < forcedChannels; c++) {
-                                    rgbaRow[size_t(x)*forcedChannels + c] =
-                                        rowBuffer[size_t(x)*originalChannels + c];
+                                    rgbaRow[v_int(x)*forcedChannels + c] =
+                                        rowBuffer[v_int(x)*originalChannels + c];
                                 }
                             }
 
-                            size_t rowOffsetInTile = 
-                                size_t(scanY - y0) * size_t(thisTileW) * size_t(forcedChannels);
-                            size_t rowOffsetInBuf =
-                                size_t(x0) * size_t(forcedChannels);
+                            v_int rowOffsetInTile = 
+                                v_int(scanY - y0) * v_int(thisTileW) * v_int(forcedChannels);
+                            v_int rowOffsetInBuf =
+                                v_int(x0) * v_int(forcedChannels);
 
                             memcpy(&tileData[rowOffsetInTile],
                                     &rgbaRow[rowOffsetInBuf],
-                                    size_t(thisTileW)*size_t(forcedChannels));
+                                    v_int(thisTileW)*v_int(forcedChannels));
                         }
                     } else {
                         bool ok = in->read_tiles(
@@ -1074,13 +1080,13 @@ TiledResult TextureTiling::tile6(OIIOTexture &texture, uint32_t deviceMaxDimensi
                 }
 
                 std::vector<unsigned char> tileData(
-                        size_t(thisTileW) * size_t(thisTileH) * size_t(forcedChannels), 
+                        v_int(thisTileW) * v_int(thisTileH) * v_int(forcedChannels), 
                         255
                         );
 
                 if (!fileIsTiled) {
-                    std::vector<unsigned char> rowBuffer(size_t(rawW) * size_t(originalChannels));
-                    std::vector<unsigned char> rgbaRow  (size_t(rawW) * size_t(forcedChannels), 255);
+                    std::vector<unsigned char> rowBuffer(v_int(rawW) * v_int(originalChannels));
+                    std::vector<unsigned char> rgbaRow  (v_int(rawW) * v_int(forcedChannels), 255);
 
                     for (uint32_t scanY = y0; scanY < y1; scanY++) {
                         bool ok = in->read_scanline(
@@ -1096,19 +1102,19 @@ TiledResult TextureTiling::tile6(OIIOTexture &texture, uint32_t deviceMaxDimensi
 
                         for (uint32_t x = 0; x < rawW; x++) {
                             for (uint32_t c = 0; c < originalChannels && c < forcedChannels; c++) {
-                                rgbaRow[size_t(x) * size_t(forcedChannels) + c] =
-                                    rowBuffer[size_t(x) * size_t(originalChannels) + c];
+                                rgbaRow[v_int(x) * v_int(forcedChannels) + c] =
+                                    rowBuffer[v_int(x) * v_int(originalChannels) + c];
                             }
                         }
 
-                        size_t rowOffsetInTile = 
-                            size_t(scanY - y0) * size_t(thisTileW) * size_t(forcedChannels);
-                        size_t rowOffsetInBuf  = 
-                            size_t(x0) * size_t(forcedChannels);
+                        v_int rowOffsetInTile = 
+                            v_int(scanY - y0) * v_int(thisTileW) * v_int(forcedChannels);
+                        v_int rowOffsetInBuf  = 
+                            v_int(x0) * v_int(forcedChannels);
 
                         memcpy(&tileData[rowOffsetInTile], 
                                 &rgbaRow[rowOffsetInBuf], 
-                                size_t(thisTileW) * size_t(forcedChannels));
+                                v_int(thisTileW) * v_int(forcedChannels));
                     }
                 } else {
                     bool ok = in->read_tiles(
@@ -1451,13 +1457,13 @@ TiledResult TextureTiling::tile5(OIIOTexture &texture, uint32_t deviceMaxDimensi
                 }
 
                 std::vector<unsigned char> tileData(
-                    size_t(thisTileW) * size_t(thisTileH) * size_t(forcedChannels), 
+                    v_int(thisTileW) * v_int(thisTileH) * v_int(forcedChannels), 
                     255
                 );
 
                 if (!fileIsTiled) {
-                    std::vector<unsigned char> rowBuffer(size_t(w) * size_t(originalChannels));
-                    std::vector<unsigned char> rgbaRow(size_t(w) * size_t(forcedChannels), 255);
+                    std::vector<unsigned char> rowBuffer(v_int(w) * v_int(originalChannels));
+                    std::vector<unsigned char> rgbaRow(v_int(w) * v_int(forcedChannels), 255);
 
                     for (uint32_t scanY = y0; scanY < y1; scanY++) {
                         bool ok = in->read_scanline(scanY, 0, OIIO::TypeDesc::UINT8, rowBuffer.data());
@@ -1469,18 +1475,18 @@ TiledResult TextureTiling::tile5(OIIOTexture &texture, uint32_t deviceMaxDimensi
                         }
                         for (uint32_t x = 0; x < w; x++) {
                             for (uint32_t c = 0; c < originalChannels && c < forcedChannels; c++) {
-                                rgbaRow[size_t(x) * size_t(forcedChannels) + c] =
-                                    rowBuffer[size_t(x) * size_t(originalChannels) + c];
+                                rgbaRow[v_int(x) * v_int(forcedChannels) + c] =
+                                    rowBuffer[v_int(x) * v_int(originalChannels) + c];
                             }
                         }
-                        size_t rowOffsetInTile = 
-                            size_t(scanY - y0) * size_t(thisTileW) * size_t(forcedChannels);
-                        size_t rowOffsetInBuf  = 
-                            size_t(x0) * size_t(forcedChannels);
+                        v_int rowOffsetInTile = 
+                            v_int(scanY - y0) * v_int(thisTileW) * v_int(forcedChannels);
+                        v_int rowOffsetInBuf  = 
+                            v_int(x0) * v_int(forcedChannels);
 
                         memcpy(&tileData[rowOffsetInTile], 
                                &rgbaRow[rowOffsetInBuf], 
-                               size_t(thisTileW) * size_t(forcedChannels));
+                               v_int(thisTileW) * v_int(forcedChannels));
                     }
                 } else {
                     bool ok = in->read_tiles(0, 0,

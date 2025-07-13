@@ -6,7 +6,10 @@
 #include <texture.h>
 #include <vector>
 #include <Vertex.h>
+#include "VLogger.h"
 namespace Veloxr {
+
+    typedef uint64_t v_int;
 
     struct TextureData {
         uint32_t width, height, channels;
@@ -24,6 +27,7 @@ namespace Veloxr {
 
     class TextureTiling {
         private:
+            Veloxr::LLogger console {"[Veloxr][TextureTiling] "};
             inline glm::vec2 rotatePositionForOrientation(const glm::vec2 &p, int orientation, float width, float height) {
                 switch (orientation) {
                     case 1: 

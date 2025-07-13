@@ -1,11 +1,12 @@
 #pragma once
 
+#include <cstdint>
 #include <vector>
 namespace Veloxr{
 
     struct VeloxrBuffer {
         std::vector<unsigned char> data;
-        int width, height, numChannels, orientation;
+        uint64_t width, height, numChannels, orientation;
     };
 
 }

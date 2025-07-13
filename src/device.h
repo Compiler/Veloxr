@@ -29,7 +29,7 @@ struct SwapChainSupportDetails {
 
 class Device {
     private:
-        Veloxr::LLogger console{"[Veloxr] [Device] "};
+        Veloxr::LLogger console{"[Veloxr][Device] "};
 
         VkInstance _instance;
         VkSurfaceKHR _surface;

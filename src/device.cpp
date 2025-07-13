@@ -241,6 +241,11 @@ void Device::_pickPhysicalDevice() {
         throw std::runtime_error("No suitable device found");
     }
     _physicalDevice = scoreMap.rbegin()->second;
+
+    VkPhysicalDeviceProperties deviceProperties;
+    vkGetPhysicalDeviceProperties(_physicalDevice, &deviceProperties);
+    console.debug("Chosen device: ", deviceProperties.deviceName);
+
     if (_physicalDevice == VK_NULL_HANDLE) {
         throw std::runtime_error("failed to find a suitable GPU!");
     }
