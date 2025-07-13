@@ -3,6 +3,7 @@
 #include <cstring>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <texture.h>
 #include <vector>
 #include "Common.h"
@@ -37,6 +38,7 @@ namespace Veloxr {
             TextureTiling() = default;
             void init();
             TiledResult tile(Veloxr::VeloxrBuffer& buffer, uint32_t maxResolution=4096*2);
+            TiledResult tile(std::shared_ptr<Veloxr::VeloxrBuffer> buffer, uint32_t deviceMaxDimension=8192);
 
     };
 

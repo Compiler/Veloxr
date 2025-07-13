@@ -12,13 +12,15 @@ namespace Veloxr {
             EntityManager() = default;
 
 
+            // Single entity endpoints
             std::shared_ptr<Veloxr::RenderEntity> createEntity(const std::string& name);
             void registerEntity(std::shared_ptr<Veloxr::RenderEntity> entity);
             void destroyEntity(const std::string& name);
             std::shared_ptr<Veloxr::RenderEntity> getEntity(const std::string& name);
 
-
+            // ECS Systems
             [[nodiscard]] inline const std::vector<Veloxr::Vertex>& getVertices () const { return _vertices; }
+            void initialize();
 
         private:
             Veloxr::LLogger console {"[Veloxr][EntityManager] "};

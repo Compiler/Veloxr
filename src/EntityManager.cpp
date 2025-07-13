@@ -5,6 +5,14 @@
 
 using Veloxr::EntityManager;
 
+
+void EntityManager::initialize() {
+    for(auto& [name, entity] : _entityMap) {
+        entity->getVVTexture().tileTexture(entity->getBuffer());
+
+    }
+}
+
 void EntityManager::registerEntity(std::shared_ptr<Veloxr::RenderEntity> entity) {
     auto name = entity->getName();
     console.log(__func__, " for ", name);

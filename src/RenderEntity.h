@@ -1,5 +1,6 @@
 #pragma once
 #include "DataUtils.h"
+#include "VVTexture.h"
 #include "Vertex.h"
 #include <glm/ext/vector_float2.hpp>
 #include <glm/ext/vector_float3.hpp>
@@ -35,6 +36,8 @@ namespace Veloxr {
             inline const std::string& getName() const { return _name; }
             inline const bool isHidden () const { return _isHidden; }
 
+            // Use these :| 
+            [[nodiscard]] inline Veloxr::VVTexture& getVVTexture() { return _texture; }
             [[nodiscard]] inline const std::shared_ptr<Veloxr::VeloxrBuffer> getBuffer() const { return _textureBuffer; }
             [[nodiscard]] inline const std::vector<Veloxr::Vertex>& getVertices () const { return _vertices; }
 
@@ -46,6 +49,6 @@ namespace Veloxr {
             std::shared_ptr<Veloxr::VeloxrBuffer> _textureBuffer;
             bool _isHidden{false};
             std::vector<Veloxr::Vertex> _vertices;
-
+            Veloxr::VVTexture _texture;
     };
 }

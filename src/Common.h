@@ -4,6 +4,12 @@
 
 namespace Veloxr {
 
+    struct VVDataPacket {
+        VkDevice device;
+        VkPhysicalDevice physicalDevice;
+        VkCommandPool commandPool;
+        VkQueue graphicsQueue, presentQueue;
+    };
 
     typedef uint64_t v_int;
 

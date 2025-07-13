@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Common.h"
+#include "RenderEntity.h"
 #include "VVTexture.h"
 #include <memory>
 #include <string>
@@ -29,6 +31,7 @@
 #include "texture.h"
 #include "Vertex.h"
 #include "TextureTiling.h"
+#include "EntityManager.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -191,6 +194,7 @@ public:
     // Initialize the renderer, given a window pointer to render into.
     void init(void* windowHandle = nullptr); 
     void setupTexturePasses(); 
+    std::shared_ptr<Veloxr::RenderEntity> registerEntity(); 
 
     // Camera API. Use this object to access camera movement related data, zoom, pan, etc.
     /*
@@ -233,6 +237,8 @@ public:
     // Make drawFrame accessible to external code
     void drawFrame();
 
+    Veloxr::EntityManager& getEntityManager() { return _entityManager; }
+
     //glm::vec2 getMainEntityPosition()  { }
 
 private: // No client -- internal
@@ -243,7 +249,7 @@ private: // No client -- internal
     int _windowWidth, _windowHeight;
     Veloxr::VeloxrBuffer _currentDataBuffer;
     Veloxr::LLogger console{"[Veloxr][Renderer] "};
-    Veloxr::CommandUtils commandUtils{};
+    Veloxr::EntityManager _entityManager{};
     // For friend classes / drivers
 
 
@@ -267,7 +273,8 @@ private: // No client -- internal
     };
 
 
-    std::unique_ptr<Veloxr::Device> _deviceUtils;
+    std::shared_ptr<Veloxr::Device> _deviceUtils;
+    std::shared_ptr<Veloxr::VVDataPacket> _dataPacket;
 
     VkSurfaceKHR surface;
     VkDevice device;
@@ -391,7 +398,7 @@ private: // No client -- internal
 
 private:
     // texture utilities ------------------------------------------------
-    VkSampler  createTextureSampler(std::string input_filepath = "");
+    VkSampler  createTextureSampler();
     VkImageView createTextureImageView(VkImage textureImage);
     VkImageView createImageView(VkImage image, VkFormat format);
 

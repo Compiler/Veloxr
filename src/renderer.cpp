@@ -1,4 +1,6 @@
 #include "renderer.h"
+#include "CommandUtils.h"
+#include "Common.h"
 #include "VVTexture.h"
 #include <chrono>
 #include <stdexcept>
@@ -41,7 +43,6 @@ void RendererCore::setTextureBuffer(Veloxr::VeloxrBuffer&& buffer){
     setupTexturePasses();
 }
 
-
 void RendererCore::init(void* windowHandle) {
     console.logc1(__func__);
     destroy();
@@ -61,7 +62,8 @@ void RendererCore::init(void* windowHandle) {
     if(noClientWindow) createSurface();
     else createSurfaceFromWindowHandle(windowHandle);
 
-    _deviceUtils = std::make_unique<Veloxr::Device>(instance, surface, enableValidationLayers);
+    _deviceUtils = std::make_shared<Veloxr::Device>(instance, surface, enableValidationLayers);
+    _dataPacket = std::make_shared<Veloxr::VVDataPacket>();
     _deviceUtils->create();
     device = _deviceUtils->getLogicalDevice();
     physicalDevice = _deviceUtils->getPhysicalDevice();
@@ -75,6 +77,12 @@ void RendererCore::init(void* windowHandle) {
     createFramebuffers();
     createUniformBuffers();
     createCommandPool();
+
+    _dataPacket->device = _deviceUtils->getLogicalDevice();
+    _dataPacket->physicalDevice = _deviceUtils->getPhysicalDevice();
+    _dataPacket->commandPool = commandPool;
+    _dataPacket->graphicsQueue = graphicsQueue;
+    _dataPacket->presentQueue = presentQueue;
     console.log("[Veloxr] [Debug] init called and completed. Setting up texture passes from state\n");
     setupTexturePasses();
 }
@@ -120,7 +128,7 @@ void RendererCore::setupTexturePasses() {
 
 // ------------- texture utilities ------------------------------------
 
-VkSampler RendererCore::createTextureSampler(std::string input_filepath) {
+VkSampler RendererCore::createTextureSampler() {
     console.logc1(__func__);
 
     VkSampler textureSampler;
@@ -186,10 +194,9 @@ VkImageView RendererCore::createImageView(VkImage image, VkFormat format) {
 }
 
 // ------------- image-layout / copy helpers --------------------------
-void RendererCore::transitionImageLayout(VkImage image, VkFormat format,
-                                     VkImageLayout oldLayout, VkImageLayout newLayout) {
+void RendererCore::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
     //console.logc1(__func__);
-    VkCommandBuffer commandBuffer = commandUtils.beginSingleTimeCommands(device, commandPool);
+    VkCommandBuffer commandBuffer = CommandUtils::beginSingleTimeCommands(device, commandPool);
 
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -235,13 +242,12 @@ void RendererCore::transitionImageLayout(VkImage image, VkFormat format,
             1, &barrier
             );
 
-    commandUtils.endSingleTimeCommands(device, commandBuffer, commandPool, graphicsQueue);
+    CommandUtils::endSingleTimeCommands(device, commandBuffer, commandPool, graphicsQueue);
 }
 
-void RendererCore::copyBufferToImage(VkBuffer buffer, VkImage image,
-                                 uint32_t width, uint32_t height) {
+void RendererCore::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
     //console.logc1(__func__);
-    VkCommandBuffer commandBuffer = commandUtils.beginSingleTimeCommands(device, commandPool);
+    VkCommandBuffer commandBuffer = CommandUtils::beginSingleTimeCommands(device, commandPool);
 
     VkBufferImageCopy region{};
     region.bufferOffset = 0;
@@ -267,7 +273,7 @@ void RendererCore::copyBufferToImage(VkBuffer buffer, VkImage image,
             1,
             &region
             );
-    commandUtils.endSingleTimeCommands(device, commandBuffer, commandPool, graphicsQueue);
+    CommandUtils::endSingleTimeCommands(device, commandBuffer, commandPool, graphicsQueue);
 }
 
 // ------------- tiling / upload path ---------------------------------
@@ -291,7 +297,7 @@ void RendererCore::createTiledTexture(Veloxr::VeloxrBuffer&& buffer) {
     now = std::chrono::high_resolution_clock::now();
 
     for(const auto& [indx, tileData] : tileData.tiles){
-        auto tileTexture = std::make_unique<VVTexture>(_deviceUtils->getLogicalDevice());
+        auto tileTexture = std::make_unique<VVTexture>(_dataPacket);
 
         int texWidth    = tileData.width;
         int texHeight   = tileData.height;
@@ -337,12 +343,11 @@ void RendererCore::createTiledTexture(Veloxr::VeloxrBuffer&& buffer) {
         auto key = "_tile_" + std::to_string(indx);
         _textureMap.emplace(key, std::move(tileTexture));
     }
+
     auto timeToUploadMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - now).count();
+
     vertices.insert(vertices.begin(), std::make_move_iterator(tileData.vertices.begin()), std::make_move_iterator(tileData.vertices.end()));
-    // for(Veloxr::Vertex& vertice : vertices) {
-    //     const auto& [position, texCoords, texUnit] = vertice;
-    //     console.log("[", position.x, ", ", position.y, "]\t\t|\t\t[", texCoords.x, ", ", texCoords.y, "]\t|\t", texUnit);
-    // }
+
     float minX = +9999.0f, maxX = -9999.0f;
     float minY = +9999.0f, maxY = -9999.0f;
     for (auto &v : vertices) {
@@ -564,13 +569,13 @@ void RendererCore::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
 
 void RendererCore::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
     console.logc1(__func__);
-      VkCommandBuffer commandBuffer = commandUtils.beginSingleTimeCommands(device, commandPool);
+      VkCommandBuffer commandBuffer = CommandUtils::beginSingleTimeCommands(device, commandPool);
 
       VkBufferCopy copyRegion{};
       copyRegion.size = size;
       vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
-      commandUtils.endSingleTimeCommands(device, commandBuffer, commandPool, graphicsQueue);
+      CommandUtils::endSingleTimeCommands(device, commandBuffer, commandPool, graphicsQueue);
 }
 
 uint32_t RendererCore::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
@@ -694,8 +699,8 @@ void RendererCore::destroyTextureData() {
     console.logc1(__func__);
     if( device && !uniformBuffers.empty() && !uniformBuffersMemory.empty()) {
         console.log("[Veloxr] [Debug] Destroying uniform data\n");
+        // hit ctors
         _textureMap.clear();
-        //for (auto &[name, data] : _textureMap) data.destroy();
         console.log("[Veloxr] [Debug] Destroying uniform pools\n");
         vkDestroyDescriptorPool(device, descriptorPool, nullptr);
     }

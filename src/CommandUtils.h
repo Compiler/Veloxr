@@ -6,11 +6,15 @@
 namespace Veloxr {
     class CommandUtils {
         private:
-            LLogger console{"[Veloxr] [CommandUtils] "};
+            CommandUtils() = delete;
+            CommandUtils(const CommandUtils&) = delete;
+            CommandUtils& operator=(const CommandUtils&) = delete;
+
+            inline static LLogger console{"[Veloxr] [CommandUtils] "}; // cpp17 btw
 
         public:
-            VkCommandBuffer beginSingleTimeCommands(VkDevice device, VkCommandPool commandPool);
-            void endSingleTimeCommands(VkDevice device, VkCommandBuffer commandBuffer, VkCommandPool commandPool, VkQueue graphicsQueue);
+            static VkCommandBuffer beginSingleTimeCommands(VkDevice device, VkCommandPool commandPool);
+            static void endSingleTimeCommands(VkDevice device, VkCommandBuffer commandBuffer, VkCommandPool commandPool, VkQueue graphicsQueue);
 
     };
 }
