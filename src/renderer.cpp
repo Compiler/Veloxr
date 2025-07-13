@@ -1,4 +1,6 @@
 #include "renderer.h"
+#include "VVTexture.h"
+#include <chrono>
 #include <stdexcept>
 #include <vulkan/vulkan_core.h>
 
@@ -79,6 +81,7 @@ void RendererCore::init(void* windowHandle) {
 
 
 void RendererCore::setupTexturePasses() {
+    _textureMap.clear();
     console.logc1(__func__);
     if(!device) {
         console.log("[Veloxr] [Debug] [Warn] No device instantiated. Returning early. Do not call setupTexturePasses without setting a filepath or buffer.\n");
@@ -113,8 +116,6 @@ void RendererCore::setupTexturePasses() {
     createSyncObjects();
     auto timeElapsedTop = std::chrono::high_resolution_clock::now() - now;
     console.log("Init(): ", std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsedTop).count(), "ms\t", std::chrono::duration_cast<std::chrono::microseconds>(timeElapsedTop).count(), "microseconds.\n");
-    _textureMap.clear();
-
 }
 
 // ------------- texture utilities ------------------------------------
@@ -187,7 +188,7 @@ VkImageView RendererCore::createImageView(VkImage image, VkFormat format) {
 // ------------- image-layout / copy helpers --------------------------
 void RendererCore::transitionImageLayout(VkImage image, VkFormat format,
                                      VkImageLayout oldLayout, VkImageLayout newLayout) {
-    console.logc1(__func__);
+    //console.logc1(__func__);
     VkCommandBuffer commandBuffer = commandUtils.beginSingleTimeCommands(device, commandPool);
 
     VkImageMemoryBarrier barrier{};
@@ -239,7 +240,7 @@ void RendererCore::transitionImageLayout(VkImage image, VkFormat format,
 
 void RendererCore::copyBufferToImage(VkBuffer buffer, VkImage image,
                                  uint32_t width, uint32_t height) {
-    console.logc1(__func__);
+    //console.logc1(__func__);
     VkCommandBuffer commandBuffer = commandUtils.beginSingleTimeCommands(device, commandPool);
 
     VkBufferImageCopy region{};
@@ -272,16 +273,26 @@ void RendererCore::copyBufferToImage(VkBuffer buffer, VkImage image,
 // ------------- tiling / upload path ---------------------------------
 //
 
-std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::createTiledTexture(Veloxr::VeloxrBuffer&& buffer) {
+void RendererCore::createTiledTexture(Veloxr::VeloxrBuffer&& buffer) {
     console.logc1(__func__);
-    std::unordered_map<std::string, VkVirtualTexture>  result;
+    auto now = std::chrono::high_resolution_clock::now();
+    console.log("Tiling...");
+
     Veloxr::TextureTiling tiler{};
     auto maxResolution = _deviceUtils->getMaxTextureResolution();
-    console.log("Tiling...");
-    Veloxr::TiledResult tileData = tiler.tile(buffer, 4096/*maxResolution*/);
+
+    // TODO: Calculate best time case for maxResolution. 4096 will be 200% faster that maxresolution, but not sure if they will have enough sampelrs
+    // TODO2: Use indexed binding on hardware that supports it.
+    Veloxr::TiledResult tileData = tiler.tile(buffer, maxResolution);
+
+    auto timeToTileMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - now).count();
     console.log("Done! Bounding box: (", tileData.boundingBox.x, ", ", tileData.boundingBox.y, ", ", tileData.boundingBox.z, ", ", tileData.boundingBox.w, ") ");
+
+    now = std::chrono::high_resolution_clock::now();
+
     for(const auto& [indx, tileData] : tileData.tiles){
-        VkVirtualTexture tileTexture;
+        auto tileTexture = std::make_unique<VVTexture>(_deviceUtils->getLogicalDevice());
+
         int texWidth    = tileData.width;
         int texHeight   = tileData.height;
         int texChannels = 4;//myTexture.getNumChannels();
@@ -313,23 +324,25 @@ std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::cr
 
         vkDestroyBuffer(device, stagingBuffer, nullptr);
         vkFreeMemory(device, stagingBufferMemory, nullptr);
-        tileTexture.textureImage = textureImage;
-        tileTexture.textureImageMemory = textureImageMemory;
+        tileTexture->textureImage = textureImage;
+        tileTexture->textureImageMemory = textureImageMemory;
 
         
         auto imageView = createTextureImageView(textureImage);
         auto sampler = createTextureSampler();
-        tileTexture.textureImageView = imageView;
-        tileTexture.textureSampler = sampler;
-        tileTexture.samplerIndex = samplerIndex;
+        tileTexture->textureImageView = imageView;
+        tileTexture->textureSampler = sampler;
+        tileTexture->samplerIndex = samplerIndex;
 
-        _textureMap["_tile_" + std::to_string(indx)] = tileTexture;
+        auto key = "_tile_" + std::to_string(indx);
+        _textureMap.emplace(key, std::move(tileTexture));
     }
+    auto timeToUploadMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - now).count();
     vertices.insert(vertices.begin(), std::make_move_iterator(tileData.vertices.begin()), std::make_move_iterator(tileData.vertices.end()));
-    for(Veloxr::Vertex& vertice : vertices) {
-        const auto& [position, texCoords, texUnit] = vertice;
-        console.log("[", position.x, ", ", position.y, "]\t\t|\t\t[", texCoords.x, ", ", texCoords.y, "]\t|\t", texUnit);
-    }
+    // for(Veloxr::Vertex& vertice : vertices) {
+    //     const auto& [position, texCoords, texUnit] = vertice;
+    //     console.log("[", position.x, ", ", position.y, "]\t\t|\t\t[", texCoords.x, ", ", texCoords.y, "]\t|\t", texUnit);
+    // }
     float minX = +9999.0f, maxX = -9999.0f;
     float minY = +9999.0f, maxY = -9999.0f;
     for (auto &v : vertices) {
@@ -352,7 +365,8 @@ std::unordered_map<std::string, RendererCore::VkVirtualTexture> RendererCore::cr
     console.warn("Updating camera: Zoom: ", _cam.getZoomLevel(), ", projection on window dim: ", _windowWidth, "x", _windowHeight, " @ (", _cam.getPosition().x, ", ", _cam.getPosition().y,")"); 
 
 
-    return {};
+    console.fatal("Time to tile: ", timeToTileMs, " ms");
+    console.fatal("Time to upload data: ", timeToUploadMs, " ms");
 }
 
 // ------------- resource creation helpers ---------------------------
@@ -360,7 +374,7 @@ void RendererCore::createImage(uint32_t width, uint32_t height, VkFormat format,
                            VkImageTiling tiling, VkImageUsageFlags usage,
                            VkMemoryPropertyFlags properties,
                            VkImage& image, VkDeviceMemory& imageMemory) {
-    console.logc1(__func__);
+    //console.logc1(__func__);
     VkImageCreateInfo imageInfo{};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -425,9 +439,9 @@ void RendererCore::createDescriptorSets() {
         for (auto& [filepath, structure] : _textureMap) {
             VkDescriptorImageInfo imageInfo{};
             imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView = structure.textureImageView;
-            imageInfo.sampler = structure.textureSampler;
-            orderedSamplers[structure.samplerIndex] = (imageInfo);
+            imageInfo.imageView = structure->textureImageView;
+            imageInfo.sampler = structure->textureSampler;
+            orderedSamplers[structure->samplerIndex] = (imageInfo);
         }
 
         for(auto& [_, imageInfo] : orderedSamplers) {
@@ -504,7 +518,7 @@ void RendererCore::createDescriptorLayout() {
     samplerLayoutBinding.binding = 1;
     samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     console.warn("Texture map size for descriptor layout: ", _textureMap.size());
-    samplerLayoutBinding.descriptorCount = std::min((uint32_t)2048, _deviceUtils->getMaxSamplersPerStage());//std::min((decltype(_textureMap.size()))1, _textureMap.size());
+    samplerLayoutBinding.descriptorCount = std::min((uint32_t)2048, _deviceUtils->getMaxSamplersPerStage());
     samplerLayoutBinding.pImmutableSamplers = nullptr;
     samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
@@ -680,7 +694,8 @@ void RendererCore::destroyTextureData() {
     console.logc1(__func__);
     if( device && !uniformBuffers.empty() && !uniformBuffersMemory.empty()) {
         console.log("[Veloxr] [Debug] Destroying uniform data\n");
-        for (auto &[name, data] : _textureMap) data.destroy(device);
+        _textureMap.clear();
+        //for (auto &[name, data] : _textureMap) data.destroy();
         console.log("[Veloxr] [Debug] Destroying uniform pools\n");
         vkDestroyDescriptorPool(device, descriptorPool, nullptr);
     }

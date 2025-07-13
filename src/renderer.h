@@ -1,5 +1,6 @@
 #pragma once
 
+#include "VVTexture.h"
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -316,7 +317,7 @@ private: // No client -- internal
         }
     };
 
-    std::map<std::string, VkVirtualTexture> _textureMap;
+    std::map<std::string, std::unique_ptr<Veloxr::VVTexture>> _textureMap;
     // Sync
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
@@ -399,8 +400,7 @@ private:
                                VkImageLayout oldLayout, VkImageLayout newLayout);
     void copyBufferToImage(VkBuffer buffer, VkImage image,
                            uint32_t width, uint32_t height);
-    std::unordered_map<std::string, VkVirtualTexture> createTiledTexture(std::string input_filepath = "");
-    std::unordered_map<std::string, VkVirtualTexture> createTiledTexture(Veloxr::VeloxrBuffer&& buffer);
+    void createTiledTexture(Veloxr::VeloxrBuffer&& buffer);
 
     // resource creation helpers ---------------------------------------
     void createImage(uint32_t width, uint32_t height, VkFormat format,

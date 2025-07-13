@@ -41,6 +41,7 @@ if (APPLE)
         src/Vertex.h 
         src/VLogger.h src/Common.h
         src/renderer.h src/renderer.cpp
+        src/VVTexture.h src/VVTexture.cpp
         src/device.h src/device.cpp 
         src/CommandUtils.h src/CommandUtils.cpp 
         src/RenderEntity.h src/RenderEntity.cpp
@@ -56,6 +57,7 @@ elseif (WIN32)
         src/Vertex.h 
         src/VLogger.h src/Common.h
         src/renderer.h src/renderer.cpp
+        src/VVTexture.h src/VVTexture.cpp
         src/CommandUtils.h src/CommandUtils.cpp 
         src/RenderEntity.h src/RenderEntity.cpp
         src/EntityManager.h src/EntityManager.cpp

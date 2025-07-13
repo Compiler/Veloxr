@@ -14,7 +14,7 @@ void main() {
     // blend for testing :D
     //outColor = 0.5 * texture(texSamplers[0], fragTexCoord.xy) + 0.5 * texture(texSamplers[1], fragTexCoord.xy);
 
-    //return;
+    return;
     //Debug code
     float edgeThreshold = 0.005;
 

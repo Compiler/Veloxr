@@ -1,24 +1,50 @@
 #include "VVTexture.h"
 
-using Veloxr::VVTexture;
 
+namespace Veloxr {
 
 VVTexture::VVTexture(VkDevice device): _device(device) {}
-VVTexture::~VVTexture() {
-    this->destroy();
+
+void VVTexture::setDevice(VkDevice device) {
+    _device = device;
 }
 
 
 void VVTexture::destroy() {
-    console.logc3("Destroying Sampler");
-    vkDestroySampler(_device, _textureSampler, nullptr);
+    if(!_device) {
+        console.warn("Called destroy on VVTexture with no device.");
+        return;
+    }
 
-    console.logc3("Destroing ImageView");
-    vkDestroyImageView(_device, _textureImageView, nullptr);
+    console.log("Destroying on device: ", _device);
 
-    console.logc3("Destroing Image");
-    vkDestroyImage(_device, _textureImage, nullptr);
+    if (textureSampler) {
+        console.logc1("Destroying Sampler");
+        vkDestroySampler(_device, textureSampler, nullptr);
+        console.logc1("Destroyed.");
+    }
 
-    console.logc3("Freeing textureImageMemory");
-    vkFreeMemory(_device, _textureImageMemory, nullptr);
+    if ( textureImageView ) {
+        console.logc1("Destroying ImageView");
+        vkDestroyImageView(_device, textureImageView, nullptr);
+        console.logc1("Destroyed.");
+    }
+
+    if ( textureImage ) {
+        console.logc1("Destroying Image");
+        vkDestroyImage(_device, textureImage, nullptr);
+        console.logc1("Destroyed.");
+    }
+
+    if ( textureImageMemory ) {
+        console.logc1("Freeing textureImageMemory");
+        vkFreeMemory(_device, textureImageMemory, nullptr);
+        console.logc1("Destroyed.");
+    }
+}
+
+VVTexture::~VVTexture() {
+    this->destroy();
+}
+
 }

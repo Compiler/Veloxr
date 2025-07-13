@@ -7,25 +7,29 @@ namespace Veloxr {
 
 
     class VVTexture {
-        friend class Veloxr::RenderEntity;
+        //friend class Veloxr::RenderEntity;
         public:
-            VVTexture() = delete;
-            VVTexture(VkDevice device);
-            ~VVTexture();
+            VVTexture() = default;
 
+            VVTexture(VkDevice device);
+
+            void setDevice(VkDevice device);
+
+            // Very exposed. This might as well be a Struct.
+            VkImage textureImage;
+            VkDeviceMemory textureImageMemory;
+            VkImageView textureImageView;
+            VkSampler textureSampler;
+            int samplerIndex;
+
+            ~VVTexture();
 
         private:
             Veloxr::LLogger console{"[Veloxr][VVTexture] "};
 
 
             VkDevice _device;
-            VkImage _textureImage;
-            VkDeviceMemory _textureImageMemory;
-            VkImageView _textureImageView;
-            VkSampler _textureSampler;
-            int _samplerIndex;
 
-            void destroy() ;
+            void destroy();
     };
-
 }
