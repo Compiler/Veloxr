@@ -4,7 +4,7 @@
 #include "VLogger.h"
 
 namespace Veloxr {
-    class CommandUtils {
+    class CommandUtils final {
         private:
             CommandUtils() = delete;
             CommandUtils(const CommandUtils&) = delete;

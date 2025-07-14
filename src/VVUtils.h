@@ -7,7 +7,7 @@
 #include "CommandUtils.h"
 
 namespace Veloxr {
-    class VVUtils {
+    class VVUtils final {
         private:
             VVUtils() = delete;
             VVUtils(const VVUtils&) = delete;
