@@ -1197,22 +1197,22 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     }
 
     if (key == GLFW_KEY_1 && action == GLFW_PRESS) {
-        setupBuffer(PREFIX + "/Users/ljuek/Downloads/fox.jpg");
+        setupBuffer(PREFIX + "/Users/luker/Downloads/fox.jpg");
     }
     if (key == GLFW_KEY_2 && action == GLFW_PRESS) {
-        setupBuffer(PREFIX + "/Users/ljuek/Downloads/test.png");
+        setupBuffer(PREFIX + "/Users/luker/Downloads/test.png");
     }
     if (key == GLFW_KEY_3 && action == GLFW_PRESS) {
-        setupBuffer(PREFIX + "/Users/ljuek/Downloads/test2.png");
+        setupBuffer(PREFIX + "/Users/luker/Downloads/test2.png");
     }
     if (key == GLFW_KEY_4 && action == GLFW_PRESS) {
-        setupBuffer(PREFIX + "/Users/ljuek/Downloads/Colonial.jpg");
+        setupBuffer(PREFIX + "/Users/luker/Downloads/Colonial.jpg");
     }
     if (key == GLFW_KEY_5 && action == GLFW_PRESS) {
-        setupBuffer(PREFIX + "/Users/ljuek/Downloads/landscape.tif");
+        setupBuffer(PREFIX + "/Users/luker/Downloads/landscape.tif");
     }
     if (key == GLFW_KEY_6 && action == GLFW_PRESS) {
-        setupBuffer(PREFIX + "/Users/ljuek/Downloads/56000.jpg");
+        setupBuffer(PREFIX + "/Users/luker/Downloads/56000.jpg");
     }
 }
 

@@ -28,8 +28,8 @@ namespace Veloxr {
 
         private:
             inline static LLogger console{"[Veloxr][VVShaderStageData] "}; 
-            inline static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
-            inline static constexpr int NUM_VERTICES_PER_TILE = 6;
+            inline static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
+            inline static constexpr uint32_t NUM_VERTICES_PER_TILE = 6;
 
             std::map<std::string, std::shared_ptr<Veloxr::RenderEntity>>::const_iterator _digestion;
 

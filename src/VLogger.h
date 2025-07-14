@@ -29,8 +29,6 @@ namespace Veloxr {
 #define END(x) std::chrono::duration_cast<std::chrono::milliseconds>(NOW - x).count()
 
     class LLogger {
-
-
         public:
             enum LogLevel{
                 INFO, DEBUG, WARNING, CRITICAL, FATAL, COLOR1, COLOR2, COLOR3

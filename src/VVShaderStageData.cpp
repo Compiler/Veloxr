@@ -1,13 +1,13 @@
 #include "VVShaderStageData.h"
 #include "Common.h"
 #include "EntityManager.h"
+#include "RenderEntity.h"
 #include <stdexcept>
 
 namespace Veloxr {
     
     VVShaderStageData::VVShaderStageData(std::shared_ptr<VVDataPacket> dataPacket): _data(dataPacket) {
-
-        
+        _vertices = std::make_shared<std::vector<Veloxr::Vertex>>();
 
     }
 
@@ -19,10 +19,13 @@ namespace Veloxr {
     void VVShaderStageData::setTextureMap(std::unordered_map<std::string, std::shared_ptr<Veloxr::RenderEntity>>& textureMap) {
         console.logc2(__func__);
         _textureMap = textureMap;
-        _vertices = {};
+        _vertices->clear();
 
         for( auto& [_, entity] : _textureMap) {
-            _vertices->insert(_vertices->begin(), entity->getVertices().begin(), entity->getVertices().end());
+            auto verts = entity->getVertices();
+            console.logc2("Adding ", verts.size(), " entities");
+            _vertices->insert(_vertices->end(), verts.begin(), verts.end());
+            console.logc2("Added ", verts.size(), " entities");
         }
         console.logc2(__func__, " done.");
     }
@@ -34,16 +37,16 @@ namespace Veloxr {
             return;
         }
 
+        createDescriptorLayout();
         createUniformBuffers();
         createVertexBuffer();
         createDescriptorPool();
         createDescriptorSets();
-        createDescriptorLayout();
     }
 
     void VVShaderStageData::createVertexBuffer() {
         console.logc1(__func__);
-        console.log("[Veloxr] Creating vertexBuffer\n");
+        console.log("Creating vertexBuffer\n");
         VkDeviceSize bufferSize = sizeof(_vertices->front()) * _vertices->size();
 
         VkBuffer stagingBuffer;
@@ -79,6 +82,7 @@ namespace Veloxr {
         poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
         if (vkCreateDescriptorPool(_data->device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
+            console.fatal("Failed to create descriptor pool.");
             throw std::runtime_error("failed to create descriptor pool!");
         }
     }
@@ -104,20 +108,24 @@ namespace Veloxr {
 
         auto device = _data->device;
 
-        console.log("[Veloxr] Creating descriptor sets for ", MAX_FRAMES_IN_FLIGHT, " frames \n");
+        console.log("Creating descriptor sets for ", MAX_FRAMES_IN_FLIGHT, " frames in flight - ", descriptorSetLayout, "\n");
         std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
         VkDescriptorSetAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         allocInfo.descriptorPool = descriptorPool;
-        allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+        allocInfo.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
         allocInfo.pSetLayouts = layouts.data();
 
         descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
 
-        if (vkAllocateDescriptorSets(device, &allocInfo, descriptorSets.data()) != VK_SUCCESS) {
+        console.log("Allocating sets.", device, " - ", descriptorSets.size());
+        auto result = vkAllocateDescriptorSets(device, &allocInfo, descriptorSets.data()) ;
+        console.debug("Checking result.");
+        if (result != VK_SUCCESS) {
+            console.fatal("Failed to allocated descriptor sets: ", result);
             throw std::runtime_error("failed to allocate descriptor sets!");
         }
-        console.log("[Veloxr] Allocated new descriptor sets\n");
+        console.log("Allocated new descriptor sets\n");
 
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -129,12 +137,15 @@ namespace Veloxr {
             std::vector<VkDescriptorImageInfo> imageInfos;
             std::map<int, VkDescriptorImageInfo> orderedSamplers;
             for (auto& [filepath, structure] : _textureMap) {
+                const auto& texture = structure->getVVTexture();
+                console.warn("Data in VVTexture: ", texture.textureImageView, " - ", texture.textureSampler, " - ", texture.samplerIndex);
                 VkDescriptorImageInfo imageInfo{};
                 imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                imageInfo.imageView = structure->getVVTexture().textureImageView;
-                imageInfo.sampler = structure->getVVTexture().textureSampler;
-                orderedSamplers[structure->getVVTexture().samplerIndex] = (imageInfo);
+                imageInfo.imageView = texture.textureImageView;
+                imageInfo.sampler = texture.textureSampler;
+                orderedSamplers[texture.samplerIndex] = (imageInfo);
             }
+            console.log("Set the Samplers and image views.");
 
             for(auto& [_, imageInfo] : orderedSamplers) {
                 imageInfos.push_back(imageInfo);
@@ -158,7 +169,7 @@ namespace Veloxr {
             descriptorWrites[1].descriptorCount = static_cast<uint32_t>(imageInfos.size());
             descriptorWrites[1].pImageInfo = imageInfos.data();
 
-            console.log("[Veloxr] Updating descriptor sets\n");
+            console.log("Updating descriptor sets\n");
             vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
         }
     }
@@ -166,6 +177,7 @@ namespace Veloxr {
 
     void VVShaderStageData::createDescriptorLayout() {
         console.logc1(__func__);
+        console.debug("Creating descrLayout with: ", _data.get(), _data->physicalDevice);
         VkDescriptorSetLayoutBinding uboLayoutBinding{};
         uboLayoutBinding.binding = 0;
         uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
