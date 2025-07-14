@@ -17,9 +17,9 @@ namespace Veloxr {
 
 
             // Single entity endpoints
-            std::shared_ptr<Veloxr::RenderEntity> createEntity(const std::string& name);
-            void registerEntity(std::shared_ptr<Veloxr::RenderEntity> entity);
-            void destroyEntity(const std::string& name);
+            std::shared_ptr<Veloxr::RenderEntity> createEntity(const std::string& name) noexcept;
+            void registerEntity(std::shared_ptr<Veloxr::RenderEntity> entity) noexcept;
+            void destroyEntity(const std::string& name) noexcept;
             std::shared_ptr<Veloxr::RenderEntity> getEntity(const std::string& name);
             // hard code, quick endpoint -- TODO: Keep stridable memory as well
             std::vector<std::shared_ptr<Veloxr::RenderEntity>> getEntityHandles() {

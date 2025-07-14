@@ -16,7 +16,7 @@ namespace Veloxr {
         _data = dataPacket;
     }
 
-    void VVShaderStageData::setTextureMap(std::unordered_map<std::string, const std::shared_ptr<Veloxr::RenderEntity>>& textureMap) {
+    void VVShaderStageData::setTextureMap(std::unordered_map<std::string, std::shared_ptr<Veloxr::RenderEntity>>& textureMap) {
         console.logc2(__func__);
         _textureMap = textureMap;
         _vertices = {};

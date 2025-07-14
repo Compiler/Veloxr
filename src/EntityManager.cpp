@@ -27,7 +27,7 @@ void EntityManager::updateUniformBuffers(uint32_t currentImage, const Veloxr::Un
     _shaderData->updateUniformBuffers(currentImage, ubo);
 }
 
-void EntityManager::registerEntity(std::shared_ptr<Veloxr::RenderEntity> entity) {
+void EntityManager::registerEntity(std::shared_ptr<Veloxr::RenderEntity> entity) noexcept {
     auto name = entity->getName();
     console.log(__func__, " for ", name);
     auto findIt = _entityMap.find(name);
@@ -40,7 +40,7 @@ void EntityManager::registerEntity(std::shared_ptr<Veloxr::RenderEntity> entity)
     _entityMap[name] = entity;
     return ;
 }
-void EntityManager::destroyEntity(const std::string& name) {
+void EntityManager::destroyEntity(const std::string& name) noexcept {
     console.log(__func__, " for ", name);
 
     auto findIt = _entityMap.find(name);
@@ -54,7 +54,7 @@ void EntityManager::destroyEntity(const std::string& name) {
     _entityMap.erase(findIt);
 }
 
-std::shared_ptr<Veloxr::RenderEntity> EntityManager::createEntity(const std::string& name) {
+std::shared_ptr<Veloxr::RenderEntity> EntityManager::createEntity(const std::string& name) noexcept {
     console.log(__func__, " for ", name);
     auto findIt = _entityMap.find(name);
 
