@@ -13,6 +13,7 @@ void VVTexture::setDataPacket(std::shared_ptr<VVDataPacket> dataPacket) {
 }
 
 void VVTexture::tileTexture(std::shared_ptr<Veloxr::VeloxrBuffer> buffer) {
+    console.logc2(__func__, buffer->data.size());
     auto now = std::chrono::high_resolution_clock::now();
     static Veloxr::TextureTiling tiler{};
 

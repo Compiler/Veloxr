@@ -38,7 +38,10 @@ namespace Veloxr {
             // Use these :| 
             [[nodiscard]] inline Veloxr::VVTexture& getVVTexture() { return _texture; }
             [[nodiscard]] inline const std::shared_ptr<Veloxr::VeloxrBuffer> getBuffer() const { return _textureBuffer; }
-            [[nodiscard]] inline const std::vector<Veloxr::Vertex>& getVertices () const { return _vertices; }
+            [[nodiscard]] inline const std::vector<Veloxr::Vertex>& getVertices (){ 
+                std::cout << "Getting " << _texture.getVertices().size() << " vertices.\n";
+                return _texture.getVertices(); 
+            }
 
 
         private:

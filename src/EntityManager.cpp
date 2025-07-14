@@ -13,11 +13,14 @@ EntityManager::EntityManager(std::shared_ptr<Veloxr::VVDataPacket> dataPacket): 
 }
 
 void EntityManager::initialize() {
+    console.logc2(__func__);
+    console.logc2("Num of entities: ", _entityMap.size() );
     for(auto& [name, entity] : _entityMap) {
         entity->getVVTexture().tileTexture(entity->getBuffer());
-        _vertices.insert(_vertices.begin(), std::make_move_iterator(entity->getVertices().begin()), std::make_move_iterator(entity->getVertices().end()));
+        _vertices.insert(_vertices.begin(), entity->getVertices().begin(), entity->getVertices().end());
     }
-    //_shaderData->createStageData();
+    _shaderData->setTextureMap(_entityMap);
+    _shaderData->createStageData();
 }
 
 void EntityManager::updateUniformBuffers(uint32_t currentImage, const Veloxr::UniformBufferObject& ubo) {

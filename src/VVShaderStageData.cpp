@@ -12,17 +12,22 @@ namespace Veloxr {
     }
 
     void VVShaderStageData::setDataPacket(std::shared_ptr<VVDataPacket> dataPacket) {
+        console.logc2(__func__);
         _data = dataPacket;
     }
 
-    void VVShaderStageData::setTextureMap(std::unordered_map<std::string, std::shared_ptr<Veloxr::RenderEntity>>& textureMap) {
+    void VVShaderStageData::setTextureMap(std::unordered_map<std::string, const std::shared_ptr<Veloxr::RenderEntity>>& textureMap) {
+        console.logc2(__func__);
         _textureMap = textureMap;
+        _vertices = {};
 
         for( auto& [_, entity] : _textureMap) {
             _vertices->insert(_vertices->begin(), entity->getVertices().begin(), entity->getVertices().end());
         }
+        console.logc2(__func__, " done.");
     }
     void VVShaderStageData::createStageData() {
+        console.logc2(__func__);
         if (!_vertices.get() || _vertices->empty()) {
             console.fatal("Cannot create stage data for empty vertices.");
             throw std::runtime_error("Cannot create stage data with no entities.");
