@@ -18,6 +18,14 @@ namespace Veloxr {
             void registerEntity(std::shared_ptr<Veloxr::RenderEntity> entity);
             void destroyEntity(const std::string& name);
             std::shared_ptr<Veloxr::RenderEntity> getEntity(const std::string& name);
+            // hard code, quick endpoint -- TODO: Keep stridable memory as well
+            std::vector<std::shared_ptr<Veloxr::RenderEntity>> getEntityHandles() {
+                std::vector<std::shared_ptr<Veloxr::RenderEntity>> entities;
+                for(auto& [_, entity] : _entityMap) {
+                    entities.push_back(entity);
+                }
+                return entities;
+            }
 
             // ECS Systems
             [[nodiscard]] inline const std::vector<Veloxr::Vertex>& getVertices () const { return _vertices; }
@@ -34,6 +42,11 @@ namespace Veloxr {
             // is willing to give us the data permanently
             std::unordered_map<std::string, std::shared_ptr<Veloxr::RenderEntity>> _entityMap;
             std::vector<Veloxr::Vertex> _vertices;
+
+
+            // Vk 
+
+            void createVertexBuffer();
 
     };
 
