@@ -10,7 +10,7 @@ namespace Veloxr {
             CommandUtils(const CommandUtils&) = delete;
             CommandUtils& operator=(const CommandUtils&) = delete;
 
-            inline static LLogger console{"[Veloxr] [CommandUtils] "}; // cpp17 btw
+            inline static LLogger console{"[Veloxr][CommandUtils] "}; // cpp17 btw
 
         public:
             static VkCommandBuffer beginSingleTimeCommands(VkDevice device, VkCommandPool commandPool);

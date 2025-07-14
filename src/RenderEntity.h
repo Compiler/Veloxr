@@ -13,9 +13,7 @@ namespace Veloxr {
     class RenderEntity {
         public:
             RenderEntity();
-            RenderEntity(glm::vec3 position);
-            RenderEntity(glm::vec2 position);
-            RenderEntity(float x, float y);
+            RenderEntity(std::shared_ptr<VVDataPacket> dataPacket);
 
             
             void appendVertex(Veloxr::Vertex&& vertex) {
@@ -31,9 +29,7 @@ namespace Veloxr {
             void setTextureBuffer(Veloxr::VeloxrBuffer& buffer);
             void setDataPacket(std::shared_ptr<VVDataPacket> dataPacket) { _texture.setDataPacket(dataPacket); }
 
-
             void destroy();
-
 
             inline const glm::vec3& getPosition() const { return _position; }
             inline const std::string& getName() const { return _name; }

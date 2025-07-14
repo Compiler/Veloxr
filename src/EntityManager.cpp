@@ -1,11 +1,14 @@
 #include "EntityManager.h"
 #include "RenderEntity.h"
+#include "VVShaderStageData.h"
 #include <memory>
 
 
 using Veloxr::EntityManager;
 
 EntityManager::EntityManager(std::shared_ptr<Veloxr::VVDataPacket> dataPacket): _data(dataPacket) {
+
+    _shaderData = std::make_shared<Veloxr::VVShaderStageData>(_data);
 
 }
 
@@ -14,6 +17,11 @@ void EntityManager::initialize() {
         entity->getVVTexture().tileTexture(entity->getBuffer());
         _vertices.insert(_vertices.begin(), std::make_move_iterator(entity->getVertices().begin()), std::make_move_iterator(entity->getVertices().end()));
     }
+    //_shaderData->createStageData();
+}
+
+void EntityManager::updateUniformBuffers(uint32_t currentImage, const Veloxr::UniformBufferObject& ubo) {
+    _shaderData->updateUniformBuffers(currentImage, ubo);
 }
 
 void EntityManager::registerEntity(std::shared_ptr<Veloxr::RenderEntity> entity) {
@@ -52,9 +60,8 @@ std::shared_ptr<Veloxr::RenderEntity> EntityManager::createEntity(const std::str
         return findIt->second;
     }
 
-    std::shared_ptr<Veloxr::RenderEntity> entity = std::make_shared<Veloxr::RenderEntity>();
+    std::shared_ptr<Veloxr::RenderEntity> entity = std::make_shared<Veloxr::RenderEntity>(_data);
     entity->setName(name);
-    entity->setDataPacket(_data);
     _entityMap[name] = entity;
     return entity;
 

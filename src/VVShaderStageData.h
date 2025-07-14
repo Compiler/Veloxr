@@ -15,8 +15,10 @@ namespace Veloxr {
     class VVShaderStageData {
     
         public:
-            VVShaderStageData() = delete;
+            VVShaderStageData() = default;
             VVShaderStageData(std::shared_ptr<VVDataPacket> dataPacket);
+
+            void setDataPacket(std::shared_ptr<VVDataPacket> dataPacket);
 
             // uh do not edit
             void setTextureMap(std::unordered_map<std::string, std::shared_ptr<Veloxr::RenderEntity>>& textureMap);

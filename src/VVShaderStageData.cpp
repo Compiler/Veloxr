@@ -7,6 +7,12 @@ namespace Veloxr {
     
     VVShaderStageData::VVShaderStageData(std::shared_ptr<VVDataPacket> dataPacket): _data(dataPacket) {
 
+        
+
+    }
+
+    void VVShaderStageData::setDataPacket(std::shared_ptr<VVDataPacket> dataPacket) {
+        _data = dataPacket;
     }
 
     void VVShaderStageData::setTextureMap(std::unordered_map<std::string, std::shared_ptr<Veloxr::RenderEntity>>& textureMap) {

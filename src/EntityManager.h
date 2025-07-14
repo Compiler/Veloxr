@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Common.h"
+#include "VVShaderStageData.h"
 #include "RenderEntity.h"
 #include <map>
 #include <memory>
@@ -11,6 +12,7 @@ namespace Veloxr {
     class EntityManager {
     
         public:
+            EntityManager() = delete;
             EntityManager(std::shared_ptr<Veloxr::VVDataPacket> dataPacket);
 
 
@@ -31,6 +33,7 @@ namespace Veloxr {
             // ECS Systems
             [[nodiscard]] inline const std::vector<Veloxr::Vertex>& getVertices () const { return _vertices; }
             void initialize();
+            void updateUniformBuffers(uint32_t currentImage, const Veloxr::UniformBufferObject& ubo);
 
         private:
             Veloxr::LLogger console {"[Veloxr][EntityManager] "};
@@ -44,9 +47,10 @@ namespace Veloxr {
             std::unordered_map<std::string, std::shared_ptr<Veloxr::RenderEntity>> _entityMap;
             std::vector<Veloxr::Vertex> _vertices;
 
+            std::shared_ptr<Veloxr::VVShaderStageData> _shaderData;
+
 
             // Vk 
-
             void createVertexBuffer();
 
     };
