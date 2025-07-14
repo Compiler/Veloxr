@@ -1209,7 +1209,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         setupBuffer(PREFIX + "/Users/luker/Downloads/Colonial.jpg");
     }
     if (key == GLFW_KEY_5 && action == GLFW_PRESS) {
-        setupBuffer(PREFIX + "/Users/luker/Downloads/landscape.tif");
+        setupBuffer(PREFIX + "/Users/luker/Downloads/landscape.tiff");
     }
     if (key == GLFW_KEY_6 && action == GLFW_PRESS) {
         setupBuffer(PREFIX + "/Users/luker/Downloads/56000.jpg");

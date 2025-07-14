@@ -638,8 +638,8 @@ void RendererCore::updateUniformBuffers(uint32_t currentImage) {
     ubo.proj = _cam.getProjectionMatrix();
     ubo.model = glm::mat4(1.0f);
     ubo.roi = _roi;
-    //ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0,0,1));
     memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+    _entityManager->updateUniformBuffers(currentImage, ubo);
 }
 
 void RendererCore::destroyTextureData() {

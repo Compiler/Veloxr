@@ -25,12 +25,14 @@ int main(int argc, char* argv[]) {
         buf.width = texture.getResolution().x;
         buf.height = texture.getResolution().y;
         buf.numChannels = texture.getNumChannels();
+        buf.orientation = texture.getOrientation();
         std::cout << "[DRIVER] Sending setTextureBuffer\n";
 
 
 
 
         std::cout << "[DRIVER] Init\n";
+        app.setTextureBuffer(std::move(buf));
         app.init();
         auto em = app.getEntityManager();
         auto entityHandle = em->createEntity("main");
