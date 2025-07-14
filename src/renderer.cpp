@@ -442,7 +442,7 @@ void RendererCore::createDescriptorSets() {
         VkDescriptorBufferInfo bufferInfo{};
         bufferInfo.buffer = uniformBuffers[i];
         bufferInfo.offset = 0;
-        bufferInfo.range = sizeof(UniformBufferObject);
+        bufferInfo.range = sizeof(Veloxr::UniformBufferObject);
 
         std::vector<VkDescriptorImageInfo> imageInfos;
         std::map<int, VkDescriptorImageInfo> orderedSamplers;
@@ -503,7 +503,7 @@ void RendererCore::createDescriptorPool() {
 
 void RendererCore::createUniformBuffers() {
     console.logc1(__func__);
-    VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+    VkDeviceSize bufferSize = sizeof(Veloxr::UniformBufferObject);
 
     uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
     uniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
@@ -632,12 +632,7 @@ void RendererCore::createSyncObjects() {
 
 // TODO: Just using a dirty bit on camera works for a single image_view. Not all of them. So we need the dirty bit for all imageViews. (triple buffer)
 void RendererCore::updateUniformBuffers(uint32_t currentImage) {
-    //console.logc1(__func__);
-    static std::unordered_map<uint32_t, bool> _dirtyMap;
-    auto curDirtyStatus = _cam.getDirty();
-    
-    _cam.resetDirty();
-    UniformBufferObject ubo{};
+    Veloxr::UniformBufferObject ubo{};
     float time = 1;
     ubo.view = _cam.getViewMatrix();
     ubo.proj = _cam.getProjectionMatrix();

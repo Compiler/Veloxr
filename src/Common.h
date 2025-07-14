@@ -2,7 +2,14 @@
 #include "Vertex.h"
 #include "VLogger.h"
 
+
 namespace Veloxr {
+    struct UniformBufferObject {
+        alignas(16) glm::mat4 model;
+        alignas(16) glm::mat4 view;
+        alignas(16) glm::mat4 proj;
+        alignas(16) glm::vec4 roi;
+    };
 
     struct VVDataPacket {
         VkDevice device;

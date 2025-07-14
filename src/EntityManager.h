@@ -2,6 +2,7 @@
 
 #include "Common.h"
 #include "RenderEntity.h"
+#include <map>
 #include <memory>
 #include <unordered_map>
 #include "VLogger.h"

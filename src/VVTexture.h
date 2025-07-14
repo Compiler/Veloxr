@@ -37,16 +37,10 @@ namespace Veloxr {
 
             void destroy();
 
-            uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-
             void createImage(uint32_t width, uint32_t height, VkFormat format,
                     VkImageTiling tiling, VkImageUsageFlags usage,
                     VkMemoryPropertyFlags properties,
                     VkImage& image, VkDeviceMemory& imageMemory) ;
-
-            void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
-                    VkMemoryPropertyFlags properties, VkBuffer& buffer,
-                    VkDeviceMemory& bufferMemory);
 
             void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 
