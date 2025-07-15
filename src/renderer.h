@@ -1176,6 +1176,8 @@ inline void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
     }
 }
 
+#define V_USER "ljuek"
+
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 
     auto setupBuffer = [&](std::string filepath) {
@@ -1192,27 +1194,31 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         std::cout << "[DRIVER] Sending setTextureBuffer\n";
         app->setTextureBuffer(std::move(buf));
     };
+
+    const std::string basePath = std::string("/Users/") + V_USER + "/Downloads/";
+
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);  
     }
 
     if (key == GLFW_KEY_1 && action == GLFW_PRESS) {
-        setupBuffer(PREFIX + "/Users/luker/Downloads/fox.jpg");
+        setupBuffer(basePath + "fox.jpg");
     }
     if (key == GLFW_KEY_2 && action == GLFW_PRESS) {
-        setupBuffer(PREFIX + "/Users/luker/Downloads/test.png");
+        setupBuffer(basePath + "test.png");
     }
     if (key == GLFW_KEY_3 && action == GLFW_PRESS) {
-        setupBuffer(PREFIX + "/Users/luker/Downloads/test2.png");
+        setupBuffer(basePath + "test2.png");
     }
     if (key == GLFW_KEY_4 && action == GLFW_PRESS) {
-        setupBuffer(PREFIX + "/Users/luker/Downloads/Colonial.jpg");
+        setupBuffer(basePath + "Colonial.jpg");
     }
     if (key == GLFW_KEY_5 && action == GLFW_PRESS) {
-        setupBuffer(PREFIX + "/Users/luker/Downloads/landscape.tiff");
+        const std::string appendage = std::string(V_USER) == "ljuek" ? "" : "t";
+        setupBuffer(basePath + "landscape.tif" + appendage);
     }
     if (key == GLFW_KEY_6 && action == GLFW_PRESS) {
-        setupBuffer(PREFIX + "/Users/luker/Downloads/56000.jpg");
+        setupBuffer(basePath + "56000.jpg");
     }
 }
 
