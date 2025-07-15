@@ -163,6 +163,7 @@ void RendererCore::cleanupSwapChain() {
 
 void RendererCore::createSyncObjects() {
     console.logc1(__func__);
+    if(imageAvailableSemaphores.size() != 0 && renderFinishedSemaphores.size() != 0) return;
     imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);

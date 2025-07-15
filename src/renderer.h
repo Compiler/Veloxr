@@ -466,6 +466,7 @@ private:
     }
 
     void createFramebuffers() {
+        if(swapChainFramebuffers.size() != 0) return;
         swapChainFramebuffers.resize(swapChainImageViews.size());
 
         for (size_t i = 0; i < swapChainImageViews.size(); i++) {
