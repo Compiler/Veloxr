@@ -422,7 +422,8 @@ private:
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &p_shaderStage->getDescriptorSets()[currentFrame], 0, nullptr);
 
-        vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+        uint32_t vertCount = static_cast<uint32_t>(_entityManager->getVertices().size());
+        vkCmdDraw(commandBuffer, vertCount, 1, 0, 0);
         vkCmdEndRenderPass(commandBuffer);
 
 
@@ -767,7 +768,9 @@ private:
         createInfo.presentMode = presentMode;
         createInfo.clipped = VK_TRUE;
 
-        if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
+        auto res = vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) ;
+        if (res != VK_SUCCESS) {
+            console.fatal("Failed to create swapchain: ", res);
             throw std::runtime_error("failed to create swap chain!");
         }
 
@@ -1140,6 +1143,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
     auto setupBuffer = [&](std::string filepath) {
         auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
+        auto em = app->getEntityManager();
         Veloxr::OIIOTexture texture(filepath);
         Veloxr::VeloxrBuffer buf;
         std::cout << "Moving data...";
@@ -1149,6 +1153,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         buf.height = texture.getResolution().y;
         buf.numChannels = texture.getNumChannels();
         buf.orientation = texture.getOrientation();
+        auto e = em->getEntity("main");
+        e->setTextureBuffer(buf);
+        em->initialize();
+        app->setupGraphics();
     };
 
     const std::string basePath = std::string("/Users/") + V_USER + "/Downloads/";

@@ -17,15 +17,6 @@ int main(int argc, char* argv[]) {
         Veloxr::OIIOTexture texture(texturePath);
         std::cout << "Loading data...";
         
-        Veloxr::VeloxrBuffer buf;
-        std::cout << "Moving data...";
-        buf.data = texture.load(texturePath);
-        std::cout << "... done!\n";
-        buf.width = texture.getResolution().x;
-        buf.height = texture.getResolution().y;
-        buf.numChannels = texture.getNumChannels();
-        buf.orientation = texture.getOrientation();
-        std::cout << "[DRIVER] Sending setTextureBuffer\n";
 
 
 
@@ -33,8 +24,35 @@ int main(int argc, char* argv[]) {
         std::cout << "[DRIVER] Init\n";
         app.init();
         auto em = app.getEntityManager();
-        auto entityHandle = em->createEntity("main");
-        entityHandle->setTextureBuffer(buf);
+        
+
+        {
+            auto entityHandle = em->createEntity("main");
+
+            Veloxr::VeloxrBuffer buf;
+            buf.data = texture.load(texturePath);
+            buf.width = texture.getResolution().x;
+            buf.height = texture.getResolution().y;
+            buf.numChannels = texture.getNumChannels();
+            buf.orientation = texture.getOrientation();
+
+            entityHandle->setTextureBuffer(buf);
+        }
+
+        // {
+        //     auto entityHandle = em->createEntity("main2");
+        //
+        //     Veloxr::VeloxrBuffer buf;
+        //     buf.data = texture.load("C:/Users/ljuek/Downloads/fox.jpg");
+        //     buf.width = texture.getResolution().x;
+        //     buf.height = texture.getResolution().y;
+        //     buf.numChannels = texture.getNumChannels();
+        //     buf.orientation = texture.getOrientation();
+        //
+        //     entityHandle->setTextureBuffer(buf);
+        // }
+
+
         em->initialize();
         app.setupGraphics();
         app.spin();

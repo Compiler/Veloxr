@@ -69,16 +69,28 @@ void RendererCore::init(void* windowHandle) {
     _entityManager = std::make_shared<Veloxr::EntityManager>(_dataPacket);
     console.log("[Veloxr] [Debug] init called and completed. Setting up texture passes from state\n");
 
+    createSwapChain();
+    createImageViews();
+    createRenderPass();
 
 }
 
 void RendererCore::setupGraphics() {
-    createSwapChain();
-    createImageViews();
-    createRenderPass();
     createGraphicsPipeline(); // Relies on _entityManager being initialized.
     createFramebuffers();
     createSyncObjects();
+    float minX = 0, minY = 0, maxX = 4920, maxY = 2150;
+    auto deltaX = std::abs(maxX - minX);
+    auto deltaY = std::abs(maxY - minY);
+    float offsetX = 0.0f, offsetY = 0.0f;
+    if(deltaX > deltaY) {
+        offsetY = -deltaY / 2.0f;
+    }
+    _cam.init(0, maxX - minX, 0, maxY - minY, -1, 1);
+    float factor = std::min(_windowWidth, _windowHeight);
+    _cam.setZoomLevel(factor / (float)(std::min(deltaX, deltaY)));
+    _cam.setProjection(0, _windowWidth, 0, _windowHeight, -1, 1);
+
 }
 
 
@@ -173,6 +185,7 @@ void RendererCore::createSyncObjects() {
 
 // TODO: Just using a dirty bit on camera works for a single image_view. Not all of them. So we need the dirty bit for all imageViews. (triple buffer)
 void RendererCore::updateUniformBuffers(uint32_t currentImage) {
+
     Veloxr::UniformBufferObject ubo{};
     float time = 1;
     ubo.view = _cam.getViewMatrix();

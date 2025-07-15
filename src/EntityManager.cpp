@@ -14,6 +14,7 @@ EntityManager::EntityManager(std::shared_ptr<Veloxr::VVDataPacket> dataPacket): 
 void EntityManager::initialize() {
     console.logc2(__func__);
     console.logc2("Num of entities: ", _entityMap.size() );
+    _vertices.clear();
     for(auto& [name, entity] : _entityMap) {
         entity->getVVTexture().tileTexture(entity->getBuffer());
         _vertices.insert(_vertices.begin(), entity->getVertices().begin(), entity->getVertices().end());
@@ -73,7 +74,7 @@ std::shared_ptr<Veloxr::RenderEntity> EntityManager::getEntity(const std::string
     console.log(__func__, " for ", name);
     auto findIt = _entityMap.find(name);
 
-    if (findIt != _entityMap.end()) {
+    if (findIt == _entityMap.end()) {
         console.warn("Could not find entity '", name, "'");
         return nullptr;
     }
