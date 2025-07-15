@@ -1,8 +1,7 @@
 #include <exception>
-#include <renderer.h>
+#include "renderer.h"
 #include <stdexcept>
-#include <texture.h>
-#include <thread>
+#include "texture.h"
 int main(int argc, char* argv[]) {
     RendererCore app{};
 
@@ -32,12 +31,12 @@ int main(int argc, char* argv[]) {
 
 
         std::cout << "[DRIVER] Init\n";
-        app.setTextureBuffer(std::move(buf));
         app.init();
         auto em = app.getEntityManager();
         auto entityHandle = em->createEntity("main");
         entityHandle->setTextureBuffer(buf);
         em->initialize();
+        app.setupGraphics();
         app.spin();
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;

@@ -26,6 +26,11 @@ namespace Veloxr {
             void updateUniformBuffers(uint32_t currentImage, const Veloxr::UniformBufferObject& ubo);
 
 
+            VkBuffer& getVertexBuffer() { return vertexBuffer;}
+            const std::vector<VkDescriptorSet>& getDescriptorSets() { return descriptorSets; }
+            VkDescriptorSetLayout& getDescriptorSetLayout() { return descriptorSetLayout; }
+
+
         private:
             inline static LLogger console{"[Veloxr][VVShaderStageData] "}; 
             inline static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;

@@ -28,12 +28,12 @@ void VVTexture::tileTexture(std::shared_ptr<Veloxr::VeloxrBuffer> buffer) {
         int texWidth    = tileData.width;
         int texHeight   = tileData.height;
         int texChannels = 4;//myTexture.getNumChannels();
-        int samplerIndex = tileData.samplerIndex;
+        int samplerIndexSlot = tileData.samplerIndex;
         VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth) * 
             static_cast<VkDeviceSize>(texHeight) *
             static_cast<VkDeviceSize>(texChannels);
 
-        console.log("Loading texture of size ", texWidth, " x ", texHeight, ": ", (imageSize / 1024.0 / 1024.0), " MB");
+        console.log("Loading texture of size ", texWidth, " x ", texHeight, ": ", (imageSize / 1024.0 / 1024.0), " MB with texture slot index: ", tileData.samplerIndex);
 
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
@@ -64,7 +64,7 @@ void VVTexture::tileTexture(std::shared_ptr<Veloxr::VeloxrBuffer> buffer) {
         auto sampler = createTextureSampler();
         textureImageView = imageView;
         textureSampler = sampler;
-        samplerIndex = samplerIndex;
+        samplerIndex = samplerIndexSlot;
     }
     auto timeToUploadMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - now).count();
 

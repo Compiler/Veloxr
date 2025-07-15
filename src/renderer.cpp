@@ -1,9 +1,7 @@
 #include "renderer.h"
-#include "CommandUtils.h"
 #include "Common.h"
 #include "DataUtils.h"
-#include "VVTexture.h"
-#include "VVUtils.h"
+#include "EntityManager.h"
 #include <chrono>
 #include <memory>
 #include <stdexcept>
@@ -33,19 +31,6 @@ void RendererCore::setWindowDimensions(int width, int height) {
     frameBufferResized = true;
 }
 
-void RendererCore::setTextureBuffer(Veloxr::VeloxrBuffer&& buffer){
-    console.logc1(__func__);
-    if (!device ) {
-        console.log("[Veloxr] Updating texture buffer \n");
-        _currentDataBuffer = buffer;
-        return;
-    }
-    console.log("[Veloxr] Updating texture buffer filepath and destroying\n");
-    destroyTextureData();
-    _currentDataBuffer = buffer;
-    setupTexturePasses();
-}
-
 void RendererCore::init(void* windowHandle) {
     console.logc1(__func__);
     destroy();
@@ -72,110 +57,32 @@ void RendererCore::init(void* windowHandle) {
     physicalDevice = _deviceUtils->getPhysicalDevice();
     graphicsQueue = _deviceUtils->getGraphicsQueue();
     presentQueue = _deviceUtils->getPresentationQueue();
-    // This is quite ugly. We need to set these so createUnfiromBuffers will work. 
     _dataPacket->device = _deviceUtils->getLogicalDevice();
     _dataPacket->physicalDevice = _deviceUtils->getPhysicalDevice();
     _dataPacket->graphicsQueue = graphicsQueue;
     _dataPacket->presentQueue = presentQueue;
-    createSwapChain();
-    createImageViews();
-    createRenderPass();
-    createDescriptorLayout();
-    createGraphicsPipeline();
-    createFramebuffers();
-    createUniformBuffers();
+
     createCommandPool();
+    createCommandBuffer();
 
     _dataPacket->commandPool = commandPool;
     _entityManager = std::make_shared<Veloxr::EntityManager>(_dataPacket);
     console.log("[Veloxr] [Debug] init called and completed. Setting up texture passes from state\n");
-    setupTexturePasses();
+
+
 }
 
-
-void RendererCore::setupTexturePasses() {
-    _textureMap.clear();
-    console.logc1(__func__);
-    if(!device) {
-        console.log("[Veloxr] [Debug] [Warn] No device instantiated. Returning early. Do not call setupTexturePasses without setting a filepath or buffer.\n");
-        return;
-    }
-    console.log("[Veloxr] [Debug] setting up texture pass.\n");
-
-    auto now = std::chrono::high_resolution_clock::now();
-    auto nowTop = std::chrono::high_resolution_clock::now();
-    now = std::chrono::high_resolution_clock::now();
-
-    if (_currentDataBuffer.data.empty() == false) {
-        createTiledTexture(std::move(_currentDataBuffer));
-    } else {
-        _currentDataBuffer.width       = 1;
-        _currentDataBuffer.height      = 1;
-        _currentDataBuffer.numChannels = 4;
-        _currentDataBuffer.data        = { 255, 255, 255, 255 };
-        console.warn("Veloxr did not find a suitable image or buffer to render. Rendering a single pixel.");
-        return setupTexturePasses();
-
-        //throw std::runtime_error("[Veloxr] setupTexturePasses called with no valid filepath or data buffer.\n");
-    }
-    auto timeElapsed = std::chrono::high_resolution_clock::now() - now;
-    console.log("Texture creation: ", std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsed).count(), "ms\t", std::chrono::duration_cast<std::chrono::microseconds>(timeElapsed).count(), "microseconds.\n");
-
-
-    createVertexBuffer();
-    createDescriptorPool();
-    createDescriptorSets();
-    createCommandBuffer();
+void RendererCore::setupGraphics() {
+    createSwapChain();
+    createImageViews();
+    createRenderPass();
+    createGraphicsPipeline(); // Relies on _entityManager being initialized.
+    createFramebuffers();
     createSyncObjects();
-    auto timeElapsedTop = std::chrono::high_resolution_clock::now() - now;
-    console.log("Init(): ", std::chrono::duration_cast<std::chrono::milliseconds>(timeElapsedTop).count(), "ms\t", std::chrono::duration_cast<std::chrono::microseconds>(timeElapsedTop).count(), "microseconds.\n");
 }
+
 
 // ------------- texture utilities ------------------------------------
-
-VkSampler RendererCore::createTextureSampler() {
-    console.logc1(__func__);
-
-    VkSampler textureSampler;
-    VkSamplerCreateInfo samplerInfo{};
-    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    // TODO: See if Linear is better for filter
-    samplerInfo.magFilter = VK_FILTER_NEAREST;
-    samplerInfo.minFilter = VK_FILTER_NEAREST;
-    // TODO: SEe how to repeat, I think clamp
-    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-
-    // TODO: Test with/without this.createGraphicsPipeline
-    samplerInfo.anisotropyEnable = VK_FALSE;
-    samplerInfo.maxAnisotropy = 1.0f;
-    samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-
-    // false = normalized, true = [0, texWidth], [0, texHeight]
-    samplerInfo.unnormalizedCoordinates = VK_FALSE;
-
-    // Shadow mapping, ignore.
-    samplerInfo.compareEnable = VK_FALSE;
-    samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-
-    // TODO: Mipmap
-    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    samplerInfo.mipLodBias = 0.0f;
-    samplerInfo.minLod = 0.0f;
-    samplerInfo.maxLod = 0.0f;
-
-    if (vkCreateSampler(device, &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create texture sampler!");
-    }
-
-    return textureSampler;
-}
-
-VkImageView RendererCore::createTextureImageView(VkImage textureImage) {
-    console.logc1(__func__);
-    return createImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB);
-}
 
 VkImageView RendererCore::createImageView(VkImage image, VkFormat format) {
     console.logc1(__func__);
@@ -198,372 +105,6 @@ VkImageView RendererCore::createImageView(VkImage image, VkFormat format) {
     return imageView;
 }
 
-// ------------- image-layout / copy helpers --------------------------
-void RendererCore::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
-    //console.logc1(__func__);
-    VkCommandBuffer commandBuffer = CommandUtils::beginSingleTimeCommands(device, commandPool);
-
-    VkImageMemoryBarrier barrier{};
-    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    barrier.oldLayout = oldLayout;
-    barrier.newLayout = newLayout;
-    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    barrier.image = image;
-    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    barrier.subresourceRange.baseMipLevel = 0;
-    barrier.subresourceRange.levelCount = 1;
-    barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount = 1;
-    barrier.srcAccessMask = 0; // TODO
-    barrier.dstAccessMask = 0; // TODO
-
-    VkPipelineStageFlags sourceStage;
-    VkPipelineStageFlags destinationStage;
-
-    if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-        barrier.srcAccessMask = 0;
-        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
-        sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-    } else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-        sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-        destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    } else {
-        throw std::invalid_argument("unsupported layout transition!");
-    }
-
-    vkCmdPipelineBarrier(
-            commandBuffer,
-            sourceStage,
-            destinationStage,
-            0,
-            0, nullptr,
-            0, nullptr,
-            1, &barrier
-            );
-
-    CommandUtils::endSingleTimeCommands(device, commandBuffer, commandPool, graphicsQueue);
-}
-
-void RendererCore::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
-    //console.logc1(__func__);
-    VkCommandBuffer commandBuffer = CommandUtils::beginSingleTimeCommands(device, commandPool);
-
-    VkBufferImageCopy region{};
-    region.bufferOffset = 0;
-    region.bufferRowLength = 0;
-    region.bufferImageHeight = 0;
-
-    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region.imageSubresource.mipLevel = 0;
-    region.imageSubresource.baseArrayLayer = 0;
-    region.imageSubresource.layerCount = 1;
-
-    region.imageOffset = {0, 0, 0};
-    region.imageExtent = {
-        width,
-        height,
-        1
-    };
-    vkCmdCopyBufferToImage(
-            commandBuffer,
-            buffer,
-            image,
-            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            1,
-            &region
-            );
-    CommandUtils::endSingleTimeCommands(device, commandBuffer, commandPool, graphicsQueue);
-}
-
-// ------------- tiling / upload path ---------------------------------
-//
-
-void RendererCore::createTiledTexture(Veloxr::VeloxrBuffer&& buffer) {
-    console.logc1(__func__);
-    auto now = std::chrono::high_resolution_clock::now();
-    console.log("Tiling...");
-
-    Veloxr::TextureTiling tiler{};
-    auto maxResolution = _deviceUtils->getMaxTextureResolution();
-
-    // TODO: Calculate best time case for maxResolution. 4096 will be 200% faster that maxresolution, but not sure if they will have enough sampelrs
-    // TODO2: Use indexed binding on hardware that supports it.
-    Veloxr::TiledResult tileData = tiler.tile(buffer, maxResolution);
-
-    auto timeToTileMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - now).count();
-    console.log("Done! Bounding box: (", tileData.boundingBox.x, ", ", tileData.boundingBox.y, ", ", tileData.boundingBox.z, ", ", tileData.boundingBox.w, ") ");
-
-    now = std::chrono::high_resolution_clock::now();
-
-    for(const auto& [indx, tileData] : tileData.tiles){
-        auto tileTexture = std::make_unique<VVTexture>(_dataPacket);
-
-        int texWidth    = tileData.width;
-        int texHeight   = tileData.height;
-        int texChannels = 4;//myTexture.getNumChannels();
-        int samplerIndex = tileData.samplerIndex;
-        VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth) * 
-            static_cast<VkDeviceSize>(texHeight) *
-            static_cast<VkDeviceSize>(texChannels);
-
-        console.log("Loading texture of size ", texWidth, " x ", texHeight, ": ", (imageSize / 1024.0 / 1024.0), " MB");
-
-        VkBuffer stagingBuffer;
-        VkDeviceMemory stagingBufferMemory;
-        VVUtils::createBuffer(_dataPacket, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-
-        void* data;
-        vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
-        memcpy(data, tileData.pixelData.data(), static_cast<size_t>(imageSize));
-        vkUnmapMemory(device, stagingBufferMemory);
-
-        VkImage textureImage;
-        VkDeviceMemory textureImageMemory;
-        createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
-
-        // not thread safe cuz of command pool
-        transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-        // thread safe
-        copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
-        transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-        vkDestroyBuffer(device, stagingBuffer, nullptr);
-        vkFreeMemory(device, stagingBufferMemory, nullptr);
-        tileTexture->textureImage = textureImage;
-        tileTexture->textureImageMemory = textureImageMemory;
-
-        
-        auto imageView = createTextureImageView(textureImage);
-        auto sampler = createTextureSampler();
-        tileTexture->textureImageView = imageView;
-        tileTexture->textureSampler = sampler;
-        tileTexture->samplerIndex = samplerIndex;
-
-        auto key = "_tile_" + std::to_string(indx);
-        _textureMap.emplace(key, std::move(tileTexture));
-    }
-
-    auto timeToUploadMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - now).count();
-
-    vertices.insert(vertices.begin(), std::make_move_iterator(tileData.vertices.begin()), std::make_move_iterator(tileData.vertices.end()));
-
-    float minX = +9999.0f, maxX = -9999.0f;
-    float minY = +9999.0f, maxY = -9999.0f;
-    for (auto &v : vertices) {
-        minX = std::min(minX, v.pos.x);
-        maxX = std::max(maxX, v.pos.x);
-        minY = std::min(minY, v.pos.y);
-        maxY = std::max(maxY, v.pos.y);
-    }
-    console.log("Final geometry bounding box: X in [", minX, ", ", maxX, "], Y in [", minY, ", ", maxY, "]");
-    auto deltaX = std::abs(maxX - minX);
-    auto deltaY = std::abs(maxY - minY);
-    float offsetX = 0.0f, offsetY = 0.0f;
-    if(deltaX > deltaY) {
-        offsetY = -deltaY / 2.0f;
-    }
-    _cam.init(0, maxX - minX, 0, maxY - minY, -1, 1);
-    float factor = std::min(_windowWidth, _windowHeight);
-    _cam.setZoomLevel(factor / (float)(std::min(deltaX, deltaY)));
-    _cam.setProjection(0, _windowWidth, 0, _windowHeight, -1, 1);
-    console.warn("Updating camera: Zoom: ", _cam.getZoomLevel(), ", projection on window dim: ", _windowWidth, "x", _windowHeight, " @ (", _cam.getPosition().x, ", ", _cam.getPosition().y,")"); 
-
-
-    console.fatal("Time to tile: ", timeToTileMs, " ms");
-    console.fatal("Time to upload data: ", timeToUploadMs, " ms");
-}
-
-// ------------- resource creation helpers ---------------------------
-void RendererCore::createImage(uint32_t width, uint32_t height, VkFormat format,
-                           VkImageTiling tiling, VkImageUsageFlags usage,
-                           VkMemoryPropertyFlags properties,
-                           VkImage& image, VkDeviceMemory& imageMemory) {
-    //console.logc1(__func__);
-    VkImageCreateInfo imageInfo{};
-    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    imageInfo.imageType = VK_IMAGE_TYPE_2D;
-    imageInfo.extent.width = width;
-    imageInfo.extent.height = height;
-    imageInfo.extent.depth = 1;
-    imageInfo.mipLevels = 1;
-    imageInfo.arrayLayers = 1;
-    imageInfo.format = format;
-    imageInfo.tiling = tiling;
-    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    imageInfo.usage = usage;
-    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    if (vkCreateImage(device, &imageInfo, nullptr, &image) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create image!");
-    }
-
-    VkMemoryRequirements memRequirements;
-    vkGetImageMemoryRequirements(device, image, &memRequirements);
-
-    VkMemoryAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = VVUtils::findMemoryType(_dataPacket, memRequirements.memoryTypeBits, properties);
-
-    if (vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate image memory!");
-    }
-
-    vkBindImageMemory(device, image, imageMemory, 0);
-}
-
-void RendererCore::createDescriptorSets() {
-    console.logc1(__func__);
-
-    console.log("[Veloxr] Creating descriptor sets for ", MAX_FRAMES_IN_FLIGHT, " frames \n");
-    std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
-    VkDescriptorSetAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = descriptorPool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-    allocInfo.pSetLayouts = layouts.data();
-
-    descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-
-    if (vkAllocateDescriptorSets(device, &allocInfo, descriptorSets.data()) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate descriptor sets!");
-    }
-    console.log("[Veloxr] Allocated new descriptor sets\n");
-
-
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = uniformBuffers[i];
-        bufferInfo.offset = 0;
-        bufferInfo.range = sizeof(Veloxr::UniformBufferObject);
-
-        std::vector<VkDescriptorImageInfo> imageInfos;
-        std::map<int, VkDescriptorImageInfo> orderedSamplers;
-        for (auto& [filepath, structure] : _textureMap) {
-            VkDescriptorImageInfo imageInfo{};
-            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView = structure->textureImageView;
-            imageInfo.sampler = structure->textureSampler;
-            orderedSamplers[structure->samplerIndex] = (imageInfo);
-        }
-
-        for(auto& [_, imageInfo] : orderedSamplers) {
-            imageInfos.push_back(imageInfo);
-        }
-
-        std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
-
-        descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[0].dstSet = descriptorSets[i];
-        descriptorWrites[0].dstBinding = 0;
-        descriptorWrites[0].dstArrayElement = 0;
-        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrites[0].descriptorCount = 1;
-        descriptorWrites[0].pBufferInfo = &bufferInfo;
-
-        descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[1].dstSet = descriptorSets[i];
-        descriptorWrites[1].dstBinding = 1;
-        descriptorWrites[1].dstArrayElement = 0;
-        descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites[1].descriptorCount = static_cast<uint32_t>(imageInfos.size());
-        descriptorWrites[1].pImageInfo = imageInfos.data();
-
-        console.log("[Veloxr] Updating descriptor sets\n");
-        vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-    }
-}
-
-void RendererCore::createDescriptorPool() {
-    // ASSERT -> WE HAVE TILED OUR TEXTURE
-    console.logc1(__func__);
-    std::array<VkDescriptorPoolSize, 2> poolSizes{};
-    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-    poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSizes[1].descriptorCount = static_cast<uint32_t>(_textureMap.size() * MAX_FRAMES_IN_FLIGHT);
-
-    VkDescriptorPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-    poolInfo.pPoolSizes = poolSizes.data();
-    poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-
-    if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create descriptor pool!");
-    }
-}
-
-void RendererCore::createUniformBuffers() {
-    console.logc1(__func__);
-    VkDeviceSize bufferSize = sizeof(Veloxr::UniformBufferObject);
-
-    uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-    uniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
-    uniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
-
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        VVUtils::createBuffer(_dataPacket, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
-
-        vkMapMemory(device, uniformBuffersMemory[i], 0, bufferSize, 0, &uniformBuffersMapped[i]);
-    }
-}
-
-void RendererCore::createDescriptorLayout() {
-    console.logc1(__func__);
-    VkDescriptorSetLayoutBinding uboLayoutBinding{};
-    uboLayoutBinding.binding = 0;
-    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    uboLayoutBinding.descriptorCount = 1;
-    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
-    VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-    samplerLayoutBinding.binding = 1;
-    samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    console.warn("Texture map size for descriptor layout: ", _textureMap.size());
-    samplerLayoutBinding.descriptorCount = std::min((uint32_t)2048, _deviceUtils->getMaxSamplersPerStage());
-    samplerLayoutBinding.pImmutableSamplers = nullptr;
-    samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-    std::array<VkDescriptorSetLayoutBinding, 2> bindings = {uboLayoutBinding, samplerLayoutBinding};
-    VkDescriptorSetLayoutCreateInfo layoutInfo{};
-    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-    layoutInfo.pBindings = bindings.data();
-
-    if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create descriptor set layout!");
-    }
-}
-
-void RendererCore::createVertexBuffer() {
-    console.logc1(__func__);
-    console.log("[Veloxr] Creating vertexBuffer\n");
-    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
-
-    VkBuffer stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
-    VVUtils::createBuffer(_dataPacket, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-
-    void* data;
-    vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-    memcpy(data, vertices.data(), (size_t) bufferSize);
-    vkUnmapMemory(device, stagingBufferMemory);
-
-    VVUtils::createBuffer(_dataPacket, bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
-
-    VVUtils::copyBuffer(_dataPacket, stagingBuffer, vertexBuffer, bufferSize);
-
-    vkDestroyBuffer(device, stagingBuffer, nullptr);
-    vkFreeMemory(device, stagingBufferMemory, nullptr);
-}
 
 void RendererCore::recreateSwapChain() {
     console.logc1(__func__);
@@ -638,19 +179,11 @@ void RendererCore::updateUniformBuffers(uint32_t currentImage) {
     ubo.proj = _cam.getProjectionMatrix();
     ubo.model = glm::mat4(1.0f);
     ubo.roi = _roi;
-    memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
     _entityManager->updateUniformBuffers(currentImage, ubo);
 }
 
 void RendererCore::destroyTextureData() {
     console.logc1(__func__);
-    if( device && !uniformBuffers.empty() && !uniformBuffersMemory.empty()) {
-        console.log("[Veloxr] [Debug] Destroying uniform data\n");
-        // hit ctors
-        _textureMap.clear();
-        console.log("[Veloxr] [Debug] Destroying uniform pools\n");
-        vkDestroyDescriptorPool(device, descriptorPool, nullptr);
-    }
     _currentDataBuffer = {};
     vertices = {};
 }
@@ -662,18 +195,9 @@ void RendererCore::destroy() {
     cleanupSwapChain();
     destroyTextureData();
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        vkDestroyBuffer(device, uniformBuffers[i], nullptr);
-        vkFreeMemory(device, uniformBuffersMemory[i], nullptr);
-    }
-    vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
-
     vkDestroyPipeline(device, graphicsPipeline, nullptr);
     vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
     vkDestroyRenderPass(device, renderPass, nullptr);
-
-    vkDestroyBuffer(device, vertexBuffer, nullptr);
-    vkFreeMemory(device, vertexBufferMemory, nullptr);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);

@@ -153,12 +153,6 @@ inline const auto BOT = 1.0f;
 
 
 
-struct UniformBufferObject {
-    alignas(16) glm::mat4 model;
-    alignas(16) glm::mat4 view;
-    alignas(16) glm::mat4 proj;
-    alignas(16) glm::vec4 roi;
-};
 
 inline bool mousePressed = false;
 inline double lastX = 0.0, lastY = 0.0;
@@ -188,30 +182,14 @@ public:
     // Change size of window to render into. 
     void setWindowDimensions(int width, int height); 
 
-    // Set the texture to load, will reinitialize the pipeline.
-    void setTextureBuffer(Veloxr::VeloxrBuffer&& buffer); 
-
     // Initialize the renderer, given a window pointer to render into.
     void init(void* windowHandle = nullptr); 
-    void setupTexturePasses(); 
+    void setupGraphics(); 
+
+    // Main introduction to entity handles.
+    std::shared_ptr<Veloxr::EntityManager> getEntityManager() { return _entityManager; }
 
     // Camera API. Use this object to access camera movement related data, zoom, pan, etc.
-    /*
-            void setPosition(const glm::vec3& pos);
-            void setPosition(const glm::vec2& pos);
-            void translate(const glm::vec2& delta);
-            void setRotation(float rot);
-            void setProjection(float left, float right, float bottom, float top, float nearPlane, float farPlane);
-            const glm::mat4& getProjectionMatrix() const;
-            const glm::mat4& getViewMatrix() const;
-            glm::mat4 getViewProjectionMatrix() const;
-            void setZoomLevel(float zoomLevel);
-            inline const float getZoomLevel() const { return _zoomLevel;}
-            void addToZoom(float delta);
-            void zoomToCenter(float zoomDelta);
-            void zoomCentered(const glm::vec2& anchorPoint, float zoomDelta);
-            void fitViewport(float left, float right, float bottom, float top);
-    */
     Veloxr::OrthographicCamera& getCamera() {
         return _cam;
     }
@@ -236,7 +214,6 @@ public:
     // Make drawFrame accessible to external code
     void drawFrame();
 
-    std::shared_ptr<Veloxr::EntityManager> getEntityManager() { return _entityManager; }
 
     //glm::vec2 getMainEntityPosition()  { }
 
@@ -258,9 +235,11 @@ private: // No client -- internal
     VkDebugUtilsMessengerEXT debugMessenger;
 
 #ifdef VALIDATION_LAYERS_VALUE
-    bool enableValidationLayers = VALIDATION_LAYERS_VALUE;
+    //bool enableValidationLayers = VALIDATION_LAYERS_VALUE;
+    bool enableValidationLayers = true;
 #else
-    bool enableValidationLayers = false;
+    //bool enableValidationLayers = false;
+    bool enableValidationLayers = true;
 #endif
 
     Veloxr::OrthographicCamera _cam;
@@ -275,6 +254,7 @@ private: // No client -- internal
     std::shared_ptr<Veloxr::Device> _deviceUtils;
     std::shared_ptr<Veloxr::VVDataPacket> _dataPacket;
 
+    // VK
     VkSurfaceKHR surface;
     VkDevice device;
     VkPhysicalDevice physicalDevice;
@@ -287,21 +267,12 @@ private: // No client -- internal
     std::vector<VkImageView> swapChainImageViews;
 
     VkRenderPass renderPass;
-    VkDescriptorSetLayout descriptorSetLayout;
     VkPipelineLayout pipelineLayout; // Uniforms in shaders object
     VkPipeline graphicsPipeline;
     std::vector<VkFramebuffer> swapChainFramebuffers;
     VkCommandPool commandPool;
     std::vector<VkCommandBuffer> commandBuffers;
     uint32_t currentFrame = 0;
-    VkBuffer vertexBuffer;
-    VkDeviceMemory vertexBufferMemory;
-
-    std::vector<VkBuffer> uniformBuffers;
-    std::vector<VkDeviceMemory> uniformBuffersMemory;
-    std::vector<void*> uniformBuffersMapped;
-    VkDescriptorPool descriptorPool;
-    std::vector<VkDescriptorSet> descriptorSets;
 
     // Structure for holding the VRAM data
     struct VkVirtualTexture {
@@ -397,28 +368,8 @@ private: // No client -- internal
 
 private:
     // texture utilities ------------------------------------------------
-    VkSampler  createTextureSampler();
-    VkImageView createTextureImageView(VkImage textureImage);
     VkImageView createImageView(VkImage image, VkFormat format);
 
-    // image operations -------------------------------------------------
-    void transitionImageLayout(VkImage image, VkFormat format,
-                               VkImageLayout oldLayout, VkImageLayout newLayout);
-    void copyBufferToImage(VkBuffer buffer, VkImage image,
-                           uint32_t width, uint32_t height);
-    void createTiledTexture(Veloxr::VeloxrBuffer&& buffer);
-
-    // resource creation helpers ---------------------------------------
-    void createImage(uint32_t width, uint32_t height, VkFormat format,
-                     VkImageTiling tiling, VkImageUsageFlags usage,
-                     VkMemoryPropertyFlags properties,
-                     VkImage& image, VkDeviceMemory& imageMemory);
-
-    // descriptor helpers ----------------------------------------------
-    void createDescriptorLayout();
-    void createDescriptorPool();
-    void createDescriptorSets();
-    void createUniformBuffers();
 
     // mesh / swapchain helpers ----------------------------------------
     void createVertexBuffer();
@@ -465,10 +416,11 @@ private:
         scissor.extent = swapChainExtent;
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-        VkBuffer vertexBuffers[] = {vertexBuffer};
+        auto p_shaderStage = _entityManager->getShaderStageData();
+        VkBuffer vertexBuffers[] = {p_shaderStage->getVertexBuffer()};
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &p_shaderStage->getDescriptorSets()[currentFrame], 0, nullptr);
 
         vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
         vkCmdEndRenderPass(commandBuffer);
@@ -580,6 +532,7 @@ private:
 
 
     VkShaderModule createShaderModule(const std::vector<char>& code) {
+        console.debug(__func__);
 
         VkShaderModuleCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -720,11 +673,14 @@ private:
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineLayoutInfo.setLayoutCount = 1;
-        pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
+        console.debug("!");
+        pipelineLayoutInfo.pSetLayouts = &_entityManager->getShaderStageData()->getDescriptorSetLayout();
+        console.debug("!!");
 
         if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
             throw std::runtime_error("failed to create pipeline layout!");
         }
+        console.debug("Graphics pipeline Layout created.");
 
 
         VkGraphicsPipelineCreateInfo pipelineInfo{};
@@ -746,9 +702,11 @@ private:
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
         pipelineInfo.basePipelineIndex = -1; // Optional
 
+        console.debug("Creating graphics pipelines");
         if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
             throw std::runtime_error("failed to create graphics pipeline!");
         }
+        console.debug("Created graphics pipelines");
 
         vkDestroyShaderModule(device, fragShaderModule, nullptr);
         vkDestroyShaderModule(device, vertShaderModule, nullptr);
@@ -1191,8 +1149,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         buf.height = texture.getResolution().y;
         buf.numChannels = texture.getNumChannels();
         buf.orientation = texture.getOrientation();
-        std::cout << "[DRIVER] Sending setTextureBuffer\n";
-        app->setTextureBuffer(std::move(buf));
     };
 
     const std::string basePath = std::string("/Users/") + V_USER + "/Downloads/";

@@ -7,7 +7,6 @@
 using Veloxr::EntityManager;
 
 EntityManager::EntityManager(std::shared_ptr<Veloxr::VVDataPacket> dataPacket): _data(dataPacket) {
-
     _shaderData = std::make_shared<Veloxr::VVShaderStageData>(_data);
 
 }
