@@ -45,7 +45,7 @@
 #include <cstdlib>
 #include <vector>
 #include <cstring>
-#include <test.h>
+#include "test.h"
 
 
 #include <cstdint> 
@@ -53,7 +53,7 @@
 #include <algorithm> 
 #include <fstream>
 
-#include <device.h>
+#include "device.h"
 
 #ifdef __APPLE__
 extern "C" {

@@ -22,3 +22,5 @@ run:
 	./build/vulkanrenderer.exe "C:/Users/luker/Downloads/fox.jpg"
 runb: 
 	./build/vulkanrenderer.exe "C:/Users/luker/Downloads/56000.jpg"
+runh: 
+	./build/vulkanrenderer.exe "C:/Users/ljuek/Downloads/fox.jpg"
