@@ -369,6 +369,35 @@ private: // No client -- internal
     }
 
 private:
+    // Helper function to find shader directory with multiple fallback options
+    std::filesystem::path findShaderPath() {
+        // Option 1: Environment variable
+        if (const char* envPath = std::getenv("VELOXR_SHADER_PATH")) {
+            std::filesystem::path envShaderPath(envPath);
+            if (std::filesystem::exists(envShaderPath)) {
+                return envShaderPath;
+            }
+        }
+        
+        // Option 2: Look in common installation locations
+        std::filesystem::path exePath = getExecutablePath();
+        std::vector<std::filesystem::path> fallbackPaths = {
+            exePath.parent_path() / "spirv",  // Same directory as executable
+            exePath.parent_path() / "Resources" / "spirv",  // macOS app bundle
+            exePath.parent_path().parent_path() / "spirv",  // Original logic fallback
+            "spirv",  // Current working directory
+            "../spirv"  // One level up
+        };
+        
+        for (const auto& path : fallbackPaths) {
+            if (std::filesystem::exists(path)) {
+                return path;
+            }
+        }
+        
+        throw std::runtime_error("Could not find spirv shader directory. Please set VELOXR_SHADER_PATH environment variable or call setShaderPath().");
+    }
+    
     // texture utilities ------------------------------------------------
     VkImageView createImageView(VkImage image, VkFormat format);
 
@@ -553,10 +582,8 @@ private:
 
     // Immutable.
     void createGraphicsPipeline() {
-        // Determine shader path relative to executable
-        std::filesystem::path exePath = getExecutablePath();
-        // Assumes executable is in 'bin/' and shaders are in 'spirv/' under the same root install prefix
-        std::filesystem::path spirvDir = exePath.parent_path().parent_path() / "spirv";
+        // Use the robust shader path finding method
+        std::filesystem::path spirvDir = findShaderPath();
 
         auto vertShaderCode = readFile((spirvDir / "vert.spv").string());
         auto fragShaderCode = readFile((spirvDir / "frag.spv").string());

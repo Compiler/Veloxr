@@ -10,7 +10,7 @@ rm -rf build
 conan install conan/conanfile.py -of . \
     --version=2.3.0 \
     --options="&:validation_layers=False" \
-    --options="&:build_video=True" \
+    --options="&:build_photo=True" \
     -pr:h=conan/profile_win2022 \
     -pr:b=conan/profile_win2022
 
