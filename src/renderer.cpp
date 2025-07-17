@@ -456,8 +456,10 @@ void RendererCore::createDescriptorSets() {
         // Ensure we have at least one texture, fill with dummy if needed
 #ifdef __APPLE__
         uint32_t maxSamplers = 16;
+        console.log("***Max samplers per stage: ", maxSamplers);
 #else
         uint32_t maxSamplers = _deviceUtils->getMaxSamplersPerStage();
+        
 #endif
         if (imageInfos.empty()) {
             console.warn("No textures available for descriptor set binding");

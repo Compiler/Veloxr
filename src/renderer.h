@@ -412,6 +412,7 @@ private:
         std::vector<std::filesystem::path> fallbackPaths = {
             exePath.parent_path() / "spirv",  // Same directory as executable
             exePath.parent_path() / "Resources" / "spirv",  // macOS app bundle
+            exePath.parent_path().parent_path() / "Resources" / "spirv",  // gigapixel
             exePath.parent_path().parent_path() / "spirv",  // Original logic fallback
             "spirv",  // Current working directory
             "../spirv"  // One level up
@@ -419,11 +420,39 @@ private:
         
         for (const auto& path : fallbackPaths) {
             if (std::filesystem::exists(path)) {
+                console.log("[Veloxr][Warning] Shader directory FOUND at: ", path);
                 return path;
+            }
+            else {
+                console.log("[Veloxr][Warning] Shader directory NOT at: ", path);
             }
         }
         
         throw std::runtime_error("Could not find spirv shader directory. Please set VELOXR_SHADER_PATH environment variable or call setShaderPath().");
+    }
+    
+    // Helper function to find MoltenVK ICD file with multiple fallback options
+    std::filesystem::path findMoltenVKICDPath() {
+        // Option 2: Look in common installation locations
+        std::filesystem::path exePath = getExecutablePath();
+        std::vector<std::filesystem::path> fallbackPaths = {
+            exePath.parent_path() / "MoltenVK_icd.json",  // Same directory as executable
+            exePath.parent_path() / "Resources" / "MoltenVK_icd.json",  // macOS app bundle
+            exePath.parent_path().parent_path() / "Resources" / "MoltenVK_icd.json",  // gigapixel
+            exePath.parent_path().parent_path() / "MoltenVK_icd.json",  // Original logic fallback
+            "MoltenVK_icd.json",  // Current working directory
+        };
+        
+        for (const auto& path : fallbackPaths) {
+            if (std::filesystem::exists(path)) {
+                return path;
+            }
+            else {
+                console.log("[Veloxr][Warning] MoltenVK ICD NOT at: ", path);
+            }
+        }
+        
+        throw std::runtime_error("Could not find MoltenVK_icd.json. Please set VK_ICD_FILENAMES environment variable to the ICD file path.");
     }
     
     // texture utilities ------------------------------------------------
@@ -1000,6 +1029,23 @@ private:
         console.log("[Veloxr] checkValidationLayerSupport(): ", checkValidationLayerSupport());
         
 #ifdef __APPLE__
+        // Set up MoltenVK ICD path before creating instance
+        try {
+            std::filesystem::path icdPath = findMoltenVKICDPath();
+            std::string icdPathStr = icdPath.string();
+            console.log("[Veloxr] Found MoltenVK ICD at: ", icdPathStr);
+            
+            // Set the VK_ICD_FILENAMES environment variable
+            if (setenv("VK_ICD_FILENAMES", icdPathStr.c_str(), 1) != 0) {
+                console.log("[Veloxr] Warning: Failed to set VK_ICD_FILENAMES environment variable");
+            } else {
+                console.log("[Veloxr] Set VK_ICD_FILENAMES to: ", icdPathStr);
+            }
+        } catch (const std::exception& e) {
+            console.log("[Veloxr] Warning: Could not find MoltenVK ICD file: ", e.what());
+            console.log("[Veloxr] Continuing with system default ICD discovery...");
+        }
+        
         // Check Metal availability using our helper function
         if (!checkMetalAvailability()) {
             std::cerr << "[Veloxr] ERROR: Metal is not available on this system!" << std::endl;
