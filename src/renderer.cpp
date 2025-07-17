@@ -117,7 +117,6 @@ VkImageView RendererCore::createImageView(VkImage image, VkFormat format) {
     return imageView;
 }
 
-
 void RendererCore::recreateSwapChain() {
     console.logc1(__func__);
     // TODO: This is client only
