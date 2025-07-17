@@ -10,3 +10,6 @@ Install GLFW3 + OpenCV
 - vcpkg install opencv
 - Use this install path as a variable in cmake
 - Update your Makefile to -D to your glfw install path
+
+## MAC
+must set VK_ICD_FILENAMES to where MoltenVK_icd.json is at!

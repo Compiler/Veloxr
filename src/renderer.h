@@ -635,7 +635,13 @@ private:
         std::filesystem::path spirvDir = findShaderPath();
 
         auto vertShaderCode = readFile((spirvDir / "vert.spv").string());
+        
+        // Load platform-specific fragment shader
+#ifdef __APPLE__
+        auto fragShaderCode = readFile((spirvDir / "frag_mac.spv").string());
+#else
         auto fragShaderCode = readFile((spirvDir / "frag.spv").string());
+#endif
 
         VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
         VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);

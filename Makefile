@@ -12,8 +12,14 @@ build:
 	./build/vulkanrenderer.exe "C:/Users/ljuek/Downloads/fox.jpg"
 else
 build:
-	glslc.exe src/shaders/passthrough.vert -o spirv/vert.spv 
-	glslc.exe src/shaders/passthrough.frag -o spirv/frag.spv
+	# Check if glslc exists, otherwise use a different approach
+	if command -v glslc >/dev/null 2>&1; then \
+		glslc src/shaders/passthrough.vert -o spirv/vert.spv; \
+		glslc src/shaders/passthrough.frag -o spirv/frag.spv; \
+		glslc src/shaders/passthrough_mac.frag -o spirv/frag_mac.spv; \
+	else \
+		echo "glslc not found, shaders will be compiled during build"; \
+	fi
 	mkdir -p build
 	cd build && cmake .. && cmake --build . && ./vulkanrenderer
 endif

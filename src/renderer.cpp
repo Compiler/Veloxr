@@ -453,6 +453,22 @@ void RendererCore::createDescriptorSets() {
             imageInfos.push_back(imageInfo);
         }
 
+        // Ensure we have at least one texture, fill with dummy if needed
+#ifdef __APPLE__
+        uint32_t maxSamplers = 16;
+#else
+        uint32_t maxSamplers = _deviceUtils->getMaxSamplersPerStage();
+#endif
+        if (imageInfos.empty()) {
+            console.warn("No textures available for descriptor set binding");
+            return; // Skip if no textures
+        }
+
+        // Fill remaining slots with the first texture to avoid validation errors
+        while (imageInfos.size() < maxSamplers) {
+            imageInfos.push_back(imageInfos[0]);
+        }
+
         std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
 
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -468,10 +484,10 @@ void RendererCore::createDescriptorSets() {
         descriptorWrites[1].dstBinding = 1;
         descriptorWrites[1].dstArrayElement = 0;
         descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites[1].descriptorCount = static_cast<uint32_t>(imageInfos.size());
+        descriptorWrites[1].descriptorCount = maxSamplers;
         descriptorWrites[1].pImageInfo = imageInfos.data();
 
-        console.log("[Veloxr] Updating descriptor sets\n");
+        console.log("[Veloxr] Updating descriptor sets with ", maxSamplers, " samplers\n");
         vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
     }
 }
@@ -483,7 +499,12 @@ void RendererCore::createDescriptorPool() {
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
     poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSizes[1].descriptorCount = static_cast<uint32_t>(_textureMap.size() * MAX_FRAMES_IN_FLIGHT);
+    // Use 16 samplers to match hardware capability on macOS
+#ifdef __APPLE__
+    poolSizes[1].descriptorCount = static_cast<uint32_t>(16 * MAX_FRAMES_IN_FLIGHT);
+#else
+    poolSizes[1].descriptorCount = static_cast<uint32_t>(_deviceUtils->getMaxSamplersPerStage() * MAX_FRAMES_IN_FLIGHT);
+#endif
 
     VkDescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -523,7 +544,12 @@ void RendererCore::createDescriptorLayout() {
     samplerLayoutBinding.binding = 1;
     samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     console.warn("Texture map size for descriptor layout: ", _textureMap.size());
-    samplerLayoutBinding.descriptorCount = std::min((uint32_t)2048, _deviceUtils->getMaxSamplersPerStage());
+    // Use 16 samplers to match hardware capability on macOS
+#ifdef __APPLE__
+    samplerLayoutBinding.descriptorCount = 16;
+#else
+    samplerLayoutBinding.descriptorCount = _deviceUtils->getMaxSamplersPerStage();
+#endif
     samplerLayoutBinding.pImmutableSamplers = nullptr;
     samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
