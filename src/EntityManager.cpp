@@ -23,7 +23,7 @@ void EntityManager::initialize() {
     for (auto& [name, entity] : _entityMap) {
         entity->getVVTexture().tileTexture(entity->getBuffer());
 
-        const auto& verts = entity->getVertices();
+        const auto verts = entity->getVertices();
         _vertices.insert(_vertices.begin(), verts.begin(), verts.end());
 
         for (const auto& vertex : verts) {

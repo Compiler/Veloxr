@@ -2,6 +2,7 @@
 #include "DataUtils.h"
 #include "TextureTiling.h"
 #include "VVUtils.h"
+#include <limits>
 
 
 namespace Veloxr {
@@ -79,8 +80,8 @@ void VVTexture::tileTexture(std::shared_ptr<Veloxr::VeloxrBuffer> buffer) {
 
     _vertices.insert(_vertices.begin(), std::make_move_iterator(tileData.vertices.begin()), std::make_move_iterator(tileData.vertices.end()));
 
-    float minX = +9999.0f, maxX = -9999.0f;
-    float minY = +9999.0f, maxY = -9999.0f;
+    float minX = std::numeric_limits<float>::min(), maxX = std::numeric_limits<float>::max();
+    float minY = std::numeric_limits<float>::min(), maxY = std::numeric_limits<float>::max();
     for (auto &v : _vertices) {
         minX = std::min(minX, v.pos.x);
         maxX = std::max(maxX, v.pos.x);
@@ -88,6 +89,7 @@ void VVTexture::tileTexture(std::shared_ptr<Veloxr::VeloxrBuffer> buffer) {
         maxY = std::max(maxY, v.pos.y);
     }
     console.log("Final geometry bounding box: X in [", minX, ", ", maxX, "], Y in [", minY, ", ", maxY, "]");
+    _currentBoundingBox = {minX, minY, maxX, maxY};
 
     console.fatal("Time to tile: ", timeToTileMs, " ms");
     console.fatal("Time to upload data: ", timeToUploadMs, " ms");

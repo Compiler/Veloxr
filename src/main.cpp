@@ -36,6 +36,7 @@ int main(int argc, char* argv[]) {
             buf.numChannels = texture.getNumChannels();
             buf.orientation = texture.getOrientation();
 
+            entityHandle->setPosition(100, 0);
             entityHandle->setTextureBuffer(buf);
         }
 

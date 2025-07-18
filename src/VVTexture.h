@@ -28,7 +28,10 @@ namespace Veloxr {
 
             // Very exposed. This might as well be a Struct.
             const std::vector<Veloxr::VVTileData>& getTiledResult() const { return _tiledResult; }
+
+            // Vertices are in base coordinates. Spawning at 0,0 and spanning width / height
             [[nodiscard]] std::vector<Veloxr::Vertex>& getVertices() { return _vertices; };
+            const glm::vec4& getBoundingBox() const { return _currentBoundingBox; }
 
             ~VVTexture();
 
@@ -38,6 +41,8 @@ namespace Veloxr {
             std::shared_ptr<VVDataPacket> _data;
             std::vector<Veloxr::Vertex> _vertices;
             std::vector<Veloxr::VVTileData> _tiledResult{};
+
+            glm::vec4 _currentBoundingBox;
 
             void destroy();
 

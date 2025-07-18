@@ -22,8 +22,8 @@ namespace Veloxr {
 
             void setIsHidden(bool isHidden) { _isHidden = isHidden; }
             void setName(const std::string& name);
-            void setPosition(float x, float y){ _position.x = x; _position.y = y;};
-            void setPosition(glm::vec3& pos) { _position = pos; };
+            void setPosition(float x, float y);
+            void setPosition(glm::vec3& pos);
             void setTextureBuffer(std::unique_ptr<Veloxr::VeloxrBuffer> buffer);
             void setTextureBuffer(std::shared_ptr<Veloxr::VeloxrBuffer> buffer);
             void setTextureBuffer(Veloxr::VeloxrBuffer& buffer);
@@ -35,17 +35,21 @@ namespace Veloxr {
             inline const std::string& getName() const { return _name; }
             inline const bool isHidden () const { return _isHidden; }
 
+            // Copy to modify position
+            const std::vector<Veloxr::Vertex> getVertices ();
+
             // Use these :| 
             [[nodiscard]] inline Veloxr::VVTexture& getVVTexture() { return _texture; }
             [[nodiscard]] inline const std::shared_ptr<Veloxr::VeloxrBuffer> getBuffer() const { return _textureBuffer; }
-            [[nodiscard]] inline const std::vector<Veloxr::Vertex>& getVertices (){ return _texture.getVertices(); }
 
         private:
             static int ENTITY_COUNT;
-            glm::vec3 _position;
+
+            glm::vec3 _position{0, 0, 0};
             std::string _name{""};
-            std::shared_ptr<Veloxr::VeloxrBuffer> _textureBuffer;
             bool _isHidden{false};
+
+            std::shared_ptr<Veloxr::VeloxrBuffer> _textureBuffer;
             std::vector<Veloxr::Vertex> _vertices;
             Veloxr::VVTexture _texture;
     };
