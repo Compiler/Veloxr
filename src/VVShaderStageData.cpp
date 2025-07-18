@@ -136,14 +136,16 @@ namespace Veloxr {
 
             std::vector<VkDescriptorImageInfo> imageInfos;
             std::map<int, VkDescriptorImageInfo> orderedSamplers;
-            for (auto& [filepath, structure] : _textureMap) {
-                const auto& texture = structure->getVVTexture();
-                console.warn("Data in VVTexture: ", texture.textureImageView, " - ", texture.textureSampler, " - ", texture.samplerIndex);
-                VkDescriptorImageInfo imageInfo{};
-                imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                imageInfo.imageView = texture.textureImageView;
-                imageInfo.sampler = texture.textureSampler;
-                orderedSamplers[texture.samplerIndex] = (imageInfo);
+            for (auto& [_, entity] : _textureMap) {
+                const auto& texture = entity->getVVTexture();
+                for( const auto& data : texture.getTiledResult() ){
+                    console.warn("Data in VVTexture: ", data.textureImageView, " - ", data.textureSampler, " - ", data.samplerIndex);
+                    VkDescriptorImageInfo imageInfo{};
+                    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                    imageInfo.imageView = data.textureImageView;
+                    imageInfo.sampler = data.textureSampler;
+                    orderedSamplers[data.samplerIndex] = (imageInfo);
+                }
             }
             console.log("Set the Samplers and image views.");
 

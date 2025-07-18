@@ -13,6 +13,7 @@ void VVTexture::setDataPacket(std::shared_ptr<VVDataPacket> dataPacket) {
 }
 
 void VVTexture::tileTexture(std::shared_ptr<Veloxr::VeloxrBuffer> buffer) {
+    //destroy();
     console.logc2(__func__, buffer->data.size());
     auto now = std::chrono::high_resolution_clock::now();
     static Veloxr::TextureTiling tiler{};
@@ -62,9 +63,17 @@ void VVTexture::tileTexture(std::shared_ptr<Veloxr::VeloxrBuffer> buffer) {
         
         auto imageView = createTextureImageView(textureImage);
         auto sampler = createTextureSampler();
-        textureImageView = imageView;
-        textureSampler = sampler;
-        samplerIndex = samplerIndexSlot;
+        // _tiledResult.emplace_back(imageView, 
+        Veloxr::VVTileData vvTileData {};
+        vvTileData.textureImage = textureImage;
+        vvTileData.textureImageView = imageView;
+        vvTileData.textureSampler = sampler;
+        vvTileData.samplerIndex = samplerIndexSlot;
+        vvTileData.textureImageMemory = textureImageMemory;
+        _tiledResult.emplace_back(std::move(vvTileData));
+        // textureImageView = imageView;
+        // textureSampler = sampler;
+        // samplerIndex = samplerIndexSlot;
     }
     auto timeToUploadMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - now).count();
 
@@ -213,29 +222,32 @@ void VVTexture::destroy() {
 
     console.log("Destroying on device: ", _data->device);
 
-    if (textureSampler) {
-        console.logc1("Destroying Sampler");
-        vkDestroySampler(_data->device, textureSampler, nullptr);
-        console.logc1("Destroyed.");
-    }
+    for(auto& [textureImage, textureImageMemory, textureImageView, textureSampler, _] : _tiledResult) {
+        if (textureSampler) {
+            console.logc1("Destroying Sampler");
+            vkDestroySampler(_data->device, textureSampler, nullptr);
+            console.logc1("Destroyed.");
+        }
 
-    if ( textureImageView ) {
-        console.logc1("Destroying ImageView");
-        vkDestroyImageView(_data->device, textureImageView, nullptr);
-        console.logc1("Destroyed.");
-    }
+        if ( textureImageView ) {
+            console.logc1("Destroying ImageView");
+            vkDestroyImageView(_data->device, textureImageView, nullptr);
+            console.logc1("Destroyed.");
+        }
 
-    if ( textureImage ) {
-        console.logc1("Destroying Image");
-        vkDestroyImage(_data->device, textureImage, nullptr);
-        console.logc1("Destroyed.");
-    }
+        if ( textureImage ) {
+            console.logc1("Destroying Image");
+            vkDestroyImage(_data->device, textureImage, nullptr);
+            console.logc1("Destroyed.");
+        }
 
-    if ( textureImageMemory ) {
-        console.logc1("Freeing textureImageMemory");
-        vkFreeMemory(_data->device, textureImageMemory, nullptr);
-        console.logc1("Destroyed.");
+        if ( textureImageMemory ) {
+            console.logc1("Freeing textureImageMemory");
+            vkFreeMemory(_data->device, textureImageMemory, nullptr);
+            console.logc1("Destroyed.");
+        }
     }
+    _tiledResult.clear();
 }
 
 VkImageView VVTexture::createImageView(VkImage image, VkFormat format) {

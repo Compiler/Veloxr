@@ -1,6 +1,7 @@
 #pragma once
 #include "Common.h"
 #include "DataUtils.h"
+#include "TextureTiling.h"
 #include "VLogger.h"
 #include "CommandUtils.h"
 #include "Vertex.h"
@@ -8,6 +9,13 @@
 
 namespace Veloxr {
 
+    struct VVTileData{
+        VkImage textureImage;
+        VkDeviceMemory textureImageMemory;
+        VkImageView textureImageView;
+        VkSampler textureSampler;
+        uint32_t samplerIndex;
+    };
 
     class VVTexture {
         public:
@@ -19,12 +27,7 @@ namespace Veloxr {
             void tileTexture(std::shared_ptr<Veloxr::VeloxrBuffer> buffer);
 
             // Very exposed. This might as well be a Struct.
-            VkImage textureImage;
-            VkDeviceMemory textureImageMemory;
-            VkImageView textureImageView;
-            VkSampler textureSampler;
-            int samplerIndex;
-
+            const std::vector<Veloxr::VVTileData>& getTiledResult() const { return _tiledResult; }
             [[nodiscard]] std::vector<Veloxr::Vertex>& getVertices() { return _vertices; };
 
             ~VVTexture();
@@ -34,6 +37,7 @@ namespace Veloxr {
 
             std::shared_ptr<VVDataPacket> _data;
             std::vector<Veloxr::Vertex> _vertices;
+            std::vector<Veloxr::VVTileData> _tiledResult{};
 
             void destroy();
 

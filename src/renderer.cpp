@@ -275,6 +275,7 @@ void RendererCore::drawFrame() {
     submitInfo.pSignalSemaphores = signalSemaphores;
     
     if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
+        console.fatal("Failed to submit draw command buffer:, graphicsQueue: ", graphicsQueue, ", inFlightFences count: ", inFlightFences.size(), ", currentFrame: ", currentFrame);
         throw std::runtime_error("failed to submit draw command buffer!");
     }
 

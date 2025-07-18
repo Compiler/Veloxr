@@ -15,10 +15,25 @@ void EntityManager::initialize() {
     console.logc2(__func__);
     console.logc2("Num of entities: ", _entityMap.size() );
     _vertices.clear();
-    for(auto& [name, entity] : _entityMap) {
+    float minX = std::numeric_limits<float>::max();
+    float maxX = std::numeric_limits<float>::lowest();
+    float minY = std::numeric_limits<float>::max();
+    float maxY = std::numeric_limits<float>::lowest();
+
+    for (auto& [name, entity] : _entityMap) {
         entity->getVVTexture().tileTexture(entity->getBuffer());
-        _vertices.insert(_vertices.begin(), entity->getVertices().begin(), entity->getVertices().end());
+
+        const auto& verts = entity->getVertices();
+        _vertices.insert(_vertices.begin(), verts.begin(), verts.end());
+
+        for (const auto& vertex : verts) {
+            minX = std::min(minX, vertex.pos.x);
+            maxX = std::max(maxX, vertex.pos.x);
+            minY = std::min(minY, vertex.pos.y);
+            maxY = std::max(maxY, vertex.pos.y);
+        }
     }
+    console.debug("Vertices initialized, count: ", _vertices.size(), ". BoundingBox: ", minX, ", ", minY, " : ", maxX, ", ", maxY);
     _shaderData->setTextureMap(_entityMap);
     _shaderData->createStageData();
 }
