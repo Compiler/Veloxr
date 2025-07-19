@@ -1142,6 +1142,7 @@ inline void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 
+    auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
     auto setupBuffer = [&](std::string filepath) {
         auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
         auto em = app->getEntityManager();
@@ -1184,6 +1185,19 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     }
     if (key == GLFW_KEY_6 && action == GLFW_PRESS) {
         setupBuffer(basePath + "56000.jpg");
+    }
+
+    // TODO, setPosition of camera instead.
+    auto em = app->getEntityManager();
+    if (key == GLFW_KEY_D && action == GLFW_PRESS) {
+        auto e = em->getEntity("main");
+        e->setPosition(e->getPosition().x + 1000 * app->deltaMs, e->getPosition().y);
+        em->initialize();
+    }
+    if (key == GLFW_KEY_A && action == GLFW_PRESS) {
+        auto e = em->getEntity("main");
+        e->setPosition(e->getPosition().x - 1000 * app->deltaMs, e->getPosition().y);
+        em->initialize();
     }
 }
 
