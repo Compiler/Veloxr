@@ -3,9 +3,12 @@
 #include "DataUtils.h"
 #include "VVTexture.h"
 #include "Vertex.h"
+#include "UniqueOrderedNumber.h"
+#include <functional>
 #include <glm/ext/vector_float2.hpp>
 #include <glm/ext/vector_float3.hpp>
 #include <memory>
+#include <queue>
 #include <string>
 
 namespace Veloxr {
@@ -46,6 +49,7 @@ namespace Veloxr {
             }
             inline const std::string& getName() const { return _name; }
             inline const bool isHidden () const { return _isHidden; }
+            inline const int getUID () const { return _entityNumber; }
 
             // Copy to modify position
             const std::vector<Veloxr::Vertex> getVertices ();
@@ -55,11 +59,12 @@ namespace Veloxr {
             [[nodiscard]] inline const std::shared_ptr<Veloxr::VeloxrBuffer> getBuffer() const { return _textureBuffer; }
 
         private:
-            static int ENTITY_COUNT;
+            static OrderedNumberFactory _entitySlots;
 
             glm::vec3 _position{0, 0, 0};
             std::string _name{""};
             bool _isHidden{false};
+            int _entityNumber;
 
             std::shared_ptr<Veloxr::VeloxrBuffer> _textureBuffer;
             std::vector<Veloxr::Vertex> _vertices;

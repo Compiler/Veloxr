@@ -14,7 +14,7 @@ int main(int argc, char* argv[]) {
         const std::string texturePath = filepath;
         std::cout << "[DRIVER] Loading texture from: " << texturePath << std::endl;
         
-        Veloxr::OIIOTexture texture(texturePath);
+//        Veloxr::OIIOTexture texture(texturePath);
         std::cout << "Loading data...";
         
 
@@ -27,6 +27,7 @@ int main(int argc, char* argv[]) {
         
 
         {
+            Veloxr::OIIOTexture texture("C:/Users/ljuek/Downloads/fox.jpg");
             auto entityHandle = em->createEntity("main");
 
             Veloxr::VeloxrBuffer buf;
@@ -36,13 +37,13 @@ int main(int argc, char* argv[]) {
             buf.numChannels = texture.getNumChannels();
             buf.orientation = texture.getOrientation();
 
-            entityHandle->setPosition(500, 0);
+            // entityHandle->setPosition(500, 0);
             entityHandle->setTextureBuffer(buf);
         }
 
         {
             auto entityHandle = em->createEntity("main2");
-            Veloxr::OIIOTexture texture("C:/Users/ljuek/Downloads/alpha.png");
+            Veloxr::OIIOTexture texture("C:/Users/ljuek/Downloads/fox_after.jpeg");
 
             Veloxr::VeloxrBuffer buf;
             buf.data = texture.load();

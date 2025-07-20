@@ -227,6 +227,7 @@ private: // No client -- internal
     Veloxr::LLogger console{"[Veloxr][Renderer] "};
     std::shared_ptr<Veloxr::EntityManager> _entityManager;
     // For friend classes / drivers
+    Veloxr::UniformBufferObject ubo{};
 
 
     VkInstance instance;
@@ -1222,6 +1223,20 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         std::cout << "Setting pos to " << newX << ", " << newY << std::endl;
         c.setPosition({newX, newY});
         std::cout << " = " << c.getPosition().x << ", " << c.getPosition().y << std::endl;
+    }
+    if (key == GLFW_KEY_S && action == GLFW_PRESS) {
+        static int entity = 0;
+        auto em = app->getEntityManager();
+        auto e = em->getEntity("main");
+        auto e2 = em->getEntity("main2");
+        if(entity++ %2 == 0) {
+            e->setIsHidden(true);
+            e2->setIsHidden(false);
+        }else {
+            e->setIsHidden(false);
+            e2->setIsHidden(true);
+        }
+
     }
 
     // TODO, setPosition of camera instead.

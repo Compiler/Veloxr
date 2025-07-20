@@ -1,11 +1,16 @@
 #include "RenderEntity.h"
+#include "UniqueOrderedNumber.h"
 
 using Veloxr::RenderEntity;
 
-int RenderEntity::ENTITY_COUNT = 0;
-
-RenderEntity::RenderEntity(){_name = "entity" + std::to_string(ENTITY_COUNT++);}
+Veloxr::OrderedNumberFactory RenderEntity::_entitySlots{4, 1};
+RenderEntity::RenderEntity(){
+    _entityNumber = _entitySlots.getSlot(); 
+    _name = "entity" + std::to_string(_entityNumber);
+}
 RenderEntity::RenderEntity(std::shared_ptr<VVDataPacket> dataPacket) {
+    _entityNumber = _entitySlots.getSlot(); 
+    _name = "entity" + std::to_string(_entityNumber);
     _texture.setDataPacket(dataPacket);
 }
 
@@ -18,12 +23,13 @@ void RenderEntity::setPosition(glm::vec3& pos) {
 }
 
 const std::vector<Veloxr::Vertex> RenderEntity::getVertices () {
-    if(_isHidden) return {};
+    // if(_isHidden) return {};
     auto vertices = _texture.getBaseVertices();
 
     for(auto& vert : vertices ) {
         vert.pos.x += _position.x;
         vert.pos.y += _position.y;
+        vert.renderUID = _entityNumber;
     }
 
     return vertices;
@@ -45,6 +51,7 @@ void RenderEntity::setName(const std::string& name) {
 }
 
 void RenderEntity::destroy() {
+    _entitySlots.removeSlot(_entityNumber);
     _texture.destroy();
 
 }
