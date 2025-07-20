@@ -42,9 +42,10 @@ int main(int argc, char* argv[]) {
 
         {
             auto entityHandle = em->createEntity("main2");
+            Veloxr::OIIOTexture texture("C:/Users/ljuek/Downloads/alpha.png");
 
             Veloxr::VeloxrBuffer buf;
-            buf.data = texture.load("C:/Users/ljuek/Downloads/test2.png");
+            buf.data = texture.load();
             buf.width = texture.getResolution().x;
             buf.height = texture.getResolution().y;
             buf.numChannels = texture.getNumChannels();

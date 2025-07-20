@@ -394,7 +394,7 @@ private:
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = swapChainExtent;
 
-        VkClearValue clearColor = {{{1.0, 0.25f, 0.25f, 1.0f}}};
+        VkClearValue clearColor = {{{0.0, 0.25f, 0.25f, 1.0f}}};
         renderPassInfo.clearValueCount = 1;
         renderPassInfo.pClearValues = &clearColor;
 
