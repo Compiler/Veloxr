@@ -1,11 +1,15 @@
 #include "VVTexture.h"
 #include "DataUtils.h"
 #include "TextureTiling.h"
+#include "TileManager.h"
 #include "VVUtils.h"
 #include <limits>
 
 
 namespace Veloxr {
+
+
+Veloxr::TileManager Veloxr::VVTexture::_tileManager {};
 
 VVTexture::VVTexture(std::shared_ptr<VVDataPacket> dataPacket): _data(dataPacket) {}
 
@@ -31,6 +35,8 @@ void VVTexture::tileTexture(std::shared_ptr<Veloxr::VeloxrBuffer> buffer) {
         int texHeight   = tileData.height;
         int texChannels = 4;//myTexture.getNumChannels();
         int samplerIndexSlot = tileData.samplerIndex;
+        samplerIndexSlot = _tileManager.getTextureSlot();
+        console.warn("Texture slot: ", tileData.samplerIndex, " => ", samplerIndexSlot);
         VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth) * 
             static_cast<VkDeviceSize>(texHeight) *
             static_cast<VkDeviceSize>(texChannels);
@@ -249,6 +255,11 @@ void VVTexture::destroy() {
             console.logc1("Destroyed.");
         }
     }
+
+    for(const auto& tile : _tiledResult) {
+        _tileManager.removeTextureSlot(tile.samplerIndex);
+    }
+
     _tiledResult.clear();
     _vertices.clear();
 }

@@ -1,5 +1,6 @@
 #pragma once
 #include "Common.h"
+#include "TileManager.h"
 #include "DataUtils.h"
 #include "TextureTiling.h"
 #include "VLogger.h"
@@ -37,6 +38,8 @@ namespace Veloxr {
 
         private:
             Veloxr::LLogger console{"[Veloxr][VVTexture] "};
+
+            static Veloxr::TileManager _tileManager;
 
             std::shared_ptr<VVDataPacket> _data;
             std::vector<Veloxr::Vertex> _vertices;
