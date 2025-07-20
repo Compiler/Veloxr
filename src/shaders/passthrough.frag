@@ -11,6 +11,7 @@ layout(binding = 1) uniform sampler2D texSamplers[MAX_SAMPLERS];
 
 void main() {
     outColor = texture(texSamplers[texUnit], fragTexCoord.xy);
+    // outColor.a = 0.5;
     // blend for testing :D
     //outColor = 0.5 * texture(texSamplers[0], fragTexCoord.xy) + 0.5 * texture(texSamplers[1], fragTexCoord.xy);
 

@@ -36,22 +36,22 @@ int main(int argc, char* argv[]) {
             buf.numChannels = texture.getNumChannels();
             buf.orientation = texture.getOrientation();
 
-            entityHandle->setPosition(100, 0);
+            entityHandle->setPosition(500, 0);
             entityHandle->setTextureBuffer(buf);
         }
 
-        // {
-        //     auto entityHandle = em->createEntity("main2");
-        //
-        //     Veloxr::VeloxrBuffer buf;
-        //     buf.data = texture.load("C:/Users/ljuek/Downloads/fox.jpg");
-        //     buf.width = texture.getResolution().x;
-        //     buf.height = texture.getResolution().y;
-        //     buf.numChannels = texture.getNumChannels();
-        //     buf.orientation = texture.getOrientation();
-        //
-        //     entityHandle->setTextureBuffer(buf);
-        // }
+        {
+            auto entityHandle = em->createEntity("main2");
+
+            Veloxr::VeloxrBuffer buf;
+            buf.data = texture.load("C:/Users/ljuek/Downloads/test2.png");
+            buf.width = texture.getResolution().x;
+            buf.height = texture.getResolution().y;
+            buf.numChannels = texture.getNumChannels();
+            buf.orientation = texture.getOrientation();
+
+            entityHandle->setTextureBuffer(buf);
+        }
 
 
         em->initialize();

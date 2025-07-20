@@ -18,6 +18,7 @@ void RenderEntity::setPosition(glm::vec3& pos) {
 }
 
 const std::vector<Veloxr::Vertex> RenderEntity::getVertices () {
+    if(_isHidden) return {};
     auto vertices = _texture.getBaseVertices();
 
     for(auto& vert : vertices ) {
