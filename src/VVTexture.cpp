@@ -25,17 +25,25 @@ void VVTexture::tileTexture(std::shared_ptr<Veloxr::VeloxrBuffer> buffer) {
 
     // TODO: Calculate best time case for maxResolution. 4096 will be 200% faster that maxresolution, but not sure if they will have enough sampelrs
     // TODO2: Use indexed binding on hardware that supports it.
-    Veloxr::TiledResult tileData = tiler.tile(buffer, 8192);
+    Veloxr::TiledResult tileDataResult = tiler.tile(buffer, 8192);
 
     auto timeToTileMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - now).count();
     now = std::chrono::high_resolution_clock::now();
-    for(const auto& [indx, tileData] : tileData.tiles){
+    for(auto& [samplerIndexBase, tileData] : tileDataResult.tiles){
 
         int texWidth    = tileData.width;
         int texHeight   = tileData.height;
         int texChannels = 4;//myTexture.getNumChannels();
+        tileData.samplerIndex = _tileManager.getTextureSlot();
         int samplerIndexSlot = tileData.samplerIndex;
-        samplerIndexSlot = _tileManager.getTextureSlot();
+
+        console.warn("Texture slot: ", tileData.samplerIndex, " => ", samplerIndexSlot);
+
+        for(auto& v : tileDataResult.vertices) {
+            if(v.textureUnit == samplerIndexBase) {
+                v.textureUnit = samplerIndexSlot;
+            }
+        }
         console.warn("Texture slot: ", tileData.samplerIndex, " => ", samplerIndexSlot);
         VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth) * 
             static_cast<VkDeviceSize>(texHeight) *
@@ -84,17 +92,17 @@ void VVTexture::tileTexture(std::shared_ptr<Veloxr::VeloxrBuffer> buffer) {
     }
     auto timeToUploadMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - now).count();
 
-    _vertices.insert(_vertices.begin(), std::make_move_iterator(tileData.vertices.begin()), std::make_move_iterator(tileData.vertices.end()));
+    _vertices.insert(_vertices.begin(), std::make_move_iterator(tileDataResult.vertices.begin()), std::make_move_iterator(tileDataResult.vertices.end()));
 
-    float minX = std::numeric_limits<float>::min(), maxX = std::numeric_limits<float>::max();
-    float minY = std::numeric_limits<float>::min(), maxY = std::numeric_limits<float>::max();
+    float minX = std::numeric_limits<float>::max(), maxX = std::numeric_limits<float>::min();
+    float minY = std::numeric_limits<float>::max(), maxY = std::numeric_limits<float>::min();
     for (auto &v : _vertices) {
         minX = std::min(minX, v.pos.x);
         maxX = std::max(maxX, v.pos.x);
         minY = std::min(minY, v.pos.y);
         maxY = std::max(maxY, v.pos.y);
     }
-    console.log("Final geometry bounding box: X in [", minX, ", ", maxX, "], Y in [", minY, ", ", maxY, "]");
+    console.warn("Final geometry bounding box: X in [", minX, ", ", maxX, "], Y in [", minY, ", ", maxY, "]");
     _currentBoundingBox = {minX, minY, maxX, maxY};
 
     console.fatal("Time to tile: ", timeToTileMs, " ms");

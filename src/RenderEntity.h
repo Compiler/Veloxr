@@ -32,6 +32,18 @@ namespace Veloxr {
             void destroy();
 
             inline const glm::vec3& getPosition() const { return _position; }
+            inline const glm::vec2 getResolution() const { 
+                const auto& bounding = _texture.getBoundingBox();
+                uint32_t width = bounding.z - bounding.x;
+                uint32_t height = bounding.w - bounding.y;
+                return {width, height};
+            }
+
+            inline const glm::vec2 getCenterPos() const { 
+                uint32_t width = getResolution().x;
+                uint32_t height = getResolution().y;
+                return {_position.x + width / 2.0f, _position.y + width / 2.0f};
+            }
             inline const std::string& getName() const { return _name; }
             inline const bool isHidden () const { return _isHidden; }
 

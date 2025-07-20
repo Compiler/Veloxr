@@ -23,6 +23,7 @@ namespace Veloxr {
             // Used in renderer to tell the GPU how to interpret our camera.
             const glm::mat4& getProjectionMatrix() const;
             const glm::mat4& getViewMatrix() const;
+            glm::vec3 worldToCamera(const glm::vec3& worldCoord);
             glm::mat4 getViewProjectionMatrix() const;
             glm::vec3 getPosition() const;
 

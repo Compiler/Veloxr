@@ -1117,7 +1117,22 @@ inline void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) 
     auto& camera = app->getCamera();
     float currentZoom = camera.getZoomLevel();
     float sensitivity = currentZoom * 0.1f;
-    camera.zoomToCenter(yoffset*sensitivity);
+    auto& c = app->getCamera();
+    auto em = app->getEntityManager();
+    auto e = em->getEntity("main");
+    auto& p = e->getPosition();
+    auto center = e->getCenterPos();
+    uint32_t newX = p.x ;//+ e->getResolution().x / 2.0f;
+    uint32_t newY = p.y; //- e->getResolution().y / 2.0f;
+    glm::vec3 newPos = {newX, newY, 1.0f};
+    auto newPosCam = camera.worldToCamera(newPos);
+
+
+    //app->getCamera().zoomCentered({newX, newY},app->getCamera().getZoomLevel() + diffs.x);
+    //camera.setPosition(newPosCam);
+
+    std::cout << "Resolution: " << e->getResolution().x << "x" << e->getResolution().y << '\n';
+    camera.zoomCentered(center, yoffset*sensitivity);
     std::cout << "[Veloxr] Zoom offset: " << currentZoom << '\n';
     //camera.addToZoom(yoffset * sensitivity);
 }
@@ -1196,6 +1211,17 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     }
     if (key == GLFW_KEY_6 && action == GLFW_PRESS) {
         setupBuffer(basePath + "56000.jpg");
+    }
+    if (key == GLFW_KEY_C && action == GLFW_PRESS) {
+        auto& c = app->getCamera();
+        auto em = app->getEntityManager();
+        auto e = em->getEntity("main");
+        auto& p = e->getPosition();
+        uint32_t newX = p.x + e->getResolution().x / 2.0f;
+        uint32_t newY = p.y + e->getResolution().y / 2.0f;
+        std::cout << "Setting pos to " << newX << ", " << newY << std::endl;
+        c.setPosition({newX, newY});
+        std::cout << " = " << c.getPosition().x << ", " << c.getPosition().y << std::endl;
     }
 
     // TODO, setPosition of camera instead.

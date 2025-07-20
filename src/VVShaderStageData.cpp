@@ -150,7 +150,8 @@ namespace Veloxr {
             }
             console.log("Set the Samplers and image views.");
 
-            for(auto& [_, imageInfo] : orderedSamplers) {
+            for(auto& [samplerIndex, imageInfo] : orderedSamplers) {
+                console.debug("Applying slot ", samplerIndex);
                 imageInfos.push_back(imageInfo);
             }
 
