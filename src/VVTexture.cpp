@@ -25,18 +25,25 @@ void VVTexture::tileTexture(std::shared_ptr<Veloxr::VeloxrBuffer> buffer) {
 
     // TODO: Calculate best time case for maxResolution. 4096 will be 200% faster that maxresolution, but not sure if they will have enough sampelrs
     // TODO2: Use indexed binding on hardware that supports it.
-    Veloxr::TiledResult tileData = tiler.tile(buffer, 8192);
+    Veloxr::TiledResult tileDataResult = tiler.tile(buffer, 8192);
 
     auto timeToTileMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - now).count();
     now = std::chrono::high_resolution_clock::now();
-    for(const auto& [indx, tileData] : tileData.tiles){
+    for(auto& [samplerIndexBase, tileData] : tileDataResult.tiles){
 
         int texWidth    = tileData.width;
         int texHeight   = tileData.height;
         int texChannels = 4;//myTexture.getNumChannels();
+        tileData.samplerIndex = _tileManager.getTextureSlot();
         int samplerIndexSlot = tileData.samplerIndex;
-        samplerIndexSlot = _tileManager.getTextureSlot();
         console.warn("Texture slot: ", tileData.samplerIndex, " => ", samplerIndexSlot);
+
+        for(auto& v : tileDataResult.vertices) {
+            if(v.textureUnit == samplerIndexBase) {
+                v.textureUnit = samplerIndexSlot;
+            }
+        }
+
         VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth) * 
             static_cast<VkDeviceSize>(texHeight) *
             static_cast<VkDeviceSize>(texChannels);
@@ -46,7 +53,6 @@ void VVTexture::tileTexture(std::shared_ptr<Veloxr::VeloxrBuffer> buffer) {
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
         VVUtils::createBuffer(_data, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-
         void* data;
         vkMapMemory(_data->device, stagingBufferMemory, 0, imageSize, 0, &data);
         memcpy(data, tileData.pixelData.data(), static_cast<size_t>(imageSize));
@@ -78,13 +84,10 @@ void VVTexture::tileTexture(std::shared_ptr<Veloxr::VeloxrBuffer> buffer) {
         vvTileData.samplerIndex = samplerIndexSlot;
         vvTileData.textureImageMemory = textureImageMemory;
         _tiledResult.emplace_back(std::move(vvTileData));
-        // textureImageView = imageView;
-        // textureSampler = sampler;
-        // samplerIndex = samplerIndexSlot;
     }
     auto timeToUploadMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - now).count();
 
-    _vertices.insert(_vertices.begin(), std::make_move_iterator(tileData.vertices.begin()), std::make_move_iterator(tileData.vertices.end()));
+    _vertices.insert(_vertices.begin(), std::make_move_iterator(tileDataResult.vertices.begin()), std::make_move_iterator(tileDataResult.vertices.end()));
 
     float minX = std::numeric_limits<float>::min(), maxX = std::numeric_limits<float>::max();
     float minY = std::numeric_limits<float>::min(), maxY = std::numeric_limits<float>::max();

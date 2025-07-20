@@ -135,45 +135,63 @@ namespace Veloxr {
             bufferInfo.offset = 0;
             bufferInfo.range = sizeof(UniformBufferObject);
 
-            std::vector<VkDescriptorImageInfo> imageInfos;
-            std::map<int, VkDescriptorImageInfo> orderedSamplers;
+            std::vector<VkDescriptorImageInfo> imageInfos;          // will become dense
+            std::map<uint32_t, VkDescriptorImageInfo> ordered;      // keep original → slot
+
+            // 1.  Collect every tile from every entity _________________________
             for (auto& [_, entity] : _textureMap) {
-                const auto& texture = entity->getVVTexture();
-                for( const auto& data : texture.getTiledResult() ){
-                    console.warn("Data in VVTexture: ", data.textureImageView, " - ", data.textureSampler, " - ", data.samplerIndex);
-                    VkDescriptorImageInfo imageInfo{};
-                    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                    imageInfo.imageView = data.textureImageView;
-                    imageInfo.sampler = data.textureSampler;
-                    orderedSamplers[data.samplerIndex] = (imageInfo);
+                for (const auto& tile : entity->getVVTexture().getTiledResult()) {
+
+                    VkDescriptorImageInfo info{};
+                    info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                    info.imageView   = tile.textureImageView;
+                    info.sampler     = tile.textureSampler;
+
+                    ordered.emplace(tile.samplerIndex, info);       // key = *absolute slot*
                 }
             }
-            console.log("Set the Samplers and image views.");
 
-            for(auto& [_, imageInfo] : orderedSamplers) {
-                imageInfos.push_back(imageInfo);
-            }
+            // 2.  Allocate a vector that is *as large as the highest slot + 1* _
+            if (ordered.empty())
+                throw std::runtime_error("VVShaderStageData: no image samplers collected");
 
-            std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
+            const uint32_t maxSlot = ordered.rbegin()->first;
+            imageInfos.assign(maxSlot + 1, {});                     // holes initialised
 
-            descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[0].dstSet = descriptorSets[i];
-            descriptorWrites[0].dstBinding = 0;
-            descriptorWrites[0].dstArrayElement = 0;
-            descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptorWrites[0].descriptorCount = 1;
-            descriptorWrites[0].pBufferInfo = &bufferInfo;
+            // Fill holes with any valid descriptor to keep validation layers happy
+            const VkDescriptorImageInfo fallback = ordered.begin()->second;
+            for (auto& img : imageInfos) img = fallback;
 
-            descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[1].dstSet = descriptorSets[i];
-            descriptorWrites[1].dstBinding = 1;
-            descriptorWrites[1].dstArrayElement = 0;
-            descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites[1].descriptorCount = static_cast<uint32_t>(imageInfos.size());
-            descriptorWrites[1].pImageInfo = imageInfos.data();
+            // 3.  Place every real image at its exact slot index _______________
+            for (const auto& [slot, info] : ordered)
+                imageInfos[slot] = info;
 
-            console.log("Updating descriptor sets\n");
-            vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+            // ------------------------------------------------------------------
+            //  Write the descriptor set in a single bulk call
+            // ------------------------------------------------------------------
+            std::array<VkWriteDescriptorSet, 2> writes{};
+
+            // UBO (binding 0) – unchanged
+            writes[0].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            writes[0].dstSet          = descriptorSets[i];
+            writes[0].dstBinding      = 0;
+            writes[0].descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            writes[0].descriptorCount = 1;
+            writes[0].pBufferInfo     = &bufferInfo;
+
+            // Sampler array (binding 1)
+            writes[1].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            writes[1].dstSet          = descriptorSets[i];
+            writes[1].dstBinding      = 1;
+            writes[1].dstArrayElement = 0;                           // start of the array
+            writes[1].descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            writes[1].descriptorCount = static_cast<uint32_t>(imageInfos.size());
+            writes[1].pImageInfo      = imageInfos.data();
+
+            vkUpdateDescriptorSets(device,
+                    static_cast<uint32_t>(writes.size()),
+                    writes.data(),
+                    0, nullptr);
         }
     }
 

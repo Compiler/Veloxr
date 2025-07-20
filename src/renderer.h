@@ -1197,6 +1197,9 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     if (key == GLFW_KEY_6 && action == GLFW_PRESS) {
         setupBuffer(basePath + "56000.jpg");
     }
+    if (key == GLFW_KEY_0 && action == GLFW_PRESS) {
+        setupBuffer(basePath + "alpha.png");
+    }
 
     // TODO, setPosition of camera instead.
     auto em = app->getEntityManager();

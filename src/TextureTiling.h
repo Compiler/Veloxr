@@ -19,7 +19,8 @@ namespace Veloxr {
     };
 
     struct TiledResult {
-        std::map<int, TextureData> tiles;
+        // sampler index to texturedata
+        std::map<uint32_t, TextureData> tiles;
         std::vector<Vertex> vertices;
         glm::vec4 boundingBox;
     };
