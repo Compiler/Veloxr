@@ -33,6 +33,7 @@ namespace Veloxr {
         public:
             EntityManager() = delete;
             EntityManager(std::shared_ptr<Veloxr::VVDataPacket> dataPacket);
+            ~EntityManager();
 
 
             // Single entity endpoints
@@ -56,6 +57,9 @@ namespace Veloxr {
             [[nodiscard]] inline const std::vector<Veloxr::Vertex>& getVertices () const { return _vertices; }
             void initialize();
             void updateUniformBuffers(uint32_t currentImage, const Veloxr::UniformBufferObject& ubo);
+
+
+            void destroy();
 
         private:
             Veloxr::LLogger console {"[Veloxr][EntityManager] "};

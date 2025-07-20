@@ -222,47 +222,6 @@ void VVTexture::createImage(uint32_t width, uint32_t height, VkFormat format,
     vkBindImageMemory(_data->device, image, imageMemory, 0);
 }
 
-void VVTexture::destroy() {
-    if(!_data->device) {
-        console.warn("Called destroy on VVTexture with no device.");
-        return;
-    }
-
-    console.log("Destroying on device: ", _data->device);
-
-    for(auto& [textureImage, textureImageMemory, textureImageView, textureSampler, _] : _tiledResult) {
-        if (textureSampler) {
-            console.logc1("Destroying Sampler");
-            vkDestroySampler(_data->device, textureSampler, nullptr);
-            console.logc1("Destroyed.");
-        }
-
-        if ( textureImageView ) {
-            console.logc1("Destroying ImageView");
-            vkDestroyImageView(_data->device, textureImageView, nullptr);
-            console.logc1("Destroyed.");
-        }
-
-        if ( textureImage ) {
-            console.logc1("Destroying Image");
-            vkDestroyImage(_data->device, textureImage, nullptr);
-            console.logc1("Destroyed.");
-        }
-
-        if ( textureImageMemory ) {
-            console.logc1("Freeing textureImageMemory");
-            vkFreeMemory(_data->device, textureImageMemory, nullptr);
-            console.logc1("Destroyed.");
-        }
-    }
-
-    for(const auto& tile : _tiledResult) {
-        _tileManager.removeTextureSlot(tile.samplerIndex);
-    }
-
-    _tiledResult.clear();
-    _vertices.clear();
-}
 
 VkImageView VVTexture::createImageView(VkImage image, VkFormat format) {
     console.logc1(__func__);
@@ -326,6 +285,48 @@ VkSampler VVTexture::createTextureSampler() {
     }
 
     return textureSampler;
+}
+
+void VVTexture::destroy() {
+    if(!_data->device) {
+        console.warn("Called destroy on VVTexture with no device.");
+        return;
+    }
+
+    console.log("Destroying on device: ", _data->device);
+
+    for(auto& [textureImage, textureImageMemory, textureImageView, textureSampler, _] : _tiledResult) {
+        if (textureSampler) {
+            console.logc1("Destroying Sampler");
+            vkDestroySampler(_data->device, textureSampler, nullptr);
+            console.logc1("Destroyed.");
+        }
+
+        if ( textureImageView ) {
+            console.logc1("Destroying ImageView");
+            vkDestroyImageView(_data->device, textureImageView, nullptr);
+            console.logc1("Destroyed.");
+        }
+
+        if ( textureImage ) {
+            console.logc1("Destroying Image");
+            vkDestroyImage(_data->device, textureImage, nullptr);
+            console.logc1("Destroyed.");
+        }
+
+        if ( textureImageMemory ) {
+            console.logc1("Freeing textureImageMemory");
+            vkFreeMemory(_data->device, textureImageMemory, nullptr);
+            console.logc1("Destroyed.");
+        }
+    }
+
+    for(const auto& tile : _tiledResult) {
+        _tileManager.removeTextureSlot(tile.samplerIndex);
+    }
+
+    _tiledResult.clear();
+    _vertices.clear();
 }
 
 VVTexture::~VVTexture() {

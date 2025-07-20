@@ -18,7 +18,7 @@ void RenderEntity::setPosition(glm::vec3& pos) {
 }
 
 const std::vector<Veloxr::Vertex> RenderEntity::getVertices () {
-    auto vertices = _texture.getVertices();
+    auto vertices = _texture.getBaseVertices();
 
     for(auto& vert : vertices ) {
         vert.pos.x += _position.x;
@@ -44,5 +44,6 @@ void RenderEntity::setName(const std::string& name) {
 }
 
 void RenderEntity::destroy() {
+    _texture.destroy();
 
 }

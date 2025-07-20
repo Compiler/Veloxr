@@ -31,6 +31,7 @@ namespace Veloxr {
     }
     void VVShaderStageData::createStageData() {
         console.logc2(__func__);
+        destroy();
         if (!_vertices.get() || _vertices->empty()) {
             console.fatal("Cannot create stage data for empty vertices.");
             throw std::runtime_error("Cannot create stage data with no entities.");
@@ -211,4 +212,30 @@ namespace Veloxr {
         memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
     }
 
+    void VVShaderStageData::destroy() {
+        console.warn(__func__);
+        if (!_data || !_data->device) return;
+        auto d = _data->device;
+
+        vkDeviceWaitIdle(d); 
+
+        if (vertexBuffer) vkDestroyBuffer(d, vertexBuffer, nullptr);
+        if (vertexBufferMemory) vkFreeMemory(d, vertexBufferMemory, nullptr);
+
+        for (size_t i = 0; i < uniformBuffers.size(); ++i) {
+            if (uniformBuffers[i]) vkDestroyBuffer(d, uniformBuffers[i], nullptr);
+            if (uniformBuffersMemory[i]) vkFreeMemory(d, uniformBuffersMemory[i], nullptr);
+        }
+
+        if (descriptorPool) vkDestroyDescriptorPool(d, descriptorPool, nullptr);
+        if (descriptorSetLayout) vkDestroyDescriptorSetLayout(d, descriptorSetLayout, nullptr);
+
+        uniformBuffers.clear(); uniformBuffersMemory.clear(); uniformBuffersMapped.clear(); descriptorSets.clear();
+
+        vertexBuffer = VK_NULL_HANDLE;
+        vertexBufferMemory = VK_NULL_HANDLE;
+        descriptorPool = VK_NULL_HANDLE;
+        descriptorSetLayout = VK_NULL_HANDLE;
+        console.warn("Done with destruction.");
+    }
 }

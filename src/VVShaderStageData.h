@@ -30,6 +30,8 @@ namespace Veloxr {
             const std::vector<VkDescriptorSet>& getDescriptorSets() { return descriptorSets; }
             VkDescriptorSetLayout& getDescriptorSetLayout() { return descriptorSetLayout; }
 
+            void destroy();
+
 
         private:
             inline static LLogger console{"[Veloxr][VVShaderStageData] "}; 

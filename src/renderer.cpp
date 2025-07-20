@@ -205,6 +205,7 @@ void RendererCore::destroyTextureData() {
 void RendererCore::destroy() {
     console.logc1(__func__);
     if(!device) return;
+    vkDeviceWaitIdle(device);
     console.log("[Veloxr] [Debug] Destroying!", device, "\n");
     cleanupSwapChain();
     destroyTextureData();
@@ -220,6 +221,8 @@ void RendererCore::destroy() {
     }
 
     vkDestroyCommandPool(device, commandPool, nullptr);
+
+    _entityManager->destroy();
 
     vkDestroyDevice(device, nullptr);
 

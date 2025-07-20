@@ -97,3 +97,11 @@ std::shared_ptr<Veloxr::RenderEntity> EntityManager::getEntity(const std::string
     return findIt->second;
 }
 
+void EntityManager::destroy() {
+    for (auto& [_, ent] : _entityMap)  ent->destroy();
+    _entityMap.clear();
+    if (_shaderData) _shaderData->destroy();
+}
+
+EntityManager::~EntityManager() { destroy(); }
+

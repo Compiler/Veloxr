@@ -867,7 +867,7 @@ private:
             }
         }
         
-        vkDeviceWaitIdle(device);
+        if(device) vkDeviceWaitIdle(device);
 
     }
 

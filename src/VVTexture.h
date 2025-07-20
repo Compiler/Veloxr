@@ -31,9 +31,10 @@ namespace Veloxr {
             const std::vector<Veloxr::VVTileData>& getTiledResult() const { return _tiledResult; }
 
             // Vertices are in base coordinates. Spawning at 0,0 and spanning width / height
-            [[nodiscard]] std::vector<Veloxr::Vertex>& getVertices() { return _vertices; };
+            [[nodiscard]] std::vector<Veloxr::Vertex>& getBaseVertices() { return _vertices; };
             const glm::vec4& getBoundingBox() const { return _currentBoundingBox; }
 
+            void destroy();
             ~VVTexture();
 
         private:
@@ -47,7 +48,6 @@ namespace Veloxr {
 
             glm::vec4 _currentBoundingBox;
 
-            void destroy();
 
             void createImage(uint32_t width, uint32_t height, VkFormat format,
                     VkImageTiling tiling, VkImageUsageFlags usage,
@@ -59,7 +59,7 @@ namespace Veloxr {
             void copyBufferToImage(VkBuffer buffer, VkImage image,
                     uint32_t width, uint32_t height);
 
-            VkSampler  createTextureSampler();
+            VkSampler createTextureSampler();
             VkImageView createTextureImageView(VkImage textureImage);
             VkImageView createImageView(VkImage image, VkFormat format);
     };
