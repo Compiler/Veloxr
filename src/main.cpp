@@ -23,19 +23,19 @@ int main(int argc, char* argv[]) {
         app.init();
         auto em = app.getEntityManager();
 
-        {
-            Veloxr::OIIOTexture texture("C:/Users/ljuek/Downloads/56000.jpg");
-            auto entityHandle = em->createEntity("main");
-
-            Veloxr::VeloxrBuffer buf;
-            buf.data = texture.load(texturePath);
-            buf.width = texture.getResolution().x;
-            buf.height = texture.getResolution().y;
-            buf.numChannels = texture.getNumChannels();
-            buf.orientation = texture.getOrientation();
-
-            entityHandle->setTextureBuffer(buf);
-        }
+        // {
+        //     Veloxr::OIIOTexture texture("C:/Users/ljuek/Downloads/56000.jpg");
+        //     auto entityHandle = em->createEntity("main");
+        //
+        //     Veloxr::VeloxrBuffer buf;
+        //     buf.data = texture.load(texturePath);
+        //     buf.width = texture.getResolution().x;
+        //     buf.height = texture.getResolution().y;
+        //     buf.numChannels = texture.getNumChannels();
+        //     buf.orientation = texture.getOrientation();
+        //
+        //     entityHandle->setTextureBuffer(buf);
+        // }
 
         // {
         //     Veloxr::OIIOTexture texture("C:/Users/ljuek/Downloads/fox.jpg");
