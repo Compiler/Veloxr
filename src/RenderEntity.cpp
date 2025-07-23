@@ -1,5 +1,6 @@
 #include "RenderEntity.h"
 #include "UniqueOrderedNumber.h"
+#include <algorithm>
 
 using Veloxr::RenderEntity;
 
@@ -26,6 +27,18 @@ const std::vector<Veloxr::Vertex> RenderEntity::getVertices () {
     // if(_isHidden) return {};
     auto vertices = _texture.getBaseVertices();
 
+    // Transform size
+    if (_resolution.x != 0 && _resolution.y != 0) {
+        const glm::vec2 res = _resolution;
+        const glm::vec2 invRes = 1.0f / res;
+
+        for (auto& vert : vertices) {
+            vert.pos.x = std::clamp(vert.pos.x, 0.0f, res.x);
+            vert.pos.y = std::clamp(vert.pos.y, 0.0f, res.y);
+        }
+    }
+
+    // Transform position
     for(auto& vert : vertices ) {
         vert.pos.x += _position.x;
         vert.pos.y += _position.y;

@@ -11,7 +11,7 @@ namespace Veloxr {
         alignas(16) glm::mat4 proj;
         alignas(16) glm::vec4 roi;
         alignas(16) uint32_t hiddenMask;
-
+        alignas(16) float nSplitVal;
     };
 
     struct VVDataPacket {

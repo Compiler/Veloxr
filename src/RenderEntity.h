@@ -31,11 +31,13 @@ namespace Veloxr {
             void setTextureBuffer(std::shared_ptr<Veloxr::VeloxrBuffer> buffer);
             void setTextureBuffer(Veloxr::VeloxrBuffer& buffer);
             void setDataPacket(std::shared_ptr<VVDataPacket> dataPacket) { _texture.setDataPacket(dataPacket); }
+            void setResolution(glm::vec2 resolution) {_resolution = resolution;}
 
             void destroy();
 
             inline const glm::vec3& getPosition() const { return _position; }
             inline const glm::vec2 getResolution() const { 
+                if(_resolution.x != 0 && _resolution.y != 0) return _resolution;
                 const auto& bounding = _texture.getBoundingBox();
                 uint32_t width = bounding.z - bounding.x;
                 uint32_t height = bounding.w - bounding.y;
@@ -62,6 +64,7 @@ namespace Veloxr {
             static OrderedNumberFactory _entitySlots;
 
             glm::vec3 _position{0, 0, 0};
+            glm::vec2 _resolution{0, 0};
             std::string _name{""};
             bool _isHidden{false};
             int _entityNumber;

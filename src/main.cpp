@@ -39,6 +39,7 @@ int main(int argc, char* argv[]) {
 
             // entityHandle->setPosition(500, 0);
             entityHandle->setTextureBuffer(buf);
+            entityHandle->setResolution({100, 100});
         }
 
         {
@@ -53,6 +54,7 @@ int main(int argc, char* argv[]) {
             buf.orientation = texture.getOrientation();
 
             entityHandle->setTextureBuffer(buf);
+            entityHandle->setResolution({100, 100});
         }
 
 
