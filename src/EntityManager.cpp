@@ -76,7 +76,7 @@ void EntityManager::destroyEntity(const std::string& name) noexcept {
 
     auto findIt = _entityMap.find(name);
 
-    if (findIt != _entityMap.end()) {
+    if (findIt == _entityMap.end()) {
         console.warn("Entity with name '", name, "' does not exist. Aborting.");
         return;
     }
