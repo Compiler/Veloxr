@@ -149,14 +149,17 @@ void RendererCore::cleanupSwapChain() {
         for (size_t i = 0; i < swapChainFramebuffers.size(); i++) {
             vkDestroyFramebuffer(device, swapChainFramebuffers[i], nullptr);
         }
+        swapChainImageViews.clear();
 
         console.log("[Veloxr] [Debug] Destroying swapChainImages\n");
         for (size_t i = 0; i < swapChainImageViews.size(); i++) {
             vkDestroyImageView(device, swapChainImageViews[i], nullptr);
         }
+        swapChainFramebuffers.clear();
 
         console.log("[Veloxr] [Debug] Destroying swap chain\n");
         vkDestroySwapchainKHR(device, swapChain, nullptr);
+
     }
 }
 
@@ -253,6 +256,12 @@ void RendererCore::drawFrame() {
     vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
     uint32_t imageIndex;
+    if (frameBufferResized) {
+        console.log("Resizing swapchain\n");
+        frameBufferResized = false;
+        recreateSwapChain();
+        return;
+    }
 
     VkResult result = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
 
