@@ -76,6 +76,10 @@ namespace Veloxr {
         poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         poolSizes[1].descriptorCount = static_cast<uint32_t>(_vertices->size() / NUM_VERTICES_PER_TILE * MAX_FRAMES_IN_FLIGHT);
 
+#ifdef __APPLE__
+        poolSizes[1].descriptorCount = static_cast<uint32_t>(16 * MAX_FRAMES_IN_FLIGHT);
+#endif
+
         VkDescriptorPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
@@ -153,6 +157,22 @@ namespace Veloxr {
             for(auto& [samplerIndex, imageInfo] : orderedSamplers) {
                 console.debug("Applying slot ", samplerIndex);
                 imageInfos.push_back(imageInfo);
+            }
+
+                    // Ensure we have at least one texture, fill with dummy if needed
+#ifdef __APPLE__
+            uint32_t maxSamplers = 16;
+#else
+            uint32_t maxSamplers = 1024;
+#endif
+            if (imageInfos.empty()) {
+                console.warn("No textures available for descriptor set binding");
+                return; // Skip if no textures
+            }
+
+            // Fill remaining slots with the first texture to avoid validation errors
+            while (imageInfos.size() < maxSamplers) {
+                imageInfos.push_back(imageInfos[0]);
             }
 
             std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
