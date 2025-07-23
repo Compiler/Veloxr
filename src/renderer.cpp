@@ -233,6 +233,8 @@ void RendererCore::destroy() {
         vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
         vkDestroyFence(device, inFlightFences[i], nullptr);
     }
+    renderFinishedSemaphores.clear();
+    imageAvailableSemaphores.clear();
 
     vkDestroyCommandPool(device, commandPool, nullptr);
 

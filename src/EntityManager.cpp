@@ -37,6 +37,7 @@ void EntityManager::initialize() {
     }
 
     for (auto& [name, entity] : _entityMap) {
+        console.debug("Initializing with entity ", name);
         entity->getVVTexture().tileTexture(entity->getBuffer());
 
         const auto verts = entity->getVertices();
@@ -71,13 +72,14 @@ void EntityManager::registerEntity(std::shared_ptr<Veloxr::RenderEntity> entity)
     _entityMap[name] = entity;
     return ;
 }
+
 void EntityManager::destroyEntity(const std::string& name) noexcept {
     console.log(__func__, " for ", name);
 
     auto findIt = _entityMap.find(name);
 
     if (findIt == _entityMap.end()) {
-        console.warn("Entity with name '", name, "' does not exist. Aborting.");
+        console.critical("Entity with name '", name, "' does not exist. Aborting.");
         return;
     }
 
