@@ -203,7 +203,7 @@ void RendererCore::updateUniformBuffers(uint32_t currentImage) {
         }
     }
     ubo.hiddenMask = mask;
-    ubo.nSplitVal = 0.5f;
+    ubo.nSplitVal = _splitVal;
 
     _entityManager->updateUniformBuffers(currentImage, ubo);
 }

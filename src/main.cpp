@@ -39,7 +39,7 @@ int main(int argc, char* argv[]) {
 
             // entityHandle->setPosition(500, 0);
             entityHandle->setTextureBuffer(buf);
-            entityHandle->setResolution({100, 100});
+            entityHandle->setResolution({500, 400});
         }
 
         {

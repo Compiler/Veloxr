@@ -217,6 +217,7 @@ public:
 
     //glm::vec2 getMainEntityPosition()  { }
 
+    float _splitVal = 0.0f;
 private: // No client -- internal
 
     GLFWwindow* window;
@@ -1251,5 +1252,16 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         e->setPosition(e->getPosition().x - 1000 * app->deltaMs, e->getPosition().y);
         em->initialize();
     }
+
+
+    if (key == GLFW_KEY_LEFT && action == GLFW_PRESS) {
+        app->_splitVal = std::max(app->_splitVal - 0.1f, 0.0f);
+        std::cout << "Updating split pos to " << app->_splitVal << std::endl;
+    }
+    if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) {
+        app->_splitVal = std::min(app->_splitVal + 0.1f, 1.0f);
+        std::cout << "Updating split pos to " << app->_splitVal << std::endl;
+    }
+
 }
 
