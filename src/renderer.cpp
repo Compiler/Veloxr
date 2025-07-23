@@ -187,12 +187,24 @@ void RendererCore::createSyncObjects() {
 // TODO: Just using a dirty bit on camera works for a single image_view. Not all of them. So we need the dirty bit for all imageViews. (triple buffer)
 void RendererCore::updateUniformBuffers(uint32_t currentImage) {
 
-    Veloxr::UniformBufferObject ubo{};
     float time = 1;
     ubo.view = _cam.getViewMatrix();
     ubo.proj = _cam.getProjectionMatrix();
     ubo.model = glm::mat4(1.0f);
     ubo.roi = _roi;
+    ubo.hiddenMask = 100;
+
+    uint32_t mask = 0;
+
+    for(auto& e : _entityManager->getEntityHandles()) {
+        if (e->isHidden() ) {
+            auto slot = e->getUID();
+            mask |= (1u << slot);
+        }
+    }
+    ubo.hiddenMask = mask;
+    ubo.nSplitVal = _splitVal;
+
     _entityManager->updateUniformBuffers(currentImage, ubo);
 }
 

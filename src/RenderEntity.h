@@ -3,9 +3,12 @@
 #include "DataUtils.h"
 #include "VVTexture.h"
 #include "Vertex.h"
+#include "UniqueOrderedNumber.h"
+#include <functional>
 #include <glm/ext/vector_float2.hpp>
 #include <glm/ext/vector_float3.hpp>
 #include <memory>
+#include <queue>
 #include <string>
 
 namespace Veloxr {
@@ -28,11 +31,13 @@ namespace Veloxr {
             void setTextureBuffer(std::shared_ptr<Veloxr::VeloxrBuffer> buffer);
             void setTextureBuffer(Veloxr::VeloxrBuffer& buffer);
             void setDataPacket(std::shared_ptr<VVDataPacket> dataPacket) { _texture.setDataPacket(dataPacket); }
+            void setResolution(glm::vec2 resolution) {_resolution = resolution;}
 
             void destroy();
 
             inline const glm::vec3& getPosition() const { return _position; }
             inline const glm::vec2 getResolution() const { 
+                if(_resolution.x != 0 && _resolution.y != 0) return _resolution;
                 const auto& bounding = _texture.getBoundingBox();
                 uint32_t width = bounding.z - bounding.x;
                 uint32_t height = bounding.w - bounding.y;
@@ -46,6 +51,7 @@ namespace Veloxr {
             }
             inline const std::string& getName() const { return _name; }
             inline const bool isHidden () const { return _isHidden; }
+            inline const int getUID () const { return _entityNumber; }
 
             // Copy to modify position
             const std::vector<Veloxr::Vertex> getVertices ();
@@ -55,11 +61,13 @@ namespace Veloxr {
             [[nodiscard]] inline const std::shared_ptr<Veloxr::VeloxrBuffer> getBuffer() const { return _textureBuffer; }
 
         private:
-            static int ENTITY_COUNT;
+            static OrderedNumberFactory _entitySlots;
 
             glm::vec3 _position{0, 0, 0};
+            glm::vec2 _resolution{0, 0};
             std::string _name{""};
             bool _isHidden{false};
+            int _entityNumber;
 
             std::shared_ptr<Veloxr::VeloxrBuffer> _textureBuffer;
             std::vector<Veloxr::Vertex> _vertices;

@@ -1,7 +1,7 @@
 #pragma once
 
-
 #include <queue>
+
 namespace Veloxr {
 
     class TileManager {
@@ -17,12 +17,7 @@ namespace Veloxr {
                 _availableTextureSlots.push(slot);
             }
 
-
         private:
             std::priority_queue<int, std::vector<int>, std::greater<int>> _availableTextureSlots;
-
-        
     };
-
-
 }
