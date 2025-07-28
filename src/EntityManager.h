@@ -62,6 +62,7 @@ namespace Veloxr {
             void destroy();
 
         private:
+            static constexpr auto DEFAULT_PIXEL_ENTITY_NAME = "veloxr_single_pixel_default_entity";
             Veloxr::LLogger console {"[Veloxr][EntityManager] "};
 
             std::shared_ptr<VVDataPacket> _data;

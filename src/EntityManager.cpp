@@ -1,4 +1,5 @@
 #include "EntityManager.h"
+#include "DataUtils.h"
 #include "RenderEntity.h"
 #include "VVShaderStageData.h"
 #include <memory>
@@ -20,7 +21,23 @@ void EntityManager::initialize() {
     float minY = std::numeric_limits<float>::max();
     float maxY = std::numeric_limits<float>::lowest();
 
+    // Fallback to a single pixel
+    if(_entityMap.empty()) {
+        auto e = createEntity(DEFAULT_PIXEL_ENTITY_NAME);
+
+        Veloxr::VeloxrBuffer _currentDataBuffer;
+        _currentDataBuffer.width       = 1;
+        _currentDataBuffer.height      = 1;
+        _currentDataBuffer.numChannels = 4;
+        _currentDataBuffer.data        = { 255, 255, 255, 255 };
+        e->setTextureBuffer(_currentDataBuffer);
+
+    } else {
+        this->destroyEntity(DEFAULT_PIXEL_ENTITY_NAME);
+    }
+
     for (auto& [name, entity] : _entityMap) {
+        console.debug("Initializing with entity ", name);
         entity->getVVTexture().tileTexture(entity->getBuffer());
 
         const auto verts = entity->getVertices();
@@ -55,13 +72,14 @@ void EntityManager::registerEntity(std::shared_ptr<Veloxr::RenderEntity> entity)
     _entityMap[name] = entity;
     return ;
 }
+
 void EntityManager::destroyEntity(const std::string& name) noexcept {
     console.log(__func__, " for ", name);
 
     auto findIt = _entityMap.find(name);
 
-    if (findIt != _entityMap.end()) {
-        console.warn("Entity with name '", name, "' does not exist. Aborting.");
+    if (findIt == _entityMap.end()) {
+        console.critical("Entity with name '", name, "' does not exist. Aborting.");
         return;
     }
 

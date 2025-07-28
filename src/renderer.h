@@ -213,6 +213,10 @@ public:
     
     // Make drawFrame accessible to external code
     void drawFrame();
+    void setValidationLayersEnabled(bool validationEnabled) {
+        enableValidationLayers = validationEnabled;
+
+    }
 
 
     //glm::vec2 getMainEntityPosition()  { }
@@ -237,11 +241,10 @@ private: // No client -- internal
     VkDebugUtilsMessengerEXT debugMessenger;
 
 #ifdef VALIDATION_LAYERS_VALUE
-    //bool enableValidationLayers = VALIDATION_LAYERS_VALUE;
-    bool enableValidationLayers = true;
+    bool enableValidationLayers = VALIDATION_LAYERS_VALUE;
 #else
-    //bool enableValidationLayers = false;
-    bool enableValidationLayers = true;
+    bool enableValidationLayers = false;
+    // bool enableValidationLayers = true;
 #endif
 
     Veloxr::OrthographicCamera _cam;
@@ -526,7 +529,6 @@ private:
     }
 
     void createFramebuffers() {
-        if(swapChainFramebuffers.size() != 0) return;
         swapChainFramebuffers.resize(swapChainImageViews.size());
 
         for (size_t i = 0; i < swapChainImageViews.size(); i++) {
@@ -1200,7 +1202,7 @@ inline void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) 
     float sensitivity = currentZoom * 0.1f;
     auto& c = app->getCamera();
     auto em = app->getEntityManager();
-    auto e = em->getEntity("main");
+    auto e = em->getEntity("main") == nullptr ? em->getEntityHandles().front() : em->getEntity("main");
     auto& p = e->getPosition();
     auto center = e->getCenterPos();
     uint32_t newX = p.x ;//+ e->getResolution().x / 2.0f;
@@ -1250,9 +1252,10 @@ inline void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 
     auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
+    auto em = app->getEntityManager();
+    auto e = em->getEntity("main") == nullptr ? em->getEntityHandles().front() : em->getEntity("main");
     auto setupBuffer = [&](std::string filepath) {
         auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
-        auto em = app->getEntityManager();
         Veloxr::OIIOTexture texture(filepath);
         Veloxr::VeloxrBuffer buf;
         std::cout << "Moving data...";
@@ -1262,7 +1265,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         buf.height = texture.getResolution().y;
         buf.numChannels = texture.getNumChannels();
         buf.orientation = texture.getOrientation();
-        auto e = em->getEntity("main");
         e->setTextureBuffer(buf);
         em->initialize();
         app->setupGraphics();
@@ -1295,8 +1297,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     }
     if (key == GLFW_KEY_C && action == GLFW_PRESS) {
         auto& c = app->getCamera();
-        auto em = app->getEntityManager();
-        auto e = em->getEntity("main");
         auto& p = e->getPosition();
         uint32_t newX = p.x + e->getResolution().x / 2.0f;
         uint32_t newY = p.y + e->getResolution().y / 2.0f;
@@ -1306,8 +1306,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     }
     if (key == GLFW_KEY_S && action == GLFW_PRESS) {
         static int entity = 0;
-        auto em = app->getEntityManager();
-        auto e = em->getEntity("main");
         auto e2 = em->getEntity("main2");
         if(entity++ %2 == 0) {
             e->setIsHidden(true);
@@ -1320,14 +1318,11 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     }
 
     // TODO, setPosition of camera instead.
-    auto em = app->getEntityManager();
     if (key == GLFW_KEY_D && action == GLFW_PRESS) {
-        auto e = em->getEntity("main");
         e->setPosition(e->getPosition().x + 1000 * app->deltaMs, e->getPosition().y);
         em->initialize();
     }
     if (key == GLFW_KEY_A && action == GLFW_PRESS) {
-        auto e = em->getEntity("main");
         e->setPosition(e->getPosition().x - 1000 * app->deltaMs, e->getPosition().y);
         em->initialize();
     }

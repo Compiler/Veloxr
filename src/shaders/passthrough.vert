@@ -7,7 +7,6 @@ layout(location = 3) in int inRenderID;
 
 layout(location = 0) out vec4 fragTexCoord;
 layout(location = 1) out flat int texUnit;
-layout(location = 2) out flat float outAlpha;
 
 layout(binding = 0) uniform UniformBufferObject {
     mat4 model;

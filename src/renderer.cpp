@@ -149,20 +149,23 @@ void RendererCore::cleanupSwapChain() {
         for (size_t i = 0; i < swapChainFramebuffers.size(); i++) {
             vkDestroyFramebuffer(device, swapChainFramebuffers[i], nullptr);
         }
+        swapChainImageViews.clear();
 
         console.log("[Veloxr] [Debug] Destroying swapChainImages\n");
         for (size_t i = 0; i < swapChainImageViews.size(); i++) {
             vkDestroyImageView(device, swapChainImageViews[i], nullptr);
         }
+        swapChainFramebuffers.clear();
 
         console.log("[Veloxr] [Debug] Destroying swap chain\n");
         vkDestroySwapchainKHR(device, swapChain, nullptr);
+
     }
 }
 
 void RendererCore::createSyncObjects() {
     console.logc1(__func__);
-    if(imageAvailableSemaphores.size() != 0 && renderFinishedSemaphores.size() != 0) return;
+    if(imageAvailableSemaphores.size() != 0 && renderFinishedSemaphores.size() != 0 && inFlightFences.size() != 0) return;
     imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
@@ -174,9 +177,9 @@ void RendererCore::createSyncObjects() {
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT; // Start signaled since we block on drawFrame :/
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        if (    vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
-                vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
-                vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
+        if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
+            vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
+            vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
 
             throw std::runtime_error("failed to create synchronization objects for a frame!");
         }
@@ -230,6 +233,9 @@ void RendererCore::destroy() {
         vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
         vkDestroyFence(device, inFlightFences[i], nullptr);
     }
+    renderFinishedSemaphores.clear();
+    imageAvailableSemaphores.clear();
+    inFlightFences.clear();
 
     vkDestroyCommandPool(device, commandPool, nullptr);
 
@@ -253,6 +259,12 @@ void RendererCore::drawFrame() {
     vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
     uint32_t imageIndex;
+    if (frameBufferResized) {
+        console.log("Resizing swapchain\n");
+        frameBufferResized = false;
+        recreateSwapChain();
+        return;
+    }
 
     VkResult result = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
 
