@@ -63,7 +63,7 @@ namespace Veloxr {
 
             }
 
-            static setLogCallback(std::function<void(std::string, int)> callback) {
+            static void setLogCallback(std::function<void(std::string, int)> callback) {
                 if (callback) {
                     LLogger::logCallback = callback;
                 } else {
