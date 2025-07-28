@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <chrono>
+#include <functional>
 #include <queue>
 #include <string>
 #include <unordered_map>
@@ -29,6 +30,8 @@ namespace Veloxr {
 #define END(x) std::chrono::duration_cast<std::chrono::milliseconds>(NOW - x).count()
 
     class LLogger {
+        static std::function<void(std::string, int)> logCallback = &LLogger::log_custom;
+
         public:
             enum LogLevel{
                 INFO, DEBUG, WARNING, CRITICAL, FATAL, COLOR1, COLOR2, COLOR3
@@ -60,6 +63,14 @@ namespace Veloxr {
 
             }
 
+            static setLogCallback(std::function<void(std::string)> callback) {
+                if (callback) {
+                    LLogger::logCallback = callback;
+                } else {
+                    LLogger::logCallback = &LLogger::log_custom;
+                }
+            }
+
             void toggleModifier(std::string modifier){
                 auto pos = uniqueIdentifier.find(modifier);
                 if(pos == std::string::npos){
@@ -83,19 +94,6 @@ namespace Veloxr {
                 const char* templatedStr ="%s\n%s: %s%s%s: %s%s%s %s%s\n%s";
                 printf(templatedStr, endingCharStyle[EndingStyle::BOLD], getTimeString().c_str(), endingCharStyle[EndingStyle::BOLD], logLevelColor[logLevel], logLevelStr, endingCharStyle[EndingStyle::BOLD], logLevelColor[logLevel], uniqueIdentifier.c_str(), msg.c_str(), endingStyle, endingCharStyle[EndingStyle::NORMAL]);
                 fflush(stdout);
-            }
-
-            // inject into qInfo ?
-            void log_custom2(const std::string& msg, int logLevel = INFO){
-                if(!active) return;
-                static std::unordered_map<int, const char*> endingCharStyle =
-                {{NORMAL, "\033[0m"}, {BOLD, "\033[1m"}, {ITALICS, "\033[2m"}};
-                const char* endingStyle = /*logLevel != LogLevel::CRITICAL ? endingCharStyle[EndingStyle::NORMAL] :*/ endingCharStyle[EndingStyle::BOLD];
-                static std::unordered_map<int, const char*> logLevelColor =
-                {{INFO, "\033[36m"}, {DEBUG, "\033[32m"}, {WARNING, "\033[33m"}, {CRITICAL, "\033[34m"}, {FATAL, "\033[31m"}};
-                const char* logLevelStr = logLevel == INFO ? " INFO" : logLevel == DEBUG ? "DEBUG" : logLevel == WARNING ? " WARN" : logLevel == CRITICAL ? " CRIT" : logLevel == FATAL ? "FATAL" : "LOG";
-                //qInfo() << logLevelColor[logLevel] << str << endingCharStyle[EndingStyle::NORMAL];
-                std::cout << logLevelColor[logLevel] << msg.c_str() << endingCharStyle[EndingStyle::NORMAL];
             }
 
             void setIdentifier(const std::string& uniqueIdentifier){
@@ -156,56 +154,56 @@ namespace Veloxr {
                 void log(Args&&... args){
                     std::stringstream ss;
                     (appendToStringStream(ss, std::forward<Args>(args)), ...);
-                    log_custom(ss.str(), INFO);
+                    LLogger::logCallback(ss.str(), INFO);
                 }
 
             template <typename ... Args>
                 void logc1(Args&&... args){
                     std::stringstream ss;
                     (appendToStringStream(ss, std::forward<Args>(args)), ...);
-                    log_custom(ss.str(), COLOR1);
+                    LLogger::logCallback(ss.str(), COLOR1);
                 }
 
             template <typename ... Args>
                 void logc2(Args&&... args){
                     std::stringstream ss;
                     (appendToStringStream(ss, std::forward<Args>(args)), ...);
-                    log_custom(ss.str(), COLOR2);
+                    LLogger::logCallback(ss.str(), COLOR2);
                 }
 
             template <typename ... Args>
                 void logc3(Args&&... args){
                     std::stringstream ss;
                     (appendToStringStream(ss, std::forward<Args>(args)), ...);
-                    log_custom(ss.str(), COLOR3);
+                    LLogger::logCallback(ss.str(), COLOR3);
                 }
 
             template <typename ... Args>
                 void debug(Args&&... args){
                     std::stringstream ss;
                     (appendToStringStream(ss, std::forward<Args>(args)), ...);
-                    log_custom(ss.str(), DEBUG);
+                    LLogger::logCallback(ss.str(), DEBUG);
                 }
 
             template <typename ... Args>
                 void warn(Args&&... args){
                     std::stringstream ss;
                     (appendToStringStream(ss, std::forward<Args>(args)), ...);
-                    log_custom(ss.str(), WARNING);
+                    LLogger::logCallback(ss.str(), WARNING);
                 }
 
             template <typename ... Args>
                 void critical(Args&&... args){
                     std::stringstream ss;
                     (appendToStringStream(ss, std::forward<Args>(args)), ...);
-                    log_custom(ss.str(), CRITICAL);
+                    LLogger::logCallback(ss.str(), CRITICAL);
                 }
 
             template <typename ... Args>
                 void fatal(Args&&... args){
                     std::stringstream ss;
                     (appendToStringStream(ss, std::forward<Args>(args)), ...);
-                    log_custom(ss.str(), FATAL);
+                    LLogger::logCallback(ss.str(), FATAL);
                     //assert(false); //[LR] Add failing to this in future
                 }
     };
