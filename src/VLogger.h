@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <chrono>
+#include <functional>
 #include <queue>
 #include <string>
 #include <unordered_map>
@@ -69,33 +70,45 @@ namespace Veloxr {
                 }
             }
 
+            static void log_write(const std::string &line) {
+                printf("%s", line.c_str());
+                fflush(stdout);
+            }
+
             //TODO: Convert printf to qInfos/qDebugs... to sync with frontend timing.
             void log_custom(const std::string& msg, int logLevel = INFO){
                 if(!active) return;
+
                 static std::unordered_map<int, const char*> endingCharStyle =
                 {{NORMAL, "\033[0m"}, {BOLD, "\033[1m"}, {ITALICS, "\033[2m"}};
+
                 const char* endingStyle = /*logLevel != LogLevel::CRITICAL ? endingCharStyle[EndingStyle::NORMAL] :*/ endingCharStyle[EndingStyle::BOLD];
                 static std::unordered_map<int, const char*> logLevelColor =
                 {{INFO, "\033[36m"}, {DEBUG, "\033[32m"}, {WARNING, "\033[33m"}, {CRITICAL, "\033[34m"}, {FATAL, "\033[31m"}, {COLOR1, "\033[35m"}, {COLOR2, "\033[37m"}, {COLOR3, "\033[38m"}};
                 const char* logLevelStr = logLevel == INFO ? " INFO" : logLevel == DEBUG ? "DEBUG" : logLevel == WARNING ? " WARN" : logLevel == CRITICAL ? " CRIT" : logLevel == FATAL ? "FATAL" : "  LOG";
-                //qInfo() << logLevelColor[logLevel] << str << endingCharStyle[EndingStyle::NORMAL];
-                fflush(stdout);
-                const char* templatedStr ="%s\n%s: %s%s%s: %s%s%s %s%s\n%s";
-                printf(templatedStr, endingCharStyle[EndingStyle::BOLD], getTimeString().c_str(), endingCharStyle[EndingStyle::BOLD], logLevelColor[logLevel], logLevelStr, endingCharStyle[EndingStyle::BOLD], logLevelColor[logLevel], uniqueIdentifier.c_str(), msg.c_str(), endingStyle, endingCharStyle[EndingStyle::NORMAL]);
-                fflush(stdout);
+
+                std::stringstream ss;
+                ss << endingCharStyle[EndingStyle::BOLD] << std::endl
+                   << getTimeString() << ": "
+                   << endingCharStyle[EndingStyle::BOLD]
+                   << logLevelColor[logLevel]
+                   << logLevelStr << ": "
+                   << endingCharStyle[EndingStyle::BOLD]
+                   << logLevelColor[logLevel]
+                   << uniqueIdentifier << " "
+                   << msg
+                   << endingStyle << std::endl
+                   << endingCharStyle[EndingStyle::NORMAL];
+                
+                LLogger::logCallback(ss.str());
             }
 
-            // inject into qInfo ?
-            void log_custom2(const std::string& msg, int logLevel = INFO){
-                if(!active) return;
-                static std::unordered_map<int, const char*> endingCharStyle =
-                {{NORMAL, "\033[0m"}, {BOLD, "\033[1m"}, {ITALICS, "\033[2m"}};
-                const char* endingStyle = /*logLevel != LogLevel::CRITICAL ? endingCharStyle[EndingStyle::NORMAL] :*/ endingCharStyle[EndingStyle::BOLD];
-                static std::unordered_map<int, const char*> logLevelColor =
-                {{INFO, "\033[36m"}, {DEBUG, "\033[32m"}, {WARNING, "\033[33m"}, {CRITICAL, "\033[34m"}, {FATAL, "\033[31m"}};
-                const char* logLevelStr = logLevel == INFO ? " INFO" : logLevel == DEBUG ? "DEBUG" : logLevel == WARNING ? " WARN" : logLevel == CRITICAL ? " CRIT" : logLevel == FATAL ? "FATAL" : "LOG";
-                //qInfo() << logLevelColor[logLevel] << str << endingCharStyle[EndingStyle::NORMAL];
-                std::cout << logLevelColor[logLevel] << msg.c_str() << endingCharStyle[EndingStyle::NORMAL];
+            static void setLogCallback(std::function<void(const std::string&)> callback) {
+                if (callback) {
+                    LLogger::logCallback = callback;
+                } else {
+                    LLogger::logCallback = &LLogger::log_write;
+                }
             }
 
             void setIdentifier(const std::string& uniqueIdentifier){
@@ -208,6 +221,9 @@ namespace Veloxr {
                     log_custom(ss.str(), FATAL);
                     //assert(false); //[LR] Add failing to this in future
                 }
+
+        private:
+            inline static std::function<void(const std::string&)> logCallback = &LLogger::log_write;
     };
 }
 #endif // LOGGER_H
