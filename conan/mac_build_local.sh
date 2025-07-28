@@ -1,4 +1,4 @@
-cd ..
+
 conan install conan/conanfile.py -of . \
     --version=0.0.1 \
     --options="&:validation_layers=False" \

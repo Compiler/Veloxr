@@ -1,5 +1,8 @@
 #pragma once
 
+#include "Common.h"
+#include "RenderEntity.h"
+#include "VVTexture.h"
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -28,6 +31,7 @@
 #include "texture.h"
 #include "Vertex.h"
 #include "TextureTiling.h"
+#include "EntityManager.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -41,7 +45,7 @@
 #include <cstdlib>
 #include <vector>
 #include <cstring>
-#include <test.h>
+#include "test.h"
 
 
 #include <cstdint> 
@@ -49,7 +53,7 @@
 #include <algorithm> 
 #include <fstream>
 
-#include <device.h>
+#include "device.h"
 
 #ifdef __APPLE__
 extern "C" {
@@ -149,12 +153,6 @@ inline const auto BOT = 1.0f;
 
 
 
-struct UniformBufferObject {
-    alignas(16) glm::mat4 model;
-    alignas(16) glm::mat4 view;
-    alignas(16) glm::mat4 proj;
-    alignas(16) glm::vec4 roi;
-};
 
 inline bool mousePressed = false;
 inline double lastX = 0.0, lastY = 0.0;
@@ -184,31 +182,14 @@ public:
     // Change size of window to render into. 
     void setWindowDimensions(int width, int height); 
 
-    // Set the texture to load, will reinitialize the pipeline.
-    void setTextureFilePath(std::string filepath); 
-    void setTextureBuffer(Veloxr::VeloxrBuffer&& buffer); 
-
     // Initialize the renderer, given a window pointer to render into.
     void init(void* windowHandle = nullptr); 
-    void setupTexturePasses(); 
+    void setupGraphics(); 
+
+    // Main introduction to entity handles.
+    std::shared_ptr<Veloxr::EntityManager> getEntityManager() { return _entityManager; }
 
     // Camera API. Use this object to access camera movement related data, zoom, pan, etc.
-    /*
-            void setPosition(const glm::vec3& pos);
-            void setPosition(const glm::vec2& pos);
-            void translate(const glm::vec2& delta);
-            void setRotation(float rot);
-            void setProjection(float left, float right, float bottom, float top, float nearPlane, float farPlane);
-            const glm::mat4& getProjectionMatrix() const;
-            const glm::mat4& getViewMatrix() const;
-            glm::mat4 getViewProjectionMatrix() const;
-            void setZoomLevel(float zoomLevel);
-            inline const float getZoomLevel() const { return _zoomLevel;}
-            void addToZoom(float delta);
-            void zoomToCenter(float zoomDelta);
-            void zoomCentered(const glm::vec2& anchorPoint, float zoomDelta);
-            void fitViewport(float left, float right, float bottom, float top);
-    */
     Veloxr::OrthographicCamera& getCamera() {
         return _cam;
     }
@@ -232,20 +213,26 @@ public:
     
     // Make drawFrame accessible to external code
     void drawFrame();
+    void setValidationLayersEnabled(bool validationEnabled) {
+        enableValidationLayers = validationEnabled;
+
+    }
+
 
     //glm::vec2 getMainEntityPosition()  { }
 
+    float _splitVal = 0.0f;
 private: // No client -- internal
 
     GLFWwindow* window;
     const int WIDTH = 1920;
     const int HEIGHT = 1080;
     int _windowWidth, _windowHeight;
-    std::string _currentFilepath;
     Veloxr::VeloxrBuffer _currentDataBuffer;
     Veloxr::LLogger console{"[Veloxr][Renderer] "};
-    Veloxr::CommandUtils commandUtils{};
+    std::shared_ptr<Veloxr::EntityManager> _entityManager;
     // For friend classes / drivers
+    Veloxr::UniformBufferObject ubo{};
 
 
     VkInstance instance;
@@ -257,27 +244,22 @@ private: // No client -- internal
     bool enableValidationLayers = VALIDATION_LAYERS_VALUE;
 #else
     bool enableValidationLayers = false;
+    // bool enableValidationLayers = true;
 #endif
 
     Veloxr::OrthographicCamera _cam;
 
 
-     std::vector<Veloxr::Vertex> vertices = {
-         {{RIGHT, BOT, 0, 0}, {1.0f, 1.0f, 1, 0}, 0},
-         {{LEFT, BOT, 0, 0}, {0.0f, 1.0f, 1, 0}, 0},
-         {{LEFT, TOP, 0, 0}, {0.0f, 0.0f, 1, 0}, 0},
-
-         {{LEFT, TOP, 0, 0}, {0.0f, 0.0f, 0, 0}, 0},
-         {{RIGHT, TOP, 0, 0}, {1.0f, 0.0f, 0, 0}, 0},
-         {{RIGHT, BOT, 0, 0}, {1.0f, 1.0f, 0, 0}, 0},
-     };
+    std::vector<Veloxr::Vertex> vertices = {};
     const std::vector<const char*> validationLayers = {
         "VK_LAYER_KHRONOS_validation"
     };
 
 
-    std::unique_ptr<Veloxr::Device> _deviceUtils;
+    std::shared_ptr<Veloxr::Device> _deviceUtils;
+    std::shared_ptr<Veloxr::VVDataPacket> _dataPacket;
 
+    // VK
     VkSurfaceKHR surface;
     VkDevice device;
     VkPhysicalDevice physicalDevice;
@@ -290,21 +272,12 @@ private: // No client -- internal
     std::vector<VkImageView> swapChainImageViews;
 
     VkRenderPass renderPass;
-    VkDescriptorSetLayout descriptorSetLayout;
     VkPipelineLayout pipelineLayout; // Uniforms in shaders object
     VkPipeline graphicsPipeline;
     std::vector<VkFramebuffer> swapChainFramebuffers;
     VkCommandPool commandPool;
     std::vector<VkCommandBuffer> commandBuffers;
     uint32_t currentFrame = 0;
-    VkBuffer vertexBuffer;
-    VkDeviceMemory vertexBufferMemory;
-
-    std::vector<VkBuffer> uniformBuffers;
-    std::vector<VkDeviceMemory> uniformBuffersMemory;
-    std::vector<void*> uniformBuffersMapped;
-    VkDescriptorPool descriptorPool;
-    std::vector<VkDescriptorSet> descriptorSets;
 
     // Structure for holding the VRAM data
     struct VkVirtualTexture {
@@ -312,7 +285,6 @@ private: // No client -- internal
         VkDeviceMemory textureImageMemory;
         VkImageView textureImageView;
         VkSampler textureSampler;
-        Veloxr::OIIOTexture textureData;
         int samplerIndex;
 
         void destroy(VkDevice device) {
@@ -327,7 +299,7 @@ private: // No client -- internal
         }
     };
 
-    std::map<std::string, VkVirtualTexture> _textureMap;
+    std::map<std::string, std::unique_ptr<Veloxr::VVTexture>> _textureMap;
     // Sync
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
@@ -415,6 +387,7 @@ private:
         std::vector<std::filesystem::path> fallbackPaths = {
             exePath.parent_path() / "spirv",  // Same directory as executable
             exePath.parent_path() / "Resources" / "spirv",  // macOS app bundle
+            exePath.parent_path().parent_path() / "Resources" / "spirv",  // gigapixel
             exePath.parent_path().parent_path() / "spirv",  // Original logic fallback
             "spirv",  // Current working directory
             "../spirv"  // One level up
@@ -422,42 +395,44 @@ private:
         
         for (const auto& path : fallbackPaths) {
             if (std::filesystem::exists(path)) {
+                console.log("[Veloxr][Warning] Shader directory FOUND at: ", path);
                 return path;
+            }
+            else {
+                console.log("[Veloxr][Warning] Shader directory NOT at: ", path);
             }
         }
         
         throw std::runtime_error("Could not find spirv shader directory. Please set VELOXR_SHADER_PATH environment variable or call setShaderPath().");
     }
     
+    // Helper function to find MoltenVK ICD file with multiple fallback options
+    std::filesystem::path findMoltenVKICDPath() {
+        // Option 2: Look in common installation locations
+        std::filesystem::path exePath = getExecutablePath();
+        std::vector<std::filesystem::path> fallbackPaths = {
+            exePath.parent_path() / "MoltenVK_icd.json",  // Same directory as executable
+            exePath.parent_path() / "Resources" / "MoltenVK_icd.json",  // macOS app bundle
+            exePath.parent_path().parent_path() / "Resources" / "MoltenVK_icd.json",  // gigapixel
+            exePath.parent_path().parent_path() / "MoltenVK_icd.json",  // Original logic fallback
+            "MoltenVK_icd.json",  // Current working directory
+        };
+        
+        for (const auto& path : fallbackPaths) {
+            if (std::filesystem::exists(path)) {
+                return path;
+            }
+            else {
+                console.log("[Veloxr][Warning] MoltenVK ICD NOT at: ", path);
+            }
+        }
+        
+        throw std::runtime_error("Could not find MoltenVK_icd.json. Please set VK_ICD_FILENAMES environment variable to the ICD file path.");
+    }
+    
     // texture utilities ------------------------------------------------
-    VkSampler  createTextureSampler(std::string input_filepath = "");
-    VkImageView createTextureImageView(VkImage textureImage);
     VkImageView createImageView(VkImage image, VkFormat format);
 
-    // image operations -------------------------------------------------
-    void transitionImageLayout(VkImage image, VkFormat format,
-                               VkImageLayout oldLayout, VkImageLayout newLayout);
-    void copyBufferToImage(VkBuffer buffer, VkImage image,
-                           uint32_t width, uint32_t height);
-    std::unordered_map<std::string, VkVirtualTexture> createTiledTexture(std::string input_filepath = "");
-    std::unordered_map<std::string, VkVirtualTexture> createTiledTexture(Veloxr::VeloxrBuffer&& buffer);
-
-    // resource creation helpers ---------------------------------------
-    void createImage(uint32_t width, uint32_t height, VkFormat format,
-                     VkImageTiling tiling, VkImageUsageFlags usage,
-                     VkMemoryPropertyFlags properties,
-                     VkImage& image, VkDeviceMemory& imageMemory);
-    void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
-                      VkMemoryPropertyFlags properties,
-                      VkBuffer& buffer, VkDeviceMemory& bufferMemory);
-    void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-    uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-
-    // descriptor helpers ----------------------------------------------
-    void createDescriptorLayout();
-    void createDescriptorPool();
-    void createDescriptorSets();
-    void createUniformBuffers();
 
     // mesh / swapchain helpers ----------------------------------------
     void createVertexBuffer();
@@ -482,7 +457,7 @@ private:
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = swapChainExtent;
 
-        VkClearValue clearColor = {{{1.0, 0.25f, 0.25f, 1.0f}}};
+        VkClearValue clearColor = {{{0.0, 0.25f, 0.25f, 1.0f}}};
         renderPassInfo.clearValueCount = 1;
         renderPassInfo.pClearValues = &clearColor;
 
@@ -504,12 +479,14 @@ private:
         scissor.extent = swapChainExtent;
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-        VkBuffer vertexBuffers[] = {vertexBuffer};
+        auto p_shaderStage = _entityManager->getShaderStageData();
+        VkBuffer vertexBuffers[] = {p_shaderStage->getVertexBuffer()};
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &p_shaderStage->getDescriptorSets()[currentFrame], 0, nullptr);
 
-        vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+        uint32_t vertCount = static_cast<uint32_t>(_entityManager->getVertices().size());
+        vkCmdDraw(commandBuffer, vertCount, 1, 0, 0);
         vkCmdEndRenderPass(commandBuffer);
 
 
@@ -619,6 +596,7 @@ private:
 
 
     VkShaderModule createShaderModule(const std::vector<char>& code) {
+        console.debug(__func__);
 
         VkShaderModuleCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -639,7 +617,13 @@ private:
         std::filesystem::path spirvDir = findShaderPath();
 
         auto vertShaderCode = readFile((spirvDir / "vert.spv").string());
+        
+        // Load platform-specific fragment shader
+#ifdef __APPLE__
+        auto fragShaderCode = readFile((spirvDir / "frag_mac.spv").string());
+#else
         auto fragShaderCode = readFile((spirvDir / "frag.spv").string());
+#endif
 
         VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
         VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
@@ -734,13 +718,13 @@ private:
         // Blend render passes into same fragment section in framebuffer :D
         VkPipelineColorBlendAttachmentState colorBlendAttachment{};
         colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-        colorBlendAttachment.blendEnable = VK_FALSE;
-        colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
-        colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; 
-        colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD; 
+        colorBlendAttachment.blendEnable = VK_TRUE;
+        colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+        colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        colorBlendAttachment.colorBlendOp        = VK_BLEND_OP_ADD;
         colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
         colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-        colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+        colorBlendAttachment.alphaBlendOp        = VK_BLEND_OP_ADD;
 
         VkPipelineColorBlendStateCreateInfo colorBlending{};
         colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -757,11 +741,14 @@ private:
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineLayoutInfo.setLayoutCount = 1;
-        pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
+        console.debug("!");
+        pipelineLayoutInfo.pSetLayouts = &_entityManager->getShaderStageData()->getDescriptorSetLayout();
+        console.debug("!!");
 
         if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
             throw std::runtime_error("failed to create pipeline layout!");
         }
+        console.debug("Graphics pipeline Layout created.");
 
 
         VkGraphicsPipelineCreateInfo pipelineInfo{};
@@ -783,9 +770,11 @@ private:
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
         pipelineInfo.basePipelineIndex = -1; // Optional
 
+        console.debug("Creating graphics pipelines");
         if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
             throw std::runtime_error("failed to create graphics pipeline!");
         }
+        console.debug("Created graphics pipelines");
 
         vkDestroyShaderModule(device, fragShaderModule, nullptr);
         vkDestroyShaderModule(device, vertShaderModule, nullptr);
@@ -813,6 +802,17 @@ private:
             imageCount = swapChainSupport.capabilities.maxImageCount;
         }
         VkSwapchainCreateInfoKHR createInfo{};
+
+        VkSurfaceCapabilitiesKHR caps{};
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &caps);
+
+        // Priority: premultiplied -> postmultiplied -> inherit -> else opaque
+        VkCompositeAlphaFlagBitsKHR chosenAlphaLayer =
+            (caps.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR)  ? VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR  :
+            (caps.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR) ? VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR :
+            (caps.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR)         ? VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR         :
+            VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+
         createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
         createInfo.surface = surface;
         createInfo.minImageCount = imageCount;
@@ -842,11 +842,13 @@ private:
             createInfo.pQueueFamilyIndices = nullptr; 
         }
         createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
-        createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+        createInfo.compositeAlpha = chosenAlphaLayer;//VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR;
         createInfo.presentMode = presentMode;
         createInfo.clipped = VK_TRUE;
 
-        if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
+        auto res = vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) ;
+        if (res != VK_SUCCESS) {
+            console.fatal("Failed to create swapchain: ", res);
             throw std::runtime_error("failed to create swap chain!");
         }
 
@@ -942,7 +944,7 @@ private:
             }
         }
         
-        vkDeviceWaitIdle(device);
+        if(device) vkDeviceWaitIdle(device);
 
     }
 
@@ -998,6 +1000,23 @@ private:
         console.log("[Veloxr] checkValidationLayerSupport(): ", checkValidationLayerSupport());
         
 #ifdef __APPLE__
+        // Set up MoltenVK ICD path before creating instance
+        try {
+            std::filesystem::path icdPath = findMoltenVKICDPath();
+            std::string icdPathStr = icdPath.string();
+            console.log("[Veloxr] Found MoltenVK ICD at: ", icdPathStr);
+            
+            // Set the VK_ICD_FILENAMES environment variable
+            if (setenv("VK_ICD_FILENAMES", icdPathStr.c_str(), 1) != 0) {
+                console.log("[Veloxr] Warning: Failed to set VK_ICD_FILENAMES environment variable");
+            } else {
+                console.log("[Veloxr] Set VK_ICD_FILENAMES to: ", icdPathStr);
+            }
+        } catch (const std::exception& e) {
+            console.log("[Veloxr] Warning: Could not find MoltenVK ICD file: ", e.what());
+            console.log("[Veloxr] Continuing with system default ICD discovery...");
+        }
+        
         // Check Metal availability using our helper function
         if (!checkMetalAvailability()) {
             std::cerr << "[Veloxr] ERROR: Metal is not available on this system!" << std::endl;
@@ -1181,7 +1200,22 @@ inline void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) 
     auto& camera = app->getCamera();
     float currentZoom = camera.getZoomLevel();
     float sensitivity = currentZoom * 0.1f;
-    camera.zoomToCenter(yoffset*sensitivity);
+    auto& c = app->getCamera();
+    auto em = app->getEntityManager();
+    auto e = em->getEntity("main") == nullptr ? em->getEntityHandles().front() : em->getEntity("main");
+    auto& p = e->getPosition();
+    auto center = e->getCenterPos();
+    uint32_t newX = p.x ;//+ e->getResolution().x / 2.0f;
+    uint32_t newY = p.y; //- e->getResolution().y / 2.0f;
+    glm::vec3 newPos = {newX, newY, 1.0f};
+    auto newPosCam = camera.worldToCamera(newPos);
+
+
+    //app->getCamera().zoomCentered({newX, newY},app->getCamera().getZoomLevel() + diffs.x);
+    //camera.setPosition(newPosCam);
+
+    std::cout << "Resolution: " << e->getResolution().x << "x" << e->getResolution().y << '\n';
+    camera.zoomCentered(center, yoffset*sensitivity);
     std::cout << "[Veloxr] Zoom offset: " << currentZoom << '\n';
     //camera.addToZoom(yoffset * sensitivity);
 }
@@ -1213,8 +1247,13 @@ inline void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
     }
 }
 
+#define V_USER "ljuek"
+
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 
+    auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
+    auto em = app->getEntityManager();
+    auto e = em->getEntity("main") == nullptr ? em->getEntityHandles().front() : em->getEntity("main");
     auto setupBuffer = [&](std::string filepath) {
         auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
         Veloxr::OIIOTexture texture(filepath);
@@ -1225,65 +1264,78 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         buf.width = texture.getResolution().x;
         buf.height = texture.getResolution().y;
         buf.numChannels = texture.getNumChannels();
-        std::cout << "[DRIVER] Sending setTextureBuffer\n";
-        app->setTextureBuffer(std::move(buf));
+        buf.orientation = texture.getOrientation();
+        e->setTextureBuffer(buf);
+        em->initialize();
+        app->setupGraphics();
     };
+
+    const std::string basePath = std::string("/Users/") + V_USER + "/Downloads/";
+
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);  
     }
 
-    if (key == GLFW_KEY_W && action == GLFW_PRESS) {
-        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
-        app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/Colonial.jpg");
-    }
-
-    if (key == GLFW_KEY_A && action == GLFW_PRESS) {
-        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
-        app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/test.png");
-    }
-
-    if (key == GLFW_KEY_S && action == GLFW_PRESS) {
-        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
-        app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/test2.png");
-    }
-
-    if (key == GLFW_KEY_D && action == GLFW_PRESS) {
-        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
-        app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/test3.png");
-    }
-
-    if (key == GLFW_KEY_G && action == GLFW_PRESS) {
-        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
-        app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/56000.jpg");
-    }
-
-    if (key == GLFW_KEY_E && action == GLFW_PRESS) {
-        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
-        app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/fox.jpg");
-    }
-
-    if (key == GLFW_KEY_L && action == GLFW_PRESS) {
-        auto app = reinterpret_cast<RendererCore*>(glfwGetWindowUserPointer(window));
-        app->setTextureFilePath(PREFIX+"/Users/ljuek/Downloads/landscape.tif");
-    }
-    
     if (key == GLFW_KEY_1 && action == GLFW_PRESS) {
-        setupBuffer(PREFIX + "/Users/ljuek/Downloads/fox.jpg");
+        setupBuffer(basePath + "fox.jpg");
     }
     if (key == GLFW_KEY_2 && action == GLFW_PRESS) {
-        setupBuffer(PREFIX + "/Users/ljuek/Downloads/test.png");
+        setupBuffer(basePath + "test.png");
     }
     if (key == GLFW_KEY_3 && action == GLFW_PRESS) {
-        setupBuffer(PREFIX + "/Users/ljuek/Downloads/test2.png");
+        setupBuffer(basePath + "test2.png");
     }
     if (key == GLFW_KEY_4 && action == GLFW_PRESS) {
-        setupBuffer(PREFIX + "/Users/ljuek/Downloads/Colonial.jpg");
+        setupBuffer(basePath + "Colonial.jpg");
     }
     if (key == GLFW_KEY_5 && action == GLFW_PRESS) {
-        setupBuffer(PREFIX + "/Users/ljuek/Downloads/landscape.tif");
+        const std::string appendage = std::string(V_USER) == "ljuek" ? "" : "t";
+        setupBuffer(basePath + "landscape.tif" + appendage);
     }
     if (key == GLFW_KEY_6 && action == GLFW_PRESS) {
-        setupBuffer(PREFIX + "/Users/ljuek/Downloads/56000.jpg");
+        setupBuffer(basePath + "56000.jpg");
     }
+    if (key == GLFW_KEY_C && action == GLFW_PRESS) {
+        auto& c = app->getCamera();
+        auto& p = e->getPosition();
+        uint32_t newX = p.x + e->getResolution().x / 2.0f;
+        uint32_t newY = p.y + e->getResolution().y / 2.0f;
+        std::cout << "Setting pos to " << newX << ", " << newY << std::endl;
+        c.setPosition({newX, newY});
+        std::cout << " = " << c.getPosition().x << ", " << c.getPosition().y << std::endl;
+    }
+    if (key == GLFW_KEY_S && action == GLFW_PRESS) {
+        static int entity = 0;
+        auto e2 = em->getEntity("main2");
+        if(entity++ %2 == 0) {
+            e->setIsHidden(true);
+            e2->setIsHidden(false);
+        }else {
+            e->setIsHidden(false);
+            e2->setIsHidden(true);
+        }
+
+    }
+
+    // TODO, setPosition of camera instead.
+    if (key == GLFW_KEY_D && action == GLFW_PRESS) {
+        e->setPosition(e->getPosition().x + 1000 * app->deltaMs, e->getPosition().y);
+        em->initialize();
+    }
+    if (key == GLFW_KEY_A && action == GLFW_PRESS) {
+        e->setPosition(e->getPosition().x - 1000 * app->deltaMs, e->getPosition().y);
+        em->initialize();
+    }
+
+
+    if (key == GLFW_KEY_LEFT && action == GLFW_PRESS) {
+        app->_splitVal = std::max(app->_splitVal - 0.1f, 0.0f);
+        std::cout << "Updating split pos to " << app->_splitVal << std::endl;
+    }
+    if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) {
+        app->_splitVal = std::min(app->_splitVal + 0.1f, 1.0f);
+        std::cout << "Updating split pos to " << app->_splitVal << std::endl;
+    }
+
 }
 

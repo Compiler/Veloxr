@@ -1,6 +1,7 @@
 
 #include "OrthographicCamera.h"
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/matrix.hpp>
 #include <iostream>
 
 using namespace Veloxr;
@@ -28,7 +29,7 @@ void OrthographicCamera::init(float left, float right, float bottom, float top, 
 }
 
 void OrthographicCamera::setPosition(const glm::vec3& pos) {
-    _position = pos;
+    _position = glm::vec3(pos.x, pos.y, pos.z);
     recalcView();
 }
 
@@ -102,7 +103,15 @@ void OrthographicCamera::zoomToCenter(float zoomDelta) {
     zoomCentered(glm::vec2(centerWorld.x, centerWorld.y), zoomDelta);
 }
 
+glm::vec3 OrthographicCamera::worldToCamera(const glm::vec3& worldCoord) {
+    glm::mat4 invViewProj = glm::inverse(this->getViewProjectionMatrix());
+    glm::vec4 pos = invViewProj * glm::vec4(0, 0, 0, 1);
+    return glm::vec3(pos) / pos.w; // perspective-divide this bish
+
+}
+
 void OrthographicCamera::zoomCentered(const glm::vec2& anchorPoint, float zoomDelta) {
+    console.debug(__func__, ": ", anchorPoint.x, ", ", anchorPoint.y);
     float oldZoom = _zoomLevel;
     float newZoom = oldZoom + zoomDelta;
     if (newZoom < 0.00001f) {

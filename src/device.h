@@ -65,10 +65,11 @@ class Device {
         QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) const ;
         SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device) const ;
 
-        inline VkPhysicalDevice getPhysicalDevice() const { return _physicalDevice; }
-        inline VkDevice getLogicalDevice() const { return _logicalDevice; }
-        inline VkQueue getGraphicsQueue() const { return _graphicsQueue; }
-        inline VkQueue getPresentationQueue() const { return _presentQueue; }
+        [[nodiscard]] inline VkPhysicalDevice getPhysicalDevice() const { return _physicalDevice; }
+        [[nodiscard]] inline VkDevice getLogicalDevice() const { return _logicalDevice; }
+        [[nodiscard]] inline VkQueue getGraphicsQueue() const { return _graphicsQueue; }
+        [[nodiscard]] inline VkQueue getPresentationQueue() const { return _presentQueue; }
         inline uint32_t getMaxTextureResolution() const { return _maxTextureResolution; }
+        inline uint32_t getMaxSamplersPerStage() const { return _maxSamplers; }
 }; 
 }

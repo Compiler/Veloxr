@@ -25,7 +25,7 @@ void OIIOTexture::init(std::string filename) {
     OIIO::ImageSpec spec = in->spec();
     auto orientation = spec.get_int_attribute("Orientation", 1);
     _orientation = orientation;
-    std::cout << "[Veloxr]" << "Filename=" << _filename << " Orientation=" << orientation << ", resolution" << _resolution.x << "x" << _resolution.y << "\n";
+    console.debug("Filename = ", _filename, " Produces ", _numChannels, " channels at ", _resolution.x, "x", _resolution.y, " with orientation ", _orientation);
     in->close();
     in.reset();
     _loaded = true;
@@ -51,7 +51,9 @@ std::vector<unsigned char> OIIOTexture::load(std::string filename) {
 
     std::vector<unsigned char> rawData(_resolution.x * _resolution.y * _numChannels);
 
+    console.logc1("Reading image: ", _numChannels, " channel ", rawData.size() / 1024 / 1024, " mb.");
     in->read_image(0, 0, 0, _numChannels, OIIO::TypeDesc::UINT8, rawData.data());
+    console.logc1("Done reading image.");
     in->close();
     in.reset();
 
@@ -62,14 +64,37 @@ std::vector<unsigned char> OIIOTexture::load(std::string filename) {
 
     std::vector<unsigned char> pixelData(static_cast<size_t>(pixels * 4), 255);
 
-    for (uint64_t i = 0; i < pixels; ++i) {
-        uint64_t dst = i * 4;
-        uint64_t src = i * _numChannels;
+       for (uint64_t i = 0; i < pixels; ++i) {
+        const uint64_t src = i * _numChannels;
+        const uint64_t dst = i * 4;
 
-        pixelData[dst + 0] = rawData[src + 0];
-        pixelData[dst + 1] = rawData[src + 1];
-        pixelData[dst + 2] = rawData[src + 2];
-        // alpha already set to opaque
+        switch (_numChannels) {
+        case 1:   // Gray-> R = G = B = L,  A = 255
+            pixelData[dst + 0] = rawData[src + 0];
+            pixelData[dst + 1] = rawData[src + 0];
+            pixelData[dst + 2] = rawData[src + 0];
+            break;
+
+        case 2:   // Gray+Alpha -> R = G = B = L,  A = A
+            pixelData[dst + 0] = rawData[src + 0];
+            pixelData[dst + 1] = rawData[src + 0];
+            pixelData[dst + 2] = rawData[src + 0];
+            pixelData[dst + 3] = rawData[src + 1];
+            break;
+
+        case 3:   // RGB -> copy, leave α = 255 (already pre‑filled)
+            pixelData[dst + 0] = rawData[src + 0];
+            pixelData[dst + 1] = rawData[src + 1];
+            pixelData[dst + 2] = rawData[src + 2];
+            break;
+
+        default:  // 4 or more channels -> assume the first four are RGBA
+            pixelData[dst + 0] = rawData[src + 0];
+            pixelData[dst + 1] = rawData[src + 1];
+            pixelData[dst + 2] = rawData[src + 2];
+            pixelData[dst + 3] = rawData[src + 3];
+            break;
+        }
     }
 
     _numChannels = 4;

@@ -4,12 +4,9 @@
 #include <vector>
 
 #include "VLogger.h"
+#include "Common.h"
 
 namespace Veloxr {
-
-    struct Point {
-        uint64_t x, y;
-    };
 
     class OIIOTexture {
         public:
@@ -17,7 +14,7 @@ namespace Veloxr {
             OIIOTexture(std::string filename);
             void init(std::string filename);
 
-            inline const Point& getResolution() const { return _resolution; }
+            inline const Veloxr::Point& getResolution() const { return _resolution; }
             inline const std::string& getFilename() const { return _filename; }
             inline const uint64_t& getNumChannels() const { return _numChannels; }
             inline const uint64_t& getOrientation() const { return _orientation; }
@@ -27,7 +24,7 @@ namespace Veloxr {
         private:
 
             Veloxr::LLogger console{"[Veloxr][OIIOTexture]"};
-            Point _resolution;
+            Veloxr::Point _resolution;
             std::string _filename;
             uint64_t _numChannels;
             uint64_t _orientation;

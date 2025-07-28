@@ -10,6 +10,7 @@ namespace Veloxr {
         glm::vec4 pos;
         glm::vec4 texCoord;
         int textureUnit;
+        int renderUID;
 
         static VkVertexInputBindingDescription getBindingDescription() {
             VkVertexInputBindingDescription bindingDescription{};
@@ -19,24 +20,29 @@ namespace Veloxr {
 
             return bindingDescription;
         }
-        static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions() {
-            std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
+        static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescriptions() {
+            std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions{};
 
-            attributeDescriptions[0].binding = 0;
-            attributeDescriptions[0].location = 0;
-            attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
-            attributeDescriptions[0].offset = offsetof(Vertex, pos);
+            int descriptionIndex = 0;
+            attributeDescriptions[descriptionIndex].binding = 0;
+            attributeDescriptions[descriptionIndex].location = descriptionIndex;
+            attributeDescriptions[descriptionIndex].format = VK_FORMAT_R32G32_SFLOAT;
+            attributeDescriptions[descriptionIndex++].offset = offsetof(Vertex, pos);
 
+            attributeDescriptions[descriptionIndex].binding = 0;
+            attributeDescriptions[descriptionIndex].location = descriptionIndex;
+            attributeDescriptions[descriptionIndex].format = VK_FORMAT_R32G32_SFLOAT;
+            attributeDescriptions[descriptionIndex++].offset = offsetof(Vertex, texCoord);
 
-            attributeDescriptions[1].binding = 0;
-            attributeDescriptions[1].location = 1;
-            attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
-            attributeDescriptions[1].offset = offsetof(Vertex, texCoord);
+            attributeDescriptions[descriptionIndex].binding = 0;
+            attributeDescriptions[descriptionIndex].location = descriptionIndex;
+            attributeDescriptions[descriptionIndex].format = VK_FORMAT_R32_SINT;
+            attributeDescriptions[descriptionIndex++].offset = offsetof(Vertex, textureUnit);
 
-            attributeDescriptions[2].binding = 0;
-            attributeDescriptions[2].location = 2;
-            attributeDescriptions[2].format = VK_FORMAT_R32_SINT;
-            attributeDescriptions[2].offset = offsetof(Vertex, textureUnit);
+            attributeDescriptions[descriptionIndex].binding = 0;
+            attributeDescriptions[descriptionIndex].location = descriptionIndex;
+            attributeDescriptions[descriptionIndex].format = VK_FORMAT_R32_SINT;
+            attributeDescriptions[descriptionIndex++].offset = offsetof(Vertex, renderUID);
 
             return attributeDescriptions;
         }

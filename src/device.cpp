@@ -145,11 +145,12 @@ int Device::_calculateDeviceScore(VkPhysicalDevice device) {
     vkGetPhysicalDeviceProperties(device, &deviceProperties);
     _maxTextureResolution = deviceProperties.limits.maxImageDimension2D;
     _maxSamplers = deviceProperties.limits.maxPerStageDescriptorSamplers;
-    uint32_t desiredSamplerCount = std::min(_maxSamplers, (uint32_t)64 );
-    _maxSamplers = desiredSamplerCount;
-    console.log("[Veloxr]", "[DEBUG] Physical Device Name: ", deviceProperties.deviceName);
-    console.log("[Veloxr]", "[DEBUG] API Version: ", deviceProperties.apiVersion );
-    console.log("[Veloxr]", "[DEBUG] Max Texture Resolution: ", _maxTextureResolution );
+    console.debug("[Hardware] Physical Device Name: ", deviceProperties.deviceName);
+    console.debug("[Hardware] API Version: ", deviceProperties.apiVersion );
+    console.debug("[Hardware] Max Texture Resolution: ", _maxTextureResolution );
+    console.debug("[Hardware] Max per-stage Descriptor Samplers: ", _maxSamplers );
+    //uint32_t desiredSamplerCount = std::min(_maxSamplers, (uint32_t)64 );
+    //_maxSamplers = desiredSamplerCount;
 
     VkPhysicalDeviceFeatures deviceFeatures;
     vkGetPhysicalDeviceFeatures(device, &deviceFeatures);

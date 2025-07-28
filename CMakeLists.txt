@@ -39,8 +39,11 @@ message(STATUS "After force set VALIDATION_LAYERS value: ${VALIDATION_LAYERS}")
 if (APPLE)
     set(LIB_SOURCES
         src/Vertex.h 
-        src/VLogger.h 
+        src/VLogger.h src/Common.h
         src/renderer.h src/renderer.cpp
+        src/VVTexture.h src/VVTexture.cpp
+        src/VVUtils.h src/VVUtils.cpp
+        src/VVShaderStageData.h src/VVShaderStageData.cpp
         src/device.h src/device.cpp 
         src/CommandUtils.h src/CommandUtils.cpp 
         src/RenderEntity.h src/RenderEntity.cpp
@@ -54,8 +57,11 @@ if (APPLE)
 elseif (WIN32)
     set(LIB_SOURCES
         src/Vertex.h 
-        src/VLogger.h 
+        src/VLogger.h src/Common.h
         src/renderer.h src/renderer.cpp
+        src/VVTexture.h src/VVTexture.cpp
+        src/VVUtils.h src/VVUtils.cpp
+        src/VVShaderStageData.h src/VVShaderStageData.cpp
         src/CommandUtils.h src/CommandUtils.cpp 
         src/RenderEntity.h src/RenderEntity.cpp
         src/EntityManager.h src/EntityManager.cpp
@@ -65,6 +71,48 @@ elseif (WIN32)
         src/TextureTiling.h src/TextureTiling.cpp
     )
 endif()
+
+# # [POTENIAL] Auto shader compilation
+# find_program(GLSLC glslc HINTS ENV VULKAN_SDK PATH_SUFFIXES bin)
+
+# if(GLSLC)
+#     # Compile vertex shader
+#     add_custom_command(
+#         OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/spirv/vert.spv
+#         COMMAND ${GLSLC} ${CMAKE_CURRENT_SOURCE_DIR}/src/shaders/passthrough.vert -o ${CMAKE_CURRENT_SOURCE_DIR}/spirv/vert.spv
+#         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/shaders/passthrough.vert
+#         COMMENT "Compiling vertex shader"
+#     )
+
+#     # Compile fragment shader for Windows/Linux
+#     add_custom_command(
+#         OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/spirv/frag.spv
+#         COMMAND ${GLSLC} ${CMAKE_CURRENT_SOURCE_DIR}/src/shaders/passthrough.frag -o ${CMAKE_CURRENT_SOURCE_DIR}/spirv/frag.spv
+#         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/shaders/passthrough.frag
+#         COMMENT "Compiling fragment shader"
+#     )
+
+#     # Compile macOS-specific fragment shader
+#     add_custom_command(
+#         OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/spirv/frag_mac.spv
+#         COMMAND ${GLSLC} ${CMAKE_CURRENT_SOURCE_DIR}/src/shaders/passthrough_mac.frag -o ${CMAKE_CURRENT_SOURCE_DIR}/spirv/frag_mac.spv
+#         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/shaders/passthrough_mac.frag
+#         COMMENT "Compiling macOS fragment shader"
+#     )
+
+#     # Create a target that depends on all compiled shaders
+#     add_custom_target(compile_shaders ALL
+#         DEPENDS 
+#             ${CMAKE_CURRENT_SOURCE_DIR}/spirv/vert.spv
+#             ${CMAKE_CURRENT_SOURCE_DIR}/spirv/frag.spv
+#             ${CMAKE_CURRENT_SOURCE_DIR}/spirv/frag_mac.spv
+#     )
+
+#     # Make the main executable depend on shader compilation
+#     add_dependencies(vulkanrenderer compile_shaders)
+# else()
+#     message(WARNING "glslc not found. Please compile shaders manually or ensure VULKAN_SDK is set.")
+# endif()
 
 # Create the library
 if (APPLE)
@@ -232,6 +280,15 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different 
                 "${LIB}" "$<TARGET_FILE_DIR:vulkanrenderer>"
                 COMMENT "Copying ${LIB} to build directory")
+        endforeach()
+        
+        # Copy MoltenVK ICD file if it exists
+        file(GLOB ICD_FILES "${DIR_PATH}/lib/MoltenVK_icd.json")
+        foreach(ICD_FILE ${ICD_FILES})
+            add_custom_command(TARGET vulkanrenderer POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different 
+                "${ICD_FILE}" "$<TARGET_FILE_DIR:vulkanrenderer>"
+                COMMENT "Copying MoltenVK ICD file to build directory")
         endforeach()
     endforeach()
 
