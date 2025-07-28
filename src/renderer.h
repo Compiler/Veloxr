@@ -213,6 +213,10 @@ public:
     
     // Make drawFrame accessible to external code
     void drawFrame();
+    void setValidationLayersEnabled(bool validationEnabled) {
+        enableValidationLayers = validationEnabled;
+
+    }
 
 
     //glm::vec2 getMainEntityPosition()  { }
