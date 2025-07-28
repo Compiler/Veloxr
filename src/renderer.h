@@ -237,11 +237,10 @@ private: // No client -- internal
     VkDebugUtilsMessengerEXT debugMessenger;
 
 #ifdef VALIDATION_LAYERS_VALUE
-    //bool enableValidationLayers = VALIDATION_LAYERS_VALUE;
-    bool enableValidationLayers = true;
+    bool enableValidationLayers = VALIDATION_LAYERS_VALUE;
 #else
-    //bool enableValidationLayers = false;
-    bool enableValidationLayers = true;
+    bool enableValidationLayers = false;
+    // bool enableValidationLayers = true;
 #endif
 
     Veloxr::OrthographicCamera _cam;
