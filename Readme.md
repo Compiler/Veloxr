@@ -1,3 +1,11 @@
+# Purpose
+- Will render any resolution image by tiling to your graphics drivers max resolution size.
+- Tradeoff of space for instant access. I do 0 mipmapping. We want to minimize VRAM here for ML processing.
+- Used in Topaz GigaPixel, Video uses internal tools.
+
+
+# Instuctions at a high level, ping me.
+
 Install make in some way, I used chocolatey
 - Or don't and manually run the lines in the makefile 
 
