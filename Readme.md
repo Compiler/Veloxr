@@ -1,7 +1,7 @@
 # Purpose
 - Will render any resolution image by tiling to your graphics drivers max resolution size.
 - Tradeoff of space for instant access. I do 0 mipmapping. We want to minimize VRAM here for ML processing.
-- Used in Topaz GigaPixel, Video uses internal tools.
+- Stress tested on 168,000 x 128,000 images, beats photoshop and lightroom for load times. 4ms draw time. 3090 and 4070 and dual 4070 hardware tests. 
 
 
 # Instuctions at a high level, ping me.
